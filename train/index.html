@@ -77,6 +77,31 @@
   .steam.s1{animation:steam 2.6s ease-out infinite;}
   .steam.s2{animation:steam 2.6s .9s ease-out infinite;}
   .steam.s3{animation:steam 2.6s 1.7s ease-out infinite;}
+  /* ---- 车厢事件 ---- */
+  .evt{
+    position:absolute;left:12px;bottom:12px;z-index:6;max-width:72%;
+    background:rgba(30,26,22,.88);color:#f5efe2;font-size:13px;letter-spacing:.05em;line-height:1.7;
+    padding:9px 12px;border-radius:9px;display:none;align-items:center;gap:10px;
+  }
+  .evt.show{display:flex;}
+  .evt button{
+    font-family:var(--serif);font-size:12.5px;background:var(--seal);color:#fdf6ee;
+    border:none;border-radius:7px;padding:6px 10px;cursor:pointer;flex:0 0 auto;
+  }
+  #noodle{cursor:pointer;}
+  #noodle .n-steam{display:none;}
+  #noodle[data-state="3"] .n-steam{display:block;}
+  #noodle .n-lidoff,#noodle .n-chopsin{display:none;}
+  #noodle[data-state="3"] .n-lidoff,#noodle[data-state="3"] .n-chopsin{display:block;}
+  #noodle[data-state="3"] .n-lidflat,#noodle[data-state="3"] .n-chopsrest{display:none;}
+  #noodle[data-state="3"] .n-badge{display:none;}
+  .n-badge rect{fill:#b5402c;}
+  .n-badge{transform-box:fill-box;transform-origin:center;animation:badgePulse 1.6s ease-in-out infinite;}
+  #noodle[data-state="1"] .n-badge{animation:none;}
+  #ticket{cursor:pointer;}
+  #ticket.want{transform-box:fill-box;transform-origin:center;animation:badgePulse 1s ease-in-out infinite;}
+  .goodie{opacity:0;transition:opacity .6s;}
+  @keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
   @keyframes rock{from{transform:translateY(0)}to{transform:translateY(2.2px)}}
   @keyframes wob{from{transform:rotate(-.7deg)}to{transform:rotate(.8deg)}}
   @keyframes steam{
@@ -161,6 +186,7 @@
           </g>
 
           <rect class="shade" x="44" y="48" width="712" height="292" fill="#0d1233"/>
+          <rect id="tunnel" x="44" y="48" width="712" height="292" fill="#0a0d18" opacity="0" style="transition:opacity .5s"/>
           <path d="M120,48 L250,340 M180,48 L310,340" stroke="#ffffff" stroke-width="18" opacity=".05"/>
         </g>
 
@@ -176,7 +202,7 @@
         <path d="M0,412 Q400,406 800,414 M0,472 Q420,466 800,474 M0,520 Q380,516 800,522" stroke="#6f4a2c" stroke-width="1.6" opacity=".5" fill="none"/>
 
         <!-- 车票 -->
-        <g transform="rotate(-5 165 448)">
+        <g id="ticket" transform="rotate(-5 165 448)">
           <rect x="88" y="402" width="154" height="92" rx="5" fill="#e7f0da" stroke="#9fae8c" stroke-width="1.5"/>
           <rect x="88" y="402" width="154" height="20" rx="5" fill="#c95840"/>
           <text x="97" y="416" font-size="11" fill="#fdf6ee" letter-spacing="1">K1997 次</text>
@@ -199,18 +225,46 @@
           <circle cx="336" cy="470" r="4" fill="#68809a"/>
         </g>
 
-        <!-- 泡面 -->
-        <g class="wob2">
-          <path class="steam s1" d="M496,376 q7,-12 -2,-24 q-7,-10 2,-18" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
-          <path class="steam s2" d="M520,372 q-7,-12 2,-24 q7,-10 -2,-18" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
-          <path class="steam s3" d="M544,378 q6,-11 -2,-22 q-6,-9 2,-15" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <!-- 泡面（可以点） -->
+        <g id="noodle" class="wob2" data-state="0">
+          <path class="n-steam steam s1" d="M496,376 q7,-12 -2,-24 q-7,-10 2,-18" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path class="n-steam steam s2" d="M520,372 q-7,-12 2,-24 q7,-10 -2,-18" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path class="n-steam steam s3" d="M544,378 q6,-11 -2,-22 q-6,-9 2,-15" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round"/>
           <path d="M470,392 L568,392 L560,494 L478,494 Z" fill="#f2e7d2" stroke="#d8cdb6" stroke-width="2"/>
           <path d="M472,414 L566,414 L563,448 L475,448 Z" fill="#c95840" opacity=".92"/>
           <text x="519" y="438" text-anchor="middle" font-size="17" fill="#fdf6ee" font-family="'Noto Serif SC','Songti SC',serif" letter-spacing="3">牛肉面</text>
           <text x="519" y="470" text-anchor="middle" font-size="10" fill="#8a8071" letter-spacing="2">加量不加价</text>
-          <ellipse cx="540" cy="388" rx="52" ry="10" fill="#e8dcc4" stroke="#c9bfa4" stroke-width="2" transform="rotate(-7 540 388)"/>
-          <line x1="500" y1="330" x2="528" y2="392" stroke="#a5703f" stroke-width="4.5" stroke-linecap="round"/>
-          <line x1="514" y1="328" x2="534" y2="392" stroke="#b98953" stroke-width="4.5" stroke-linecap="round"/>
+          <g class="n-chopsrest">
+            <line x1="482" y1="384" x2="552" y2="372" stroke="#a5703f" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="486" y1="392" x2="556" y2="380" stroke="#b98953" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+          <g class="n-chopsin">
+            <line x1="500" y1="330" x2="528" y2="392" stroke="#a5703f" stroke-width="4.5" stroke-linecap="round"/>
+            <line x1="514" y1="328" x2="534" y2="392" stroke="#b98953" stroke-width="4.5" stroke-linecap="round"/>
+          </g>
+          <ellipse class="n-lidflat" cx="519" cy="392" rx="51" ry="10" fill="#e8dcc4" stroke="#c9bfa4" stroke-width="2"/>
+          <ellipse class="n-lidoff" cx="600" cy="478" rx="46" ry="10" fill="#e8dcc4" stroke="#c9bfa4" stroke-width="2" transform="rotate(22 600 478)"/>
+          <g class="n-badge">
+            <rect x="462" y="344" width="116" height="26" rx="13"/>
+            <text id="noodleBadge" x="520" y="362" text-anchor="middle" font-size="12.5" fill="#fdf6ee" font-family="'Noto Serif SC','Songti SC',serif">点我 · 拆面加水</text>
+          </g>
+        </g>
+
+        <!-- 小卖部战利品 -->
+        <g id="gGuazi" class="goodie" transform="rotate(8 720 462)">
+          <rect x="690" y="436" width="60" height="52" rx="7" fill="#d84437" stroke="#a92f24" stroke-width="2"/>
+          <rect x="690" y="436" width="60" height="14" rx="7" fill="#f3c14b"/>
+          <text x="720" y="472" text-anchor="middle" font-size="13" fill="#fdf6ee" font-family="'Noto Serif SC','Songti SC',serif" letter-spacing="2">瓜子</text>
+        </g>
+        <g id="gChang" class="goodie" transform="rotate(-14 275 505)">
+          <rect x="240" y="497" width="70" height="16" rx="8" fill="#e88a8a" stroke="#b85b5b" stroke-width="1.5"/>
+          <circle cx="238" cy="505" r="4" fill="#b85b5b"/>
+          <circle cx="312" cy="505" r="4" fill="#b85b5b"/>
+        </g>
+        <g id="gZhou" class="goodie">
+          <rect x="646" y="504" width="40" height="44" rx="5" fill="#e8dcc4" stroke="#c9bfa4" stroke-width="2"/>
+          <ellipse cx="666" cy="504" rx="20" ry="5" fill="#b9bfae" stroke="#8f958a" stroke-width="1.5"/>
+          <text x="666" y="532" text-anchor="middle" font-size="9.5" fill="#8a5a3b" font-family="'Noto Serif SC','Songti SC',serif">八宝粥</text>
         </g>
       </g>
     </svg>
@@ -220,6 +274,7 @@
       <button id="btnSound">🔇 声音</button>
       <button id="btnHorn" disabled>📣 汽笛</button>
     </div>
+    <div class="evt" id="evt"><span id="evtText"></span><button id="evtBtn" style="display:none"></button></div>
   </div>
 
   <div class="plaque">
@@ -461,6 +516,103 @@
     }
   });
   btnHorn.addEventListener('click', horn);
+
+  /* ---------- 车厢事件 ---------- */
+  var evt = document.getElementById('evt');
+  var evtBtn = document.getElementById('evtBtn');
+  var evtText = document.getElementById('evtText');
+  var evtTimer = null;
+  function showEvt(text, btnLabel, onClick, autoHide){
+    evtText.textContent = text;
+    if (btnLabel){
+      evtBtn.style.display = 'inline-block';
+      evtBtn.textContent = btnLabel;
+      evtBtn.onclick = onClick;
+    } else {
+      evtBtn.style.display = 'none';
+    }
+    evt.classList.add('show');
+    clearTimeout(evtTimer);
+    if (autoHide) evtTimer = setTimeout(function(){ evt.classList.remove('show'); }, autoHide);
+  }
+
+  /* 泡面三部曲 */
+  var noodle = document.getElementById('noodle');
+  var badge = document.getElementById('noodleBadge');
+  var nState = 0, brewLeft = 0, brewTick = null;
+  noodle.addEventListener('click', function(){
+    if (nState === 0){
+      nState = 1;
+      noodle.setAttribute('data-state', '1');
+      brewLeft = 180;
+      badge.textContent = '焖着 · 180 秒';
+      showEvt('撕开一半盖子，热水冲下去的瞬间，整节车厢都醒了。', null, null, 4000);
+      brewTick = setInterval(function(){
+        brewLeft -= 15;
+        if (brewLeft > 0){
+          badge.textContent = '焖着 · ' + brewLeft + ' 秒';
+        } else {
+          clearInterval(brewTick);
+          nState = 2;
+          noodle.setAttribute('data-state', '2');
+          badge.textContent = '好了！点我开吃';
+        }
+      }, 500);
+    } else if (nState === 2){
+      nState = 3;
+      noodle.setAttribute('data-state', '3');
+      showEvt('三分钟，是绿皮车上最好闻的等待。', null, null, 4500);
+    } else if (nState === 3){
+      showEvt('唏哩呼噜。对面小孩看你的眼神越来越直了。', null, null, 4000);
+    }
+  });
+
+  /* 卖货推车 */
+  var GOODS = [
+    {label: '来一包瓜子 ¥3', id: 'gGuazi', done: '「给。」一包还带着体温的瓜子落在桌上。'},
+    {label: '来根火腿肠 ¥5', id: 'gChang', done: '火腿肠在桌上滚了半圈，被你一把按住。'},
+    {label: '来罐八宝粥 ¥6', id: 'gZhou', done: '八宝粥晃了晃，是甜的那种晃。'}
+  ];
+  var goodIdx = 0;
+  function cartVisit(){
+    if (goodIdx >= GOODS.length) return;
+    var g = GOODS[goodIdx];
+    showEvt('🛒 「花生瓜子八宝粥，火腿肠矿泉水，让一让嘞——」', g.label, function(){
+      document.getElementById(g.id).style.opacity = '1';
+      goodIdx++;
+      showEvt(g.done, null, null, 4000);
+    }, 12000);
+  }
+  setTimeout(cartVisit, 16000);
+  setInterval(cartVisit, 47000);
+
+  /* 查票 */
+  var ticket = document.getElementById('ticket');
+  var checking = false;
+  setTimeout(function(){
+    checking = true;
+    ticket.classList.add('want');
+    showEvt('👮 「查票了查票了，车票拿手上。」（点一下你的车票）');
+  }, 32000);
+  ticket.addEventListener('click', function(){
+    if (!checking){
+      showEvt('泉州 → 童年，2026年07月06日，硬座，¥12.5。', null, null, 3500);
+      return;
+    }
+    checking = false;
+    ticket.classList.remove('want');
+    showEvt('「嗯，到童年的。这趟车慢，坐稳了。」', null, null, 4500);
+  });
+
+  /* 隧道 */
+  var tunnel = document.getElementById('tunnel');
+  function goTunnel(){
+    tunnel.style.opacity = '0.88';
+    showEvt('🕳️ 呜——进隧道了，耳朵有点闷。', null, null, 3500);
+    setTimeout(function(){ tunnel.style.opacity = '0'; }, 3600);
+  }
+  setTimeout(goTunnel, 24000);
+  setInterval(function(){ if (Math.random() < 0.6) goTunnel(); }, 45000);
 })();
 </script>
 </body>

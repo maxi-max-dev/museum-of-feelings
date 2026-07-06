@@ -41,6 +41,24 @@
   }
   .stage-btns button:hover{transform:translateY(-1px);border-color:#e8e2d2;}
   .stage-btns button.on{background:#e8e2d2;color:#0b0f24;border-color:#e8e2d2;}
+  .intro{
+    position:absolute;inset:0;background:rgba(11,15,36,.6);z-index:8;
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  .intro.hide{display:none;}
+  .ibox{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line),0 14px 30px rgba(0,0,0,.4);
+    max-width:540px;padding:22px 26px 20px;font-size:14px;line-height:2;color:#453e30;
+  }
+  .ibox .it{font-size:16px;letter-spacing:.15em;color:var(--seal);margin-bottom:10px;}
+  .ibox p{margin-bottom:8px;}
+  .ibox b{color:var(--ink);}
+  .ibox button{
+    font-family:var(--serif);font-size:15px;letter-spacing:.1em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:9px;
+    padding:11px 22px;cursor:pointer;margin-top:6px;
+  }
 
   .plaque{
     background:var(--card);border:1px solid var(--ink);
@@ -73,9 +91,21 @@
   <div class="stage">
     <canvas id="cv" width="800" height="560"></canvas>
     <div class="stage-btns">
-      <button id="btnNew">🎲 换个宇宙</button>
-      <button id="btnFig8">∞ 奇迹解：8字舞</button>
+      <button id="btnTwo">🌗 两体对照</button>
+      <button id="btnThird" style="display:none">☄️ 放入第三颗星</button>
+      <button id="btnNew">🎲 随机三体</button>
+      <button id="btnFig8">∞ 8字舞</button>
       <button id="btnGhost">👻 平行宇宙</button>
+      <button id="btnHelp">❓</button>
+    </div>
+    <div class="intro" id="intro">
+      <div class="ibox">
+        <div class="it">🪐 一分钟看懂这个展厅</div>
+        <p>① 先点「两体对照」：<b>两颗</b>星共舞，轨道是永恒的椭圆，一万年后它们在哪都算得出来。</p>
+        <p>② 再点「放入第三颗星」：只是多了一颗，就<b>再也没有公式</b>能算出它们的明天，这就是混沌，也是小说《三体》里那颗星球的日常。</p>
+        <p>③「平行宇宙」会叠加一个只差<b>十万分之一</b>的幽灵世界，看两个宇宙多快分道扬镳。大多数宇宙的结局是把一颗星甩出去，左上角在给宇宙计数。</p>
+        <button id="btnGo">🔭 从两颗星开始</button>
+      </div>
     </div>
   </div>
 
@@ -146,10 +176,37 @@
     ghost[0].x += 0.00001; /* 十万分之一的差别 */
   }
 
+  var flash = null;
+  function newTwo(){
+    uniN++;
+    simT = 0; dead = null;
+    scalePx = 150;
+    bodies = [
+      {x: -0.8, y: 0, vx: 0, vy: 0.56, m: 1},
+      {x: 0.8, y: 0, vx: 0, vy: -0.56, m: 1}
+    ];
+    if (ghostOn) makeGhost();
+    clearCanvas();
+    document.getElementById('btnThird').style.display = 'inline-block';
+    flash = {text: '两颗星：稳定、优雅、完全可预测。看够了就放第三颗进来。', t: 0};
+  }
+  function addThird(){
+    if (bodies.length !== 2) return;
+    bodies.push({x: 0, y: 1.5, vx: -0.35, vy: 0, m: 1});
+    var mvx = 0, mvy = 0;
+    for (var i = 0; i < 3; i++){ mvx += bodies[i].vx; mvy += bodies[i].vy; }
+    for (var j = 0; j < 3; j++){ bodies[j].vx -= mvx / 3; bodies[j].vy -= mvy / 3; }
+    if (ghostOn) makeGhost();
+    document.getElementById('btnThird').style.display = 'none';
+    flash = {text: '第三颗星入场，数学退场。从这一刻起，没人算得出明天。', t: 0};
+  }
+
   function accel(bs){
-    var ax = [0, 0, 0], ay = [0, 0, 0];
-    for (var i = 0; i < 3; i++){
-      for (var j = i + 1; j < 3; j++){
+    var n = bs.length;
+    var ax = [], ay = [];
+    for (var z = 0; z < n; z++){ ax.push(0); ay.push(0); }
+    for (var i = 0; i < n; i++){
+      for (var j = i + 1; j < n; j++){
         var dx = bs[j].x - bs[i].x, dy = bs[j].y - bs[i].y;
         var d2 = dx * dx + dy * dy + EPS2;
         var inv = 1 / (Math.sqrt(d2) * d2);
@@ -162,12 +219,12 @@
 
   function stepSys(bs, dt){
     var a1 = accel(bs);
-    for (var i = 0; i < 3; i++){
+    for (var i = 0; i < bs.length; i++){
       bs[i].x += bs[i].vx * dt + 0.5 * a1[0][i] * dt * dt;
       bs[i].y += bs[i].vy * dt + 0.5 * a1[1][i] * dt * dt;
     }
     var a2 = accel(bs);
-    for (var j = 0; j < 3; j++){
+    for (var j = 0; j < bs.length; j++){
       bs[j].vx += 0.5 * (a1[0][j] + a2[0][j]) * dt;
       bs[j].vy += 0.5 * (a1[1][j] + a2[1][j]) * dt;
     }
@@ -175,13 +232,13 @@
 
   function checkFate(){
     if (dead) return;
-    for (var i = 0; i < 3; i++){
+    for (var i = 0; i < bodies.length; i++){
       var r = Math.hypot(bodies[i].x, bodies[i].y);
       if (r > 6){
         dead = {msg: '一颗星被甩出了宇宙 · 文明存活 ' + Math.floor(simT) + ' 个纪元', t: 0};
         return;
       }
-      for (var j = i + 1; j < 3; j++){
+      for (var j = i + 1; j < bodies.length; j++){
         if (Math.hypot(bodies[j].x - bodies[i].x, bodies[j].y - bodies[i].y) < 0.045){
           dead = {msg: '两颗星相撞了 · 文明存活 ' + Math.floor(simT) + ' 个纪元', t: 0};
           return;
@@ -226,7 +283,7 @@
     }
 
     if (ghostOn && ghost){
-      for (var g = 0; g < 3; g++){
+      for (var g = 0; g < ghost.length; g++){
         ctx.beginPath();
         ctx.arc(sx(ghost[g].x), sy(ghost[g].y), 6, 0, 7);
         ctx.strokeStyle = COLORS[g];
@@ -237,7 +294,7 @@
       }
     }
 
-    for (var b = 0; b < 3; b++){
+    for (var b = 0; b < bodies.length; b++){
       var x = sx(bodies[b].x), y = sy(bodies[b].y);
       var grd = ctx.createRadialGradient(x, y, 0, x, y, 14);
       grd.addColorStop(0, COLORS[b]);
@@ -248,10 +305,27 @@
       ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill();
     }
 
+    /* HUD 底条：防止文字被拖尾残影污染 */
+    ctx.fillStyle = '#0b0f24';
+    ctx.fillRect(0, 0, 340, 38);
+    if (flash) ctx.fillRect(0, 44, W, 28);
+    if (ghostOn && ghost && !dead) ctx.fillRect(0, H - 68, 400, 68);
+
     ctx.textAlign = 'left';
     ctx.font = '13px "Noto Serif SC","Songti SC",serif';
     ctx.fillStyle = 'rgba(232,226,210,0.75)';
     ctx.fillText('第 ' + uniN + ' 号宇宙 · 已存活 ' + Math.floor(simT) + ' 个纪元', 16, 26);
+
+    if (flash){
+      flash.t += 0.016;
+      if (flash.t > 5){ flash = null; }
+      else {
+        ctx.textAlign = 'center';
+        ctx.font = '15px "Noto Serif SC","Songti SC",serif';
+        ctx.fillStyle = 'rgba(232,226,210,' + Math.min(1, 5 - flash.t) * 0.9 + ')';
+        ctx.fillText(flash.text, CX, 62);
+      }
+    }
 
     if (ghostOn && ghost && !dead){
       var div = Math.hypot(bodies[0].x - ghost[0].x, bodies[0].y - ghost[0].y);
@@ -283,8 +357,18 @@
     requestAnimationFrame(loop);
   }
 
-  document.getElementById('btnNew').addEventListener('click', newRandom);
-  document.getElementById('btnFig8').addEventListener('click', newFig8);
+  function hideThird(){ document.getElementById('btnThird').style.display = 'none'; }
+  document.getElementById('btnNew').addEventListener('click', function(){ hideThird(); newRandom(); });
+  document.getElementById('btnFig8').addEventListener('click', function(){ hideThird(); newFig8(); });
+  document.getElementById('btnTwo').addEventListener('click', newTwo);
+  document.getElementById('btnThird').addEventListener('click', addThird);
+  document.getElementById('btnGo').addEventListener('click', function(){
+    document.getElementById('intro').classList.add('hide');
+    newTwo();
+  });
+  document.getElementById('btnHelp').addEventListener('click', function(){
+    document.getElementById('intro').classList.remove('hide');
+  });
   document.getElementById('btnGhost').addEventListener('click', function(){
     ghostOn = !ghostOn;
     this.classList.toggle('on', ghostOn);

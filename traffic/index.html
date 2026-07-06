@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>堵车制造机 · 感觉博物馆</title>
-<meta name="description" content="前面明明没有事故，为什么会堵？一条环形公路交给你，你只有一脚刹车。">
+<meta name="description" content="前面明明没有事故，为什么会堵？环形测试场看幽灵堵车，高速瓶颈看三车道变两车道。">
 <style>
   :root{
     --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
@@ -22,10 +22,18 @@
   .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
   .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
   .topbar a:hover{color:var(--seal);border-color:var(--seal);}
-  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
   h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
   .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
   .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .tabs{display:flex;justify-content:center;gap:10px;margin-bottom:16px;}
+  .tabs button{
+    font-family:var(--serif);font-size:14px;letter-spacing:.1em;
+    background:var(--card);border:1.5px solid var(--line);border-radius:9px;
+    padding:9px 18px;cursor:pointer;color:var(--ink-soft);
+  }
+  .tabs button.on{border-color:var(--seal);color:var(--seal);box-shadow:0 0 0 1px var(--seal);}
 
   .stage{
     position:relative;border:1px solid var(--ink);
@@ -86,26 +94,36 @@
     <p class="sub">前面明明没有事故，为什么会堵？</p>
   </header>
 
+  <div class="tabs">
+    <button id="tabRoad" class="on">🚧 高速瓶颈 · 三车道变两车道</button>
+    <button id="tabRing">🔁 环形测试场 · 幽灵堵车</button>
+  </div>
+
   <div class="stage">
     <canvas id="cv" width="800" height="500"></canvas>
   </div>
 
   <div class="ctrls">
     <button class="brake" id="btnBrake">🦶 点一脚刹车</button>
-    <div class="slider-box">
+    <div class="slider-box" id="boxRing" style="display:none">
       车流密度
       <input type="range" id="density" min="16" max="40" value="28">
       <span id="densityVal">28 辆</span>
+    </div>
+    <div class="slider-box" id="boxRoad">
+      车流量
+      <input type="range" id="inflow" min="20" max="95" value="62">
+      <span id="inflowVal">中等</span>
     </div>
     <button class="btn" id="btnClear">🚿 疏通道路</button>
   </div>
 
   <div class="plaque">
-    <div class="pt">说明牌 · 幽灵堵车</div>
+    <div class="pt">说明牌 · 堵车的两张配方</div>
     <div class="pb">
-      <b>这条路上没有事故，没有红灯，没有收费站。</b>你按下刹车，被选中的那辆车只是轻轻减速了一下。但它身后的车会刹得更狠一点，再后面的更狠。一脚刹车就这样变成一道往后传的波，以每小时十几公里的速度逆着车流走，这就是「幽灵堵车」。你在高速上莫名其妙堵住的那一场，源头可能是几公里外、几分钟前，某个人的一脚刹车。
-      <span class="exp">🧪 三个实验：①密度拉低，刹一脚，看波浪自己愈合。②密度拉高，刹一脚，看它变成一场灾难。③密度拉满，什么都别按，堵车会自己诞生。</span>
-      <span class="exp">💡 唯一的解药是车距：跟得越近，波越难消化。自动驾驶车队治堵，靠的就是不乱刹车。</span>
+      <b>配方一：瓶颈。</b>三条车道挤进两条，路的「喉咙」就这么宽，来的车一多，多出来的部分只能变成排队。看蓝色施工段前面：并线的车一脚刹车，后面整条车道跟着点头，堵的不是施工那五十米，是它上游的一公里。车流量调小，拉链般丝滑；调大，立刻现出原形。
+      <span class="exp"><b>配方二：幽灵。</b>切到环形测试场：没有瓶颈、没有事故的完美道路上，你点一脚刹车，波浪会逆着车流传下去，几分钟都散不掉，这就是你在高速上莫名其妙堵住的那一场。密度低时刹一脚能自愈，密度拉满连刹车都不用，堵车自己诞生。</span>
+      <span class="exp">💡 两个场景同一个解药：车距。跟得越近，波越难消化。所以「加塞抢到的时间」，是从所有人的刹车里偷来的。</span>
     </div>
   </div>
 
@@ -119,171 +137,355 @@
 (function(){
   var cv = document.getElementById('cv');
   var ctx = cv.getContext('2d');
-  var CX = 400, CY = 252, R = 187, ROAD_W = 40;
-  var L = 2 * Math.PI * R;
-  var CAR_LEN = 20, V0 = 55;
-  var cars = [];
-  var brakeFlash = 0, brakeAngle = 0;
+  var mode = 'road';
+  var brakeFlash = 0, brakeX = 0, brakeY = 0;
 
-  function build(n){
-    cars = [];
-    for (var i = 0; i < n; i++){
-      cars.push({
-        s: L * i / n,
-        v: V0 * 0.55,
-        v0: V0 * (0.92 + Math.random() * 0.16),
-        brakeT: 0
-      });
-    }
+  function vDesire(gap, v0, near, far){
+    if (gap <= near) return 0;
+    if (gap >= far) return v0;
+    return v0 * (gap - near) / (far - near);
+  }
+  function relax(c, vDes, dt, brakeRate, accelRate){
+    var rate = vDes < c.v ? brakeRate : accelRate;
+    c.v += (vDes - c.v) * Math.min(1, dt * rate);
+    if (c.v < 0) c.v = 0;
   }
 
-  function step(dt){
-    var n = cars.length;
+  /* ================= 场景一：环形 ================= */
+  var R_CX = 400, R_CY = 252, R_R = 187, ROAD_W = 40;
+  var L = 2 * Math.PI * R_R, CAR_LEN = 20, V0 = 55;
+  var ring = [];
+
+  function ringBuild(n){
+    ring = [];
     for (var i = 0; i < n; i++){
-      var c = cars[i], nx = cars[(i + 1) % n];
+      ring.push({ s: L * i / n, v: V0 * 0.55, v0: V0 * (0.92 + Math.random() * 0.16), brakeT: 0 });
+    }
+  }
+  function ringStep(dt){
+    var n = ring.length;
+    for (var i = 0; i < n; i++){
+      var c = ring[i], nx = ring[(i + 1) % n];
       var gap = (nx.s - c.s + L) % L - CAR_LEN;
       var vDes;
       if (c.brakeT > 0){ vDes = 0; c.brakeT -= dt; }
-      else if (gap <= 8){ vDes = 0; }
-      else if (gap >= 30){ vDes = c.v0; }
-      else { vDes = c.v0 * (gap - 8) / 22; }
-      /* 远处不减速、近了猛刹、起步磨蹭：幽灵堵车三件套 */
-      var rate = vDes < c.v ? 5 : 0.85;
-      c.v += (vDes - c.v) * Math.min(1, dt * rate);
-      if (c.v < 0) c.v = 0;
+      else vDes = vDesire(gap, c.v0, 8, 30);
+      relax(c, vDes, dt, 5, 0.85);
     }
-    for (var j = 0; j < n; j++){
-      cars[j].s = (cars[j].s + cars[j].v * dt + L) % L;
-    }
+    for (var j = 0; j < n; j++) ring[j].s = (ring[j].s + ring[j].v * dt + L) % L;
   }
-
-  function brake(){
+  function ringBrake(){
     var target = null, best = 1e9;
-    for (var i = 0; i < cars.length; i++){
-      var a = cars[i].s / L * Math.PI * 2 - Math.PI / 2;
-      var d = Math.abs(Math.atan2(Math.sin(a + Math.PI / 2), Math.cos(a + Math.PI / 2)));
-      if (d < best){ best = d; target = cars[i]; }
+    for (var i = 0; i < ring.length; i++){
+      var d = Math.min(ring[i].s, L - ring[i].s);
+      if (d < best){ best = d; target = ring[i]; }
     }
     if (target){
       target.brakeT = 2.0;
       brakeFlash = 1;
-      brakeAngle = target.s / L * Math.PI * 2 - Math.PI / 2;
+      var a = target.s / L * Math.PI * 2 - Math.PI / 2;
+      brakeX = R_CX + Math.cos(a) * R_R;
+      brakeY = R_CY + Math.sin(a) * R_R;
     }
-    var b = document.getElementById('btnBrake');
-    b.disabled = true;
-    setTimeout(function(){ b.disabled = false; }, 900);
   }
-
-  function draw(){
-    ctx.clearRect(0, 0, 800, 500);
-    ctx.fillStyle = '#f5efe2';
-    ctx.fillRect(0, 0, 800, 500);
-
-    ctx.beginPath();
-    ctx.arc(CX, CY, R + 92, 0, 7);
-    ctx.fillStyle = '#a8cc7f';
-    ctx.fill();
-
-    var deco = [[-0.6, 1.28], [0.5, 1.3], [1.7, 1.27], [2.9, 1.31], [4.1, 1.26], [5.2, 1.3]];
+  function ringDraw(){
+    ctx.beginPath(); ctx.arc(R_CX, R_CY, R_R + 92, 0, 7);
+    ctx.fillStyle = '#a8cc7f'; ctx.fill();
+    var deco = [[-0.6,1.28],[0.5,1.3],[1.7,1.27],[2.9,1.31],[4.1,1.26],[5.2,1.3]];
     for (var d = 0; d < deco.length; d++){
-      var dx = CX + Math.cos(deco[d][0]) * R * deco[d][1];
-      var dy = CY + Math.sin(deco[d][0]) * R * deco[d][1];
+      var dx = R_CX + Math.cos(deco[d][0]) * R_R * deco[d][1];
+      var dy = R_CY + Math.sin(deco[d][0]) * R_R * deco[d][1];
       ctx.beginPath(); ctx.arc(dx, dy + 2, 9, 0, 7); ctx.fillStyle = '#54823f'; ctx.fill();
       ctx.beginPath(); ctx.arc(dx, dy - 4, 7, 0, 7); ctx.fillStyle = '#659a4c'; ctx.fill();
     }
-
-    ctx.beginPath();
-    ctx.arc(CX, CY, R, 0, 7);
-    ctx.strokeStyle = '#5a564e';
-    ctx.lineWidth = ROAD_W;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(CX, CY, R, 0, 7);
-    ctx.strokeStyle = 'rgba(253,246,238,.75)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([14, 12]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.beginPath();
-    ctx.arc(CX, CY, R - ROAD_W / 2 - 10, 0, 7);
-    ctx.fillStyle = '#b9d489';
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(R_CX, R_CY, R_R, 0, 7);
+    ctx.strokeStyle = '#5a564e'; ctx.lineWidth = ROAD_W; ctx.stroke();
+    ctx.beginPath(); ctx.arc(R_CX, R_CY, R_R, 0, 7);
+    ctx.strokeStyle = 'rgba(253,246,238,.75)'; ctx.lineWidth = 2;
+    ctx.setLineDash([14, 12]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(R_CX, R_CY, R_R - ROAD_W / 2 - 10, 0, 7);
+    ctx.fillStyle = '#b9d489'; ctx.fill();
 
     var jam = 0, sum = 0;
-    for (var i = 0; i < cars.length; i++){
-      var c = cars[i];
+    for (var i = 0; i < ring.length; i++){
+      var c = ring[i];
       sum += c.v;
       if (c.v < V0 * 0.16) jam++;
       var a = c.s / L * Math.PI * 2 - Math.PI / 2;
-      var x = CX + Math.cos(a) * R, y = CY + Math.sin(a) * R;
-      var hue = 118 * Math.min(1, c.v / c.v0);
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(a + Math.PI / 2);
-      ctx.fillStyle = 'hsl(' + hue + ',68%,44%)';
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(-10, -6.5, 20, 13, 4); else ctx.rect(-10, -6.5, 20, 13);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(253,246,238,.5)';
-      ctx.fillRect(3, -5, 4, 10);
-      ctx.restore();
+      var x = R_CX + Math.cos(a) * R_R, y = R_CY + Math.sin(a) * R_R;
+      drawCar(x, y, a + Math.PI / 2, c.v / c.v0);
     }
-
-    if (brakeFlash > 0){
-      var bx = CX + Math.cos(brakeAngle) * R, by = CY + Math.sin(brakeAngle) * R;
-      ctx.beginPath();
-      ctx.arc(bx, by, 16 + (1 - brakeFlash) * 30, 0, 7);
-      ctx.strokeStyle = 'rgba(181,64,44,' + (brakeFlash * 0.9) + ')';
-      ctx.lineWidth = 3.5;
-      ctx.stroke();
-      brakeFlash -= 0.02;
-    }
-
-    var avg = Math.round(sum / cars.length / (V0 * 0.98) * 100);
+    var avg = Math.round(sum / ring.length / (V0 * 0.98) * 100);
     ctx.textAlign = 'center';
     ctx.fillStyle = '#2a2521';
     ctx.font = '600 40px "Noto Serif SC","Songti SC",serif';
-    ctx.fillText(avg + '%', CX, CY - 18);
+    ctx.fillText(avg + '%', R_CX, R_CY - 18);
     ctx.font = '13px "Noto Serif SC","Songti SC",serif';
     ctx.fillStyle = '#8a8071';
-    ctx.fillText('平 均 车 速', CX, CY + 8);
-    var mood = jam === 0 ? '🟢 一路畅通' : (jam < 6 ? '🟡 有点堵了' : '🔴 堵成一锅粥');
+    ctx.fillText('平 均 车 速', R_CX, R_CY + 8);
+    mood(jam, R_CX, R_CY + 42);
+  }
+
+  /* ================= 场景二：高速瓶颈 ================= */
+  var LANE_Y = [215, 255, 295];
+  var TAPER_A = 470, TAPER_B = 560;
+  var RV0 = 95, RCAR = 20;
+  var cars = [], spawnAcc = 0, exits = [];
+
+  function roadReset(){ cars = []; spawnAcc = 0; exits = []; }
+
+  function inflowRate(){ return +document.getElementById('inflow').value / 100; } /* 辆/秒/全路 */
+
+  function laneCars(lane){
+    return cars.filter(function(c){ return c.lane === lane; }).sort(function(a, b){ return a.x - b.x; });
+  }
+
+  function roadStep(dt){
+    /* 生成：进不来就在场外排队（压力守恒） */
+    spawnAcc += dt * inflowRate() * 3;
+    var guard = 0;
+    while (spawnAcc >= 1 && guard < 12){
+      guard++;
+      var order = [0, 1, 2].sort(function(){ return Math.random() - 0.5; });
+      var placed = false;
+      for (var oi = 0; oi < 3; oi++){
+        var lane = order[oi];
+        var ok = true;
+        for (var i = 0; i < cars.length; i++){
+          if (cars[i].lane === lane && cars[i].x < 36){ ok = false; break; }
+        }
+        if (ok){
+          cars.push({ x: -26, v: RV0 * 0.6, v0: RV0 * (0.9 + Math.random() * 0.2), lane: lane, y: LANE_Y[lane], brakeT: 0 });
+          spawnAcc -= 1;
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) break;
+    }
+    if (spawnAcc > 8) spawnAcc = 8;
+
+    /* 按车道排序找前车 */
+    var byLane = [laneCars(0), laneCars(1), laneCars(2)];
+
+    for (var l = 0; l < 3; l++){
+      var arr = byLane[l];
+      for (var k = 0; k < arr.length; k++){
+        var c = arr[k];
+        var gap = 1e9;
+        if (k < arr.length - 1) gap = arr[k + 1].x - c.x - RCAR;
+        if (c.lane === 2){
+          var wall = TAPER_B - 6 - c.x - RCAR / 2;
+          if (wall < gap) gap = wall;
+        }
+        var vDes;
+        if (c.brakeT > 0){ vDes = 0; c.brakeT -= dt; }
+        else vDes = vDesire(gap, c.v0, 10, 55);
+        relax(c, vDes, dt, 5, 0.95);
+      }
+    }
+
+    /* 并线：封闭车道的车找中道空隙 */
+    for (var m = 0; m < cars.length; m++){
+      var c2 = cars[m];
+      if (c2.lane === 2 && c2.x > 300 && c2.merging === undefined){
+        var mid = byLane[1];
+        var gapA = 1e9, gapB = 1e9;
+        for (var q = 0; q < mid.length; q++){
+          var dx = mid[q].x - c2.x;
+          if (dx >= 0 && dx - RCAR < gapA) gapA = dx - RCAR;
+          if (dx < 0 && -dx - RCAR < gapB) gapB = -dx - RCAR;
+        }
+        var urgent = c2.x > TAPER_A;
+        if (gapA > (urgent ? 26 : 42) && gapB > (urgent ? 18 : 30)){
+          c2.lane = 1;
+          c2.merging = 1; /* y 动画进行中 */
+        }
+      }
+      if (c2.merging !== undefined){
+        c2.y += (LANE_Y[c2.lane] - c2.y) * Math.min(1, dt * 6);
+        if (Math.abs(c2.y - LANE_Y[c2.lane]) < 0.5){ c2.y = LANE_Y[c2.lane]; delete c2.merging; }
+      } else {
+        c2.y = LANE_Y[c2.lane];
+      }
+    }
+
+    /* 位置与离场 */
+    var now = performance.now() / 1000;
+    for (var p = cars.length - 1; p >= 0; p--){
+      cars[p].x += cars[p].v * dt;
+      if (cars[p].x > 830){
+        cars.splice(p, 1);
+        exits.push(now);
+      }
+    }
+    while (exits.length && exits[0] < now - 30) exits.shift();
+  }
+
+  function roadBrake(){
+    var pool = cars.filter(function(c){ return c.x > 120 && c.x < 430; });
+    if (!pool.length) return;
+    var t = pool[(Math.random() * pool.length) | 0];
+    t.brakeT = 1.6;
+    brakeFlash = 1; brakeX = t.x; brakeY = t.y;
+  }
+
+  function roadDraw(){
+    /* 环境 */
+    ctx.fillStyle = '#b9d489';
+    ctx.fillRect(0, 0, 800, 500);
+    ctx.fillStyle = '#a8cc7f';
+    ctx.fillRect(0, 340, 800, 160);
+    var trees = [[60,120],[190,90],[330,130],[560,100],[700,120],[120,420],[300,440],[520,415],[680,435]];
+    for (var t = 0; t < trees.length; t++){
+      ctx.beginPath(); ctx.arc(trees[t][0], trees[t][1] + 3, 10, 0, 7); ctx.fillStyle = '#54823f'; ctx.fill();
+      ctx.beginPath(); ctx.arc(trees[t][0], trees[t][1] - 4, 8, 0, 7); ctx.fillStyle = '#659a4c'; ctx.fill();
+    }
+
+    /* 路面 */
+    ctx.fillStyle = '#5a564e';
+    ctx.fillRect(0, 195, 800, 120);
+    ctx.strokeStyle = '#fdf6ee';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, 196.5); ctx.lineTo(800, 196.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 313.5); ctx.lineTo(800, 313.5); ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.setLineDash([16, 14]);
+    ctx.strokeStyle = 'rgba(253,246,238,.7)';
+    ctx.beginPath(); ctx.moveTo(0, 235); ctx.lineTo(800, 235); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 275); ctx.lineTo(TAPER_A, 275); ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 施工区：斜切封闭第三车道 */
+    ctx.fillStyle = 'rgba(90,86,78,1)';
+    ctx.beginPath();
+    ctx.moveTo(TAPER_A, 315); ctx.lineTo(TAPER_B, 277); ctx.lineTo(800, 277); ctx.lineTo(800, 315); ctx.closePath();
+    ctx.fillStyle = '#6b675f'; ctx.fill();
+    ctx.strokeStyle = 'rgba(253,246,238,.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(TAPER_A, 313); ctx.lineTo(TAPER_B, 276); ctx.lineTo(800, 276); ctx.stroke();
+    for (var cn = 0; cn <= 6; cn++){
+      var fx = TAPER_A + (TAPER_B - TAPER_A) * cn / 6;
+      var fy = 310 - 33 * cn / 6;
+      ctx.beginPath();
+      ctx.moveTo(fx, fy - 9); ctx.lineTo(fx - 5, fy + 4); ctx.lineTo(fx + 5, fy + 4); ctx.closePath();
+      ctx.fillStyle = '#e8702a'; ctx.fill();
+      ctx.fillStyle = '#fdf6ee'; ctx.fillRect(fx - 3.5, fy - 3, 7, 2.5);
+    }
+    for (var cn2 = 0; cn2 < 5; cn2++){
+      var fx2 = TAPER_B + 40 + cn2 * 45;
+      ctx.beginPath();
+      ctx.moveTo(fx2, 288); ctx.lineTo(fx2 - 5, 301); ctx.lineTo(fx2 + 5, 301); ctx.closePath();
+      ctx.fillStyle = '#e8702a'; ctx.fill();
+    }
+    /* 施工牌 */
+    ctx.fillStyle = '#8a5a3b'; ctx.fillRect(TAPER_A - 60, 330, 6, 34);
+    ctx.fillStyle = '#f3c14b';
+    ctx.fillRect(TAPER_A - 105, 352, 96, 30);
+    ctx.strokeStyle = '#2a2521'; ctx.lineWidth = 1.5; ctx.strokeRect(TAPER_A - 105, 352, 96, 30);
+    ctx.fillStyle = '#2a2521';
+    ctx.font = '13px "Noto Serif SC","Songti SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('前方施工 并道慢行', TAPER_A - 57, 371);
+
+    /* 车 */
+    var jam = 0;
+    for (var i = 0; i < cars.length; i++){
+      var c = cars[i];
+      if (c.v < c.v0 * 0.16 && c.x > 20) jam++;
+      drawCar(c.x, c.y, 0, c.v / c.v0);
+    }
+
+    /* 指标 */
+    var perMin = Math.round(exits.length * 2);
+    ctx.textAlign = 'left';
+    ctx.font = '15px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#453e30';
+    ctx.fillText('🛣️ 每分钟通过 ' + perMin + ' 辆 · 在场 ' + cars.length + ' 辆', 20, 34);
+    mood(jam, 400, 74);
+    ctx.textAlign = 'left';
+    ctx.font = '12.5px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#8a8071';
+    ctx.fillText('蓝色路段施工，最下面的车道要并进中间', 20, 58);
+  }
+
+  /* ================= 公共 ================= */
+  function drawCar(x, y, rot, frac){
+    var hue = 118 * Math.min(1, frac);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.fillStyle = 'hsl(' + hue + ',68%,44%)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-10, -6.5, 20, 13, 4); else ctx.rect(-10, -6.5, 20, 13);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(253,246,238,.5)';
+    ctx.fillRect(3, -5, 4, 10);
+    ctx.restore();
+  }
+  function mood(jam, x, y){
+    var m = jam === 0 ? '🟢 一路畅通' : (jam < 6 ? '🟡 有点堵了' : '🔴 堵成一锅粥');
     ctx.font = '17px "Noto Serif SC","Songti SC",serif';
     ctx.fillStyle = '#453e30';
-    ctx.fillText(mood, CX, CY + 42);
-    if (jam > 0){
-      ctx.font = '12.5px "Noto Serif SC","Songti SC",serif';
-      ctx.fillStyle = '#8a8071';
-      ctx.fillText(jam + ' 辆车动弹不得', CX, CY + 64);
-    }
+    ctx.textAlign = 'center';
+    ctx.fillText(m + (jam > 0 ? ' · ' + jam + ' 辆动弹不得' : ''), x, y);
   }
 
   var last = performance.now();
   function loop(now){
-    /* 真实时间补帧：后台标签回来也能追上时钟 */
     var dt = Math.min(8, (now - last) / 1000);
     last = now;
     while (dt > 0){
       var h = Math.min(0.016, dt);
-      step(h);
+      if (mode === 'ring') ringStep(h); else roadStep(h);
       dt -= h;
     }
-    draw();
+    ctx.clearRect(0, 0, 800, 500);
+    ctx.fillStyle = '#f5efe2';
+    ctx.fillRect(0, 0, 800, 500);
+    if (mode === 'ring') ringDraw(); else roadDraw();
+    if (brakeFlash > 0){
+      ctx.beginPath();
+      ctx.arc(brakeX, brakeY, 16 + (1 - brakeFlash) * 30, 0, 7);
+      ctx.strokeStyle = 'rgba(181,64,44,' + brakeFlash * 0.9 + ')';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      brakeFlash -= 0.02;
+    }
     requestAnimationFrame(loop);
   }
 
-  document.getElementById('btnBrake').addEventListener('click', brake);
+  function setMode(m){
+    mode = m;
+    document.getElementById('tabRing').classList.toggle('on', m === 'ring');
+    document.getElementById('tabRoad').classList.toggle('on', m === 'road');
+    document.getElementById('boxRing').style.display = m === 'ring' ? 'flex' : 'none';
+    document.getElementById('boxRoad').style.display = m === 'road' ? 'flex' : 'none';
+  }
+  document.getElementById('tabRing').addEventListener('click', function(){ setMode('ring'); });
+  document.getElementById('tabRoad').addEventListener('click', function(){ setMode('road'); });
+
+  document.getElementById('btnBrake').addEventListener('click', function(){
+    if (mode === 'ring') ringBrake(); else roadBrake();
+    var b = this;
+    b.disabled = true;
+    setTimeout(function(){ b.disabled = false; }, 900);
+  });
   document.getElementById('btnClear').addEventListener('click', function(){
-    build(cars.length);
+    if (mode === 'ring') ringBuild(ring.length); else roadReset();
   });
   var den = document.getElementById('density');
   den.addEventListener('input', function(){
     document.getElementById('densityVal').textContent = den.value + ' 辆';
-    build(+den.value);
+    ringBuild(+den.value);
+  });
+  var inf = document.getElementById('inflow');
+  inf.addEventListener('input', function(){
+    var v = +inf.value;
+    document.getElementById('inflowVal').textContent = v < 40 ? '深夜' : v < 62 ? '平峰' : v < 80 ? '晚高峰' : '节假日返程';
   });
 
-  build(28);
+  ringBuild(28);
+  roadReset();
   requestAnimationFrame(loop);
 })();
 </script>

@@ -33,6 +33,24 @@
     background:var(--card);overflow:hidden;animation:rise .8s .1s ease both;
   }
   .stage canvas{display:block;width:100%;height:auto;}
+  .intro{
+    position:absolute;inset:0;background:rgba(42,37,33,.5);z-index:8;
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  .intro.hide{display:none;}
+  .ibox{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line),0 14px 30px rgba(40,30,15,.3);
+    max-width:540px;padding:22px 26px 20px;font-size:14px;line-height:2;color:#453e30;
+  }
+  .ibox .it{font-size:16px;letter-spacing:.15em;color:var(--seal);margin-bottom:10px;}
+  .ibox p{margin-bottom:8px;}
+  .ibox b{color:var(--ink);}
+  .ibox button{
+    font-family:var(--serif);font-size:15px;letter-spacing:.1em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:9px;
+    padding:11px 22px;cursor:pointer;margin-top:6px;
+  }
 
   .stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
   @media(max-width:640px){.stats{grid-template-columns:1fr;}}
@@ -97,6 +115,15 @@
 
   <div class="stage">
     <canvas id="cv" width="800" height="440"></canvas>
+    <div class="intro" id="intro">
+      <div class="ibox">
+        <div class="it">🧪 一分钟看懂这个实验</div>
+        <p>① 一会儿进场的小圆点是<b>同一批客人</b>，一人分饰两角，同时排左右两边。</p>
+        <p>② 左边<b>超市式</b>：进门自己挑一条队，站到底不许换。右边<b>银行式</b>：所有人排一条大队，哪个窗口空了就去哪个，就是叫号机。</p>
+        <p>③ 窗口数、办事速度、到场时间，两边<b>一模一样，唯一的区别是排法</b>。等得越久的圆点越红，带红圈的「你」是你自己，盯着他看。</p>
+        <button id="btnStart">🏁 开始实验</button>
+      </div>
+    </div>
   </div>
 
   <div class="stats">
@@ -117,7 +144,7 @@
   <div class="verdict" id="verdict"></div>
 
   <div class="ctrls">
-    <button class="btn primary" id="btnPlay">⏸ 暂停</button>
+    <button class="btn primary" id="btnPlay">▶ 开始</button>
     <button class="btn" id="btnSpeed">⏩ 速度 ×4</button>
     <div class="slider-box">
       办事效率差异
@@ -145,7 +172,7 @@
   var cv = document.getElementById('cv');
   var ctx = cv.getContext('2d');
   var N_CUST = 90, YOU = 34, SERVERS = 3;
-  var speed = 4, playing = true, sigma = 0.75;
+  var speed = 4, playing = false, sigma = 0.75;
   var customers, L, R, simT, verdictShown;
 
   function randn(){
@@ -282,6 +309,10 @@
     ctx.fillStyle = '#453e30';
     ctx.fillText('🛒 超市式 · 各排各的', 200, 30);
     ctx.fillText('🏦 银行式 · 一条队叫号', 600, 30);
+    ctx.font = '12px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#8a8071';
+    ctx.fillText('自己挑一队，站到底不许换', 200, 410);
+    ctx.fillText('一条大队，哪个窗口空了去哪个', 600, 410);
 
     var bxL = [96, 200, 304];
     for (var i = 0; i < 3; i++){
@@ -406,6 +437,12 @@
   document.getElementById('btnPlay').addEventListener('click', function(){
     playing = !playing;
     this.textContent = playing ? '⏸ 暂停' : '▶ 继续';
+    document.getElementById('intro').classList.add('hide');
+  });
+  document.getElementById('btnStart').addEventListener('click', function(){
+    document.getElementById('intro').classList.add('hide');
+    playing = true;
+    document.getElementById('btnPlay').textContent = '⏸ 暂停';
   });
   var speeds = [1, 4, 8];
   var si = 1;

@@ -159,6 +159,10 @@
     <button id="tabChallenge" class="on">⏱️ 挑战「我想你」</button>
     <button id="tabFree">💬 自由短信</button>
   </div>
+  <div class="mode-tabs" style="margin-top:-6px">
+    <button id="imT9" class="on">T9 智能拼音 · 一键一按</button>
+    <button id="imABC">ABC 多击拼音 · 连按选字母</button>
+  </div>
 
   <div class="phone">
     <div class="earpiece"></div>
@@ -349,7 +353,9 @@
   };
 
   var K2L = {a:2,b:2,c:2,d:3,e:3,f:3,g:4,h:4,i:4,j:5,k:5,l:5,m:6,n:6,o:6,p:7,q:7,r:7,s:7,t:8,u:8,v:8,w:9,x:9,y:9,z:9};
+  var LETTERS = {'2':'abc','3':'def','4':'ghi','5':'jkl','6':'mno','7':'pqrs','8':'tuv','9':'wxyz'};
   var BY_DIGIT = {};
+  var BY_PY = {};
   var SYL_ORDER = [];
   Object.keys(DICT).forEach(function(syl){
     var chars = DICT[syl].replace(/[?？]/g,'');
@@ -359,6 +365,7 @@
     for (var i = 0; i < base.length; i++){ d += K2L[base[i]]; }
     if (!BY_DIGIT[d]) BY_DIGIT[d] = [];
     BY_DIGIT[d].push({syl: base, chars: chars});
+    if (!BY_PY[base]) BY_PY[base] = chars;
     SYL_ORDER.push(d);
   });
   var PUNCT = ['，','。','？','！','…','～','（','）'];
@@ -370,8 +377,10 @@
   ];
 
   var mode = 'challenge';
+  var im = 't9'; /* 't9' 智能拼音 | 'abc' 多击拼音 */
   var TARGET = '我想你';
   var buf = '', msg = '';
+  var pinyinBuf = '', mtKey = null, mtIdx = 0, mtTimer = null;
   var presses = 0, startT = null, timerId = null;
 
   var $ = function(id){ return document.getElementById(id); };
@@ -387,11 +396,46 @@
   });
 
   function pressKey(k){
-    if (k === '*' || k === '#'){ toastLcd('这个键光荣退休了'); return; }
+    if (k === '*'){ toastLcd('这个键光荣退休了'); return; }
+    if (k === '#'){ toggleIM(); return; }
     countPress();
     if (k === '0'){ msg += ' '; render(); return; }
-    if (k === '1'){ buf = ''; renderCands(PUNCT.map(function(p){ return {c:p}; })); digEl.textContent = '1'; return; }
+    if (k === '1'){ buf = ''; clearPending(); pinyinBuf = ''; renderCands(PUNCT.map(function(p){ return {c:p}; })); digEl.textContent = '1'; return; }
+    if (im === 'abc'){ multiTap(k); return; }
     buf += k;
+    render();
+  }
+
+  /* ---------- 多击拼音 ---------- */
+  function clearPending(){
+    clearTimeout(mtTimer);
+    mtKey = null; mtIdx = 0;
+  }
+  function commitPending(){
+    if (mtKey !== null){
+      pinyinBuf += LETTERS[mtKey][mtIdx];
+      clearPending();
+    }
+    render();
+  }
+  function multiTap(k){
+    if (mtKey === k){
+      mtIdx = (mtIdx + 1) % LETTERS[k].length;
+    } else {
+      if (mtKey !== null) pinyinBuf += LETTERS[mtKey][mtIdx];
+      mtKey = k; mtIdx = 0;
+    }
+    clearTimeout(mtTimer);
+    mtTimer = setTimeout(commitPending, 850);
+    render();
+  }
+  function toggleIM(){
+    im = im === 't9' ? 'abc' : 't9';
+    buf = ''; pinyinBuf = ''; clearPending();
+    document.getElementById('imT9').classList.toggle('on', im === 't9');
+    document.getElementById('imABC').classList.toggle('on', im === 'abc');
+    toastLcd(im === 't9' ? '已切换：T9 智能拼音，一键一按' : '已切换：ABC 多击拼音，连按同一个键选字母');
+    if (mode === 'challenge') addBubble(im === 't9' ? '提示：先按 96，再按 94264，再按 64' : '多击提示：我=9,666　想=99,444,2,66,4　你=66,444（逗号处停一拍）', 'ta');
     render();
   }
 
@@ -424,12 +468,30 @@
 
   function render(){
     msgEl.textContent = msg;
+    if (im === 'abc'){ renderABC(); return; }
     digEl.textContent = buf || ' ';
     if (!buf){ candEl.innerHTML = ''; return; }
     var m = matches(buf);
     if (m.length){ renderCands(m); }
     else if (hasPrefix(buf)){ candEl.innerHTML = '<span class="cand lbl">继续按…</span>'; }
     else { candEl.innerHTML = '<span class="cand lbl">词库里没有这个组合，删掉重来</span>'; }
+  }
+
+  function renderABC(){
+    var pending = mtKey !== null ? LETTERS[mtKey][mtIdx] : '';
+    digEl.textContent = (pinyinBuf + (pending ? '[' + pending + ']' : '')) || ' ';
+    var full = pinyinBuf + pending;
+    if (!full){ candEl.innerHTML = ''; return; }
+    if (BY_PY[full]){
+      var list = [{lbl: full}];
+      var chars = BY_PY[full];
+      for (var i = 0; i < chars.length && i < 10; i++) list.push({c: chars[i]});
+      renderCands(list);
+      return;
+    }
+    var hasPre = false;
+    for (var p in BY_PY){ if (p.length > full.length && p.indexOf(full) === 0){ hasPre = true; break; } }
+    candEl.innerHTML = '<span class="cand lbl">' + (hasPre ? full + '… 继续拼' : '词库里没有「' + full + '」，删掉重来') + '</span>';
   }
 
   function renderCands(list){
@@ -444,6 +506,8 @@
           countPress();
           msg += item.c;
           buf = '';
+          pinyinBuf = '';
+          clearPending();
           render();
           checkAuto();
         });
@@ -517,7 +581,7 @@
     if (mode === 'challenge'){
       $('goalbar').style.display = 'flex';
       addBubble('挑战开始：用九键打出「我想你」', 'ta');
-      addBubble('提示：先按 96，再按 94264，再按 64', 'ta');
+      addBubble(im === 't9' ? '提示：先按 96，再按 94264，再按 64' : '多击提示：我=9,666　想=99,444,2,66,4　你=66,444（逗号处停一拍）', 'ta');
     } else {
       $('goalbar').style.display = 'none';
       addBubble('自由模式：随便聊，TA 会回你', 'ta');
@@ -527,11 +591,18 @@
 
   $('skDel').addEventListener('click', function(){
     countPress();
+    if (im === 'abc'){
+      if (mtKey !== null){ clearPending(); }
+      else if (pinyinBuf) pinyinBuf = pinyinBuf.slice(0, -1);
+      else msg = msg.slice(0, -1);
+      render();
+      return;
+    }
     if (buf) buf = buf.slice(0, -1);
     else msg = msg.slice(0, -1);
     render();
   });
-  $('skClear').addEventListener('click', function(){ buf = ''; msg = ''; render(); });
+  $('skClear').addEventListener('click', function(){ buf = ''; msg = ''; pinyinBuf = ''; clearPending(); render(); });
   $('btnSend').addEventListener('click', send);
   $('resAgain').addEventListener('click', resetChallenge);
   $('tabChallenge').addEventListener('click', function(){
@@ -544,6 +615,8 @@
     this.classList.add('on'); $('tabChallenge').classList.remove('on');
     resetChallenge();
   });
+  $('imT9').addEventListener('click', function(){ if (im !== 't9') toggleIM(); });
+  $('imABC').addEventListener('click', function(){ if (im !== 'abc') toggleIM(); });
 
   document.addEventListener('keydown', function(e){
     if (e.key >= '0' && e.key <= '9'){ pressKey(e.key); }
