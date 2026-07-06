@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拍一下就好了 · 感觉博物馆</title>
+<meta name="description" content="1998 年的客厅，一台闹脾气的电视，和全家手感最好的那只手掌。转天线，拍电视，别让显像管罢工。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#cbb99a;overflow:hidden;animation:rise .8s .1s ease both;
+    touch-action:none;
+  }
+  .stage svg{display:block;width:100%;height:auto;}
+  #screenCv{position:absolute;image-rendering:pixelated;}
+  .handle{cursor:grab;}
+  .handle:active{cursor:grabbing;}
+  .caption{
+    position:absolute;left:0;right:0;text-align:center;
+    font-size:12.5px;color:#fdf6ee;letter-spacing:.1em;
+    text-shadow:1px 1px 2px rgba(0,0,0,.6);pointer-events:none;
+  }
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .row1{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-bottom:14px;}
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 18px;cursor:pointer;user-select:none;-webkit-user-select:none;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn:active{transform:translateY(1px);}
+  .btn.whack{background:var(--seal);color:#fdf6ee;border-color:var(--seal);font-size:15px;padding:11px 22px;}
+  .btn.whack:hover{background:#8f3323;color:#fdf6ee;}
+  .btn.fix{background:#57503f;color:#fdf6ee;border-color:#57503f;}
+
+  .meter{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  .meter .lbl{font-size:12.5px;color:var(--ink-soft);letter-spacing:.1em;white-space:nowrap;}
+  .meterbar{flex:1;height:14px;border:1px solid var(--ink);border-radius:8px;background:#efe6d3;overflow:hidden;position:relative;}
+  .meterbar .fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,#b5402c,#c9834a,#5f8a4a);transition:width .25s ease;}
+  .meterbar .fill.broken{background:#57503f;}
+  .hint{text-align:center;font-size:12.5px;color:var(--ink-soft);letter-spacing:.06em;min-height:18px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque .quote{
+    text-align:center;font-size:16.5px;letter-spacing:.06em;color:var(--seal);
+    border-top:1px dashed var(--line);padding-top:16px;margin-top:4px;
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №016</span>
+  </div>
+
+  <header>
+    <h1>拍一下就好了</h1>
+    <div class="en">PERCUSSIVE MAINTENANCE</div>
+    <p class="sub">1998 年的客厅，一台闹脾气的电视，和全家手感最好的那只手掌</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <svg id="sceneSvg" viewBox="0 0 700 520" xmlns="http://www.w3.org/2000/svg">
+      <!-- 墙纸 -->
+      <defs>
+        <pattern id="wallstripe" width="34" height="34" patternUnits="userSpaceOnUse">
+          <rect width="34" height="34" fill="#d9c9ac"/>
+          <rect width="17" height="34" fill="#cebd9c"/>
+        </pattern>
+        <linearGradient id="woodgrain" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a5a3a"/>
+          <stop offset="1" stop-color="#5e3a24"/>
+        </linearGradient>
+        <linearGradient id="tvwood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6b4530"/>
+          <stop offset="1" stop-color="#432a1b"/>
+        </linearGradient>
+        <radialGradient id="screenGlass" cx="42%" cy="38%" r="75%">
+          <stop offset="0" stop-color="#3a4a48"/>
+          <stop offset="100%" stop-color="#12211f"/>
+        </radialGradient>
+      </defs>
+
+      <rect x="0" y="0" width="700" height="380" fill="url(#wallstripe)"/>
+      <rect x="0" y="360" width="700" height="20" fill="#c2ae8c"/>
+      <!-- 地板 -->
+      <rect x="0" y="380" width="700" height="140" fill="url(#woodgrain)"/>
+      <g stroke="#3f2818" stroke-width="1" opacity=".35">
+        <line x1="0" y1="410" x2="700" y2="410"/>
+        <line x1="0" y1="445" x2="700" y2="445"/>
+        <line x1="0" y1="480" x2="700" y2="480"/>
+      </g>
+
+      <!-- 电视柜 -->
+      <g id="cabinet">
+        <rect x="120" y="392" width="460" height="108" rx="6" fill="url(#tvwood)" stroke="#2c1b10" stroke-width="2"/>
+        <rect x="132" y="404" width="436" height="8" fill="#7a4f34" opacity=".6"/>
+        <circle cx="150" cy="470" r="6" fill="#caa96b"/>
+        <circle cx="650" cy="470" r="6" fill="#caa96b"/>
+        <rect x="120" y="486" width="30" height="14" fill="#2c1b10"/>
+        <rect x="550" y="486" width="30" height="14" fill="#2c1b10"/>
+      </g>
+
+      <!-- 兔耳天线（在电视壳后面画杆，把手在最上层另画） -->
+      <g id="antennaRods">
+        <line id="antL_rod" x1="330" y1="196" x2="330" y2="196" stroke="#8a8071" stroke-width="4" stroke-linecap="round"/>
+        <line id="antR_rod" x1="370" y1="196" x2="370" y2="196" stroke="#8a8071" stroke-width="4" stroke-linecap="round"/>
+      </g>
+
+      <!-- 电视机身 -->
+      <g id="tvBody">
+        <rect x="210" y="196" width="280" height="210" rx="20" fill="#4a2f1e" stroke="#2a1b10" stroke-width="3"/>
+        <rect x="222" y="208" width="256" height="186" rx="14" fill="#3a2416"/>
+        <!-- 屏幕开口，稍后用同尺寸 canvas 覆盖其上 -->
+        <rect id="screenBezel" x="238" y="220" width="224" height="150" rx="16" fill="url(#screenGlass)" stroke="#1c120a" stroke-width="4"/>
+        <!-- 品牌牌 -->
+        <text x="350" y="386" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="13" letter-spacing="3" fill="#d8c7a8">彩虹牌</text>
+        <!-- 电源灯 -->
+        <circle id="powerLamp" cx="452" cy="386" r="4" fill="#d43a2f"/>
+        <!-- 频道旋钮 -->
+        <g id="knobGroup" class="handle" style="cursor:pointer">
+          <circle cx="250" cy="386" r="11" fill="#20140c" stroke="#0e0906" stroke-width="2"/>
+          <line id="knobTick" x1="250" y1="386" x2="250" y2="377" stroke="#d8c7a8" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <text x="250" y="404" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="9" fill="#8a8071">频道</text>
+      </g>
+
+      <!-- 蕾丝布 + 搪瓷杯 摆件 -->
+      <g id="decor">
+        <path d="M226,196 q6,-10 18,0 q6,-9 18,0 q6,-9 18,0 q6,-9 18,0 q6,-9 18,0 q6,-9 18,0 q6,-9 18,0 q6,-9 18,0 L470,196 Z" fill="#f2ece0" opacity=".92" stroke="#d8cdb6" stroke-width="1"/>
+        <rect x="226" y="192" width="244" height="8" fill="#f5efe2" opacity=".92"/>
+        <g transform="translate(400,168)">
+          <path d="M-11,0 Q-11,20 0,20 Q11,20 11,0 Z" fill="#e8e2d4" stroke="#8a8071" stroke-width="1.4"/>
+          <rect x="-11" y="-3" width="22" height="6" rx="2" fill="#f5efe2" stroke="#8a8071" stroke-width="1.2"/>
+          <path d="M11,4 q10,2 9,11 q-1,7 -9,5" fill="none" stroke="#8a8071" stroke-width="2.4"/>
+          <path d="M-6,3 L6,3" stroke="#b5402c" stroke-width="1.6" opacity=".7"/>
+        </g>
+      </g>
+
+      <!-- 天线把手（最上层，可拖拽）。可见圆点半径 9，另叠一个透明的大命中圈，
+           保证移动端 390px 宽时手指也能稳稳摸到（fill 用 transparent 而非 none，
+           这样透明区域仍能接住指针事件）。 -->
+      <g id="antHandleL" class="handle" style="cursor:grab">
+        <circle cx="330" cy="196" r="18" fill="transparent"/>
+        <circle cx="330" cy="196" r="9" fill="#d8c7a8" stroke="#2a1b10" stroke-width="2"/>
+      </g>
+      <g id="antHandleR" class="handle" style="cursor:grab">
+        <circle cx="370" cy="196" r="18" fill="transparent"/>
+        <circle cx="370" cy="196" r="9" fill="#d8c7a8" stroke="#2a1b10" stroke-width="2"/>
+      </g>
+    </svg>
+
+    <canvas id="screenCv" width="440" height="330"></canvas>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="row1">
+      <button class="btn whack" id="btnWhack">👋 拍一下</button>
+      <span style="font-size:12px;color:var(--ink-soft)">（也可以直接点电视机身）</span>
+    </div>
+    <div class="meter">
+      <span class="lbl">信号强度</span>
+      <div class="meterbar"><div class="fill" id="meterFill"></div></div>
+    </div>
+    <div class="hint" id="hintText">转转天线，或者，拍一下？</div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 敲击式维修，percussive maintenance</div>
+    <div class="pb">
+      <b>为什么拍一下真的有用：</b>老电视机身里全是焊点和插接件，年头久了会氧化开裂，接触时好时坏。拍一下，震动让断开的触点瞬间重新贴上，图像就回来了。这套祖传手艺有个正经学名，敲击式维修，percussive maintenance。
+    </div>
+    <div class="pb">
+      <b>为什么现在不行了：</b>如今的电路是贴片集成，一体成型，坏了就是真坏了。拍下去只能收获一台更坏的电视。
+    </div>
+    <div class="pb">
+      <b>人体天线的道理：</b>人体是一根不错的导体，你扶着天线，你就成了天线的一部分。所以每家都有一个被指挥「你就站那别动」的人。
+    </div>
+    <div class="quote">有些问题真的可以靠打一顿解决，仅限 1998 年以前。</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №016 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============ 基础状态 ============ */
+  var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var stage = document.getElementById('stage');
+  var svg = document.getElementById('sceneSvg');
+  var cv = document.getElementById('screenCv');
+  var ctx = cv.getContext('2d');
+  var CW = 440, CH = 330;
+
+  var meterFill = document.getElementById('meterFill');
+  var hintText = document.getElementById('hintText');
+  var captionEl = document.getElementById('caption');
+  var btnWhack = document.getElementById('btnWhack');
+  var powerLamp = document.getElementById('powerLamp');
+
+  /* 天线：每根有隐藏目标角度（本次会话随机 20~70 度），当前角度可拖拽。
+     angle 的定义：0 度=竖直向上，正值向右倾，负值向左倾。两根杆默认呈八字张开
+     （L 向左倾、R 向右倾），目标角度按与竖直方向的夹角绝对值（20~70 度）独立评分。 */
+  var antennas = {
+    L: {cx: 330, cy: 196, angle: -45, target: 20 + Math.random() * 50, len: 78, held: false},
+    R: {cx: 370, cy: 196, angle: 45, target: 20 + Math.random() * 50, len: 78, held: false}
+  };
+  /* 开机必须先是坏画面，戏才演得起来：初始角度保证离隐藏目标至少 30 度 */
+  (function(){
+    function far(t){ var off = 30 + Math.random() * 20; return (t + off <= 84) ? (t + off) : Math.max(0, t - off); }
+    antennas.L.angle = -far(antennas.L.target);
+    antennas.R.angle = far(antennas.R.target);
+  })();
+
+  var luck = 8 + Math.random() * 12; /* 运气 0~100，慢随机游走；开机故意很差 */
+  var signal = 0; /* 综合信号 0~100 */
+
+  var humanBoost = 0; /* 人体天线临时加成，按住时逼近 28，松手回落到 0 */
+  var HUMAN_BOOST_MAX = 28;
+
+  var channel = 0; /* 0 足球 1 动画片 2 彩条 */
+  var CH_NAMES = ['足球赛', '动画片', '测试卡'];
+
+  var broken = false;
+  var repairing = false;
+  var repairT = 0;
+  var REPAIR_DUR = 2.5;
+
+  var whackTimes = []; /* 最近拍击时间戳，用于判断 2.5 秒内第几下 */
+  var shakeT = -999, glitchT = -999; /* 视觉特效计时（秒，用 clockT） */
+
+  var clockT = 0; /* 累积秒数，performance.now() 驱动 */
+
+  /* ============ 天线得分与信号 ============ */
+  function antScore(a){
+    var diff = Math.abs(Math.abs(a.angle) - a.target);
+    /* 高斯衰减，diff=0 得 1，diff=25 度左右降到约 0.3 */
+    return Math.exp(-(diff * diff) / (2 * 16 * 16));
+  }
+
+  function computeSignal(){
+    var sL = antScore(antennas.L);
+    var sR = antScore(antennas.R);
+    var antPct = (sL + sR) / 2 * 100;
+    var base = 0.55 * antPct + 0.45 * luck;
+    base += humanBoost;
+    return Math.max(0, Math.min(100, base));
+  }
+
+  /* 运气：慢随机游走，约每 2 秒一小步 */
+  var luckWalkAcc = 0;
+  function stepLuck(dt){
+    luckWalkAcc += dt;
+    if (luckWalkAcc >= 2){
+      luckWalkAcc = 0;
+      luck += (Math.random() * 2 - 1) * 12;
+      luck = Math.max(0, Math.min(100, luck));
+    }
+  }
+
+  /* 人体天线：按住任一把手，boost 平滑逼近上限；松手回落 */
+  function stepHumanBoost(dt){
+    var holding = antennas.L.held || antennas.R.held;
+    var targetB = holding ? HUMAN_BOOST_MAX : 0;
+    var speed = 90; /* 每秒变化速度 */
+    if (humanBoost < targetB) humanBoost = Math.min(targetB, humanBoost + speed * dt);
+    else if (humanBoost > targetB) humanBoost = Math.max(targetB, humanBoost - speed * dt);
+  }
+
+  /* ============ 提示语 ============ */
+  var lowHints = ['试试转天线', '要不，拍一下？', '信号快没了'];
+  var highHints = ['别动，就保持这样', '这台电视今天状态不错'];
+  var hintAcc = 0, hintIdx = 0;
+  function stepHint(dt){
+    if (broken){
+      hintText.textContent = '显像管歇菜了，先修一下';
+      return;
+    }
+    if (antennas.L.held || antennas.R.held){
+      hintText.textContent = antennas.L.held && antennas.R.held ? '两只手都占用了，佩服' : '别动，就是这样，你就站在那';
+      return;
+    }
+    hintAcc += dt;
+    if (hintAcc < 2.2) return;
+    hintAcc = 0;
+    if (signal < 45){
+      hintIdx = (hintIdx + 1) % lowHints.length;
+      hintText.textContent = lowHints[hintIdx];
+    } else if (signal >= 75){
+      hintIdx = (hintIdx + 1) % highHints.length;
+      hintText.textContent = highHints[hintIdx];
+    } else {
+      hintText.textContent = '信号还行，将就看';
+    }
+  }
+
+  /* ============ 字幕（判决/彩蛋文案），带淡出 ============ */
+  var caption = {text: '', t: 0, dur: 0};
+  function showCaption(text, dur){
+    caption = {text: text, t: 0, dur: dur || 2.2};
+  }
+  function stepCaption(dt){
+    if (!caption.text) { captionEl.style.opacity = 0; return; }
+    caption.t += dt;
+    var alpha = 1;
+    if (caption.t > caption.dur) alpha = Math.max(0, 1 - (caption.t - caption.dur) * 2);
+    captionEl.style.opacity = alpha;
+    captionEl.textContent = caption.text;
+    if (alpha <= 0) caption.text = '';
+  }
+
+  /* ============ 天线 SVG 更新 ============ */
+  var antL_rod = document.getElementById('antL_rod');
+  var antR_rod = document.getElementById('antR_rod');
+  var antHandleL = document.getElementById('antHandleL');
+  var antHandleR = document.getElementById('antHandleR');
+
+  function updateAntennaSvg(){
+    [['L', antL_rod, antHandleL], ['R', antR_rod, antHandleR]].forEach(function(pair){
+      var a = antennas[pair[0]];
+      var rod = pair[1], handle = pair[2];
+      var rad = a.angle * Math.PI / 180;
+      var tx = a.cx + Math.sin(rad) * a.len;
+      var ty = a.cy - Math.cos(rad) * a.len;
+      rod.setAttribute('x2', tx.toFixed(1));
+      rod.setAttribute('y2', ty.toFixed(1));
+      handle.setAttribute('transform', 'translate(' + (tx - a.cx).toFixed(1) + ',' + (ty - a.cy).toFixed(1) + ')');
+    });
+  }
+
+  /* ============ 天线拖拽（pointer events，统一鼠标/触摸） ============ */
+  function svgPoint(clientX, clientY){
+    var pt = svg.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    var m = svg.getScreenCTM().inverse();
+    return pt.matrixTransform(m);
+  }
+
+  function bindAntennaDrag(handleEl, key){
+    handleEl.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      if (broken) return;
+      antennas[key].held = true;
+      handleEl.setPointerCapture(e.pointerId);
+      ensureAudio();
+    });
+    handleEl.addEventListener('pointermove', function(e){
+      if (!antennas[key].held) return;
+      var p = svgPoint(e.clientX, e.clientY);
+      var a = antennas[key];
+      var dx = p.x - a.cx, dy = p.y - a.cy;
+      var ang = Math.atan2(dx, -dy) * 180 / Math.PI;
+      ang = Math.max(-85, Math.min(85, ang));
+      a.angle = ang;
+      updateAntennaSvg();
+    });
+    function release(e){
+      if (!antennas[key].held) return;
+      antennas[key].held = false;
+      try { handleEl.releasePointerCapture(e.pointerId); } catch(err){}
+      showCaption('你一松手它又不行了', 2);
+    }
+    handleEl.addEventListener('pointerup', release);
+    handleEl.addEventListener('pointercancel', release);
+  }
+  bindAntennaDrag(antHandleL, 'L');
+  bindAntennaDrag(antHandleR, 'R');
+
+  /* ============ 频道旋钮 ============ */
+  var knobGroup = document.getElementById('knobGroup');
+  var knobTick = document.getElementById('knobTick');
+  var knobAngle = 0;
+  function turnKnob(){
+    if (broken) return;
+    channel = (channel + 1) % 3;
+    knobAngle += 120;
+    knobTick.setAttribute('transform', 'rotate(' + knobAngle + ' 250 386)');
+    knobClickSound();
+    channelFlash();
+    showCaption('频道：' + CH_NAMES[channel], 1.6);
+  }
+  knobGroup.addEventListener('click', turnKnob);
+
+  /* ============ 拍击 / 拍电视 ============ */
+  var screenFlashT = -999; /* 换台雪花闪一下 */
+  function channelFlash(){ screenFlashT = clockT; }
+
+  function doWhack(){
+    if (repairing) return;
+    ensureAudio();
+    var now = clockT;
+    if (broken){
+      return; /* 坏着的时候拍击无效（换台外的其它交互全部无效） */
+    }
+    shakeT = now;
+    glitchT = now;
+    thudSound();
+
+    whackTimes.push(now);
+    whackTimes = whackTimes.filter(function(t){ return now - t <= 2.5; });
+
+    /* 拍坏判定：2.5 秒内第 4 下起，每下 15% 概率拍坏 */
+    if (whackTimes.length >= 4 && Math.random() < 0.15){
+      triggerBreak();
+      return;
+    }
+
+    /* 运气重掷：S<50 时偏向变好（30~100），S>=50 时可能变坏（0~100） */
+    if (signal < 50){
+      luck = 30 + Math.random() * 70;
+    } else {
+      luck = Math.random() * 100;
+    }
+    luck = Math.max(0, Math.min(100, luck));
+  }
+
+  btnWhack.addEventListener('click', doWhack);
+  document.getElementById('tvBody').addEventListener('click', function(e){
+    /* 避免旋钮点击冒泡到机身拍击 */
+    if (e.target === knobGroup || knobGroup.contains(e.target)) return;
+    doWhack();
+  });
+  /* 屏幕 canvas 在视觉上盖住了机身缺口，但它是 svg 外的兄弟节点，
+     点击不会冒泡进 #tvBody，所以单独接一个点击当作拍机身 */
+  cv.addEventListener('click', doWhack);
+
+  /* ============ 拍坏 / 修理 ============ */
+  var btnFix = null;
+  function triggerBreak(){
+    broken = true;
+    whackTimes = [];
+    showCaption('拍太狠了，显像管罢工了', 3.2);
+    popSound();
+    if (!btnFix){
+      btnFix = document.createElement('button');
+      btnFix.className = 'btn fix';
+      btnFix.id = 'btnFixFuse';
+      btnFix.textContent = '🔧 换保险丝';
+      document.querySelector('.row1').appendChild(btnFix);
+      btnFix.addEventListener('click', startRepair);
+    }
+    btnFix.style.display = 'inline-block';
+    btnFix.disabled = false;
+    btnFix.textContent = '🔧 换保险丝';
+    btnWhack.disabled = true;
+  }
+
+  function startRepair(){
+    if (repairing || !broken) return;
+    repairing = true;
+    repairT = 0;
+    btnFix.disabled = true;
+    btnFix.textContent = '滴答…滴答…';
+    tickSoundLoop(REPAIR_DUR);
+  }
+
+  function finishRepair(){
+    repairing = false;
+    broken = false;
+    humanBoost = 0;
+    /* S 重置 70：反解运气值，让「天线得分 + 运气」在这一刻直接算出 70，
+       之后运气照常慢慢游走，天线角度也不强制归位，只是这一帧钉在 70 */
+    var sL = antScore(antennas.L), sR = antScore(antennas.R);
+    var antPct = (sL + sR) / 2 * 100;
+    luck = Math.max(0, Math.min(100, (70 - 0.55 * antPct) / 0.45));
+    signal = 70;
+    showCaption('保险丝换好了，将就能看', 2.4);
+    btnFix.style.display = 'none';
+    btnFix.disabled = false;
+    btnFix.textContent = '🔧 换保险丝';
+    btnWhack.disabled = false;
+  }
+
+  /* ============ 屏幕渲染：噪点缓存 ============ */
+  var noiseCv = document.createElement('canvas');
+  noiseCv.width = CW; noiseCv.height = CH;
+  var noiseCtx = noiseCv.getContext('2d');
+  var noiseImg = noiseCtx.createImageData(CW, CH);
+  function paintNoise(alphaScale){
+    var d = noiseImg.data;
+    for (var i = 0; i < d.length; i += 4){
+      var v = (Math.random() * 255) | 0;
+      d[i] = v; d[i+1] = v; d[i+2] = v;
+      d[i+3] = 255 * alphaScale;
+    }
+    noiseCtx.putImageData(noiseImg, 0, 0);
+  }
+
+  /* ============ 频道画面绘制（简单形状） ============ */
+  function drawSoccer(t){
+    ctx.fillStyle = '#2f7a3c';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.strokeStyle = 'rgba(255,255,255,.55)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 16, CW - 40, CH - 32);
+    ctx.beginPath(); ctx.moveTo(CW/2, 16); ctx.lineTo(CW/2, CH - 16); ctx.stroke();
+    ctx.beginPath(); ctx.arc(CW/2, CH/2, 34, 0, Math.PI*2); ctx.stroke();
+    ctx.strokeRect(20, CH/2 - 55, 34, 110);
+    ctx.strokeRect(CW - 54, CH/2 - 55, 34, 110);
+
+    var ballAng = t * 0.9;
+    var bx = CW/2 + Math.sin(ballAng) * (CW/2 - 60);
+    var by = CH/2 + Math.sin(ballAng * 1.7) * (CH/2 - 40);
+    for (var i = 0; i < 4; i++){
+      var pa = t * 1.3 + i * 1.6;
+      ctx.fillStyle = '#d94040';
+      ctx.beginPath();
+      ctx.arc(bx + Math.cos(pa) * 46 - 26, by + Math.sin(pa) * 30, 6, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#3a5fd9';
+      ctx.beginPath();
+      ctx.arc(bx + Math.cos(pa + 2.4) * 46 + 26, by + Math.sin(pa + 2.4) * 30, 6, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI*2); ctx.fill();
+
+    if (goalFlashT >= 0 && clockT - goalFlashT < 1.1){
+      var ga = 1 - (clockT - goalFlashT) / 1.1;
+      ctx.fillStyle = 'rgba(255,255,255,' + (ga*0.5) + ')';
+      ctx.fillRect(0, 0, CW, CH);
+      ctx.fillStyle = 'rgba(180,40,30,' + ga + ')';
+      ctx.font = 'bold 30px "Noto Serif SC",serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('球进了！！', CW/2, CH/2);
+    }
+  }
+
+  function drawCartoon(t){
+    ctx.fillStyle = '#f2d675';
+    ctx.fillRect(0, 0, CW, CH);
+    var groundY = CH * 0.78;
+    ctx.fillStyle = '#c9a24a';
+    ctx.fillRect(0, groundY, CW, CH - groundY);
+
+    var cycle = (Math.sin(t * 1.4) + 1) / 2;
+    var mx = 30 + cycle * (CW - 90);
+    var catx = mx - 46 - Math.sin(t*7)*4;
+    var by = groundY - 14 - Math.abs(Math.sin(t*9)) * 10;
+
+    /* 鼠 */
+    ctx.fillStyle = '#8a7a6a';
+    ctx.beginPath(); ctx.ellipse(mx, by, 13, 9, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(mx - 12, by - 4, 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#8a7a6a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(mx + 12, by); ctx.quadraticCurveTo(mx + 26, by - 10, mx + 30, by + 2); ctx.stroke();
+
+    /* 猫 */
+    ctx.fillStyle = '#d97840';
+    ctx.beginPath(); ctx.ellipse(catx, by + 2, 20, 13, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(catx - 20, by - 6, 9, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(catx - 26, by - 12); ctx.lineTo(catx - 22, by - 20); ctx.lineTo(catx - 17, by - 12); ctx.fill();
+    ctx.moveTo(catx - 16, by - 13); ctx.lineTo(catx - 12, by - 21); ctx.lineTo(catx - 8, by - 13); ctx.fill();
+
+    ctx.fillStyle = '#7a5230';
+    ctx.font = '13px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('猫和鼠 · 谁也追不上谁', CW/2, 26);
+  }
+
+  function drawTestCard(t){
+    var bars = ['#e0e0e0','#d9c23a','#3ac2d9','#3ad95c','#d93a9a','#d93a3a','#3a4ad9'];
+    var bw = CW / bars.length;
+    for (var i = 0; i < bars.length; i++){
+      ctx.fillStyle = bars[i];
+      ctx.fillRect(i * bw, 0, bw + 1, CH * 0.7);
+    }
+    ctx.fillStyle = '#161616';
+    ctx.fillRect(0, CH*0.7, CW, CH*0.3);
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(CW/2, CH*0.42, 46, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(CW/2, CH*0.42, 3, 0, Math.PI*2); ctx.fillStyle='#e8e8e8'; ctx.fill();
+    ctx.fillStyle = '#e8e8e8';
+    ctx.font = '13px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('本台节目到此结束', CW/2, CH*0.86);
+  }
+
+  /* 足球进球计时 */
+  var nextGoalAt = 20 + Math.random() * 20;
+  var goalFlashT = -999;
+  function stepGoal(dt){
+    if (channel !== 0 || broken) return;
+    nextGoalAt -= dt;
+    if (nextGoalAt <= 0){
+      goalFlashT = clockT;
+      cheerSound();
+      nextGoalAt = 20 + Math.random() * 20;
+    }
+  }
+
+  /* ============ CRT 关机动画（拍坏时） ============ */
+  var shutdownT = -1, shutdownDur = 0.5;
+  function stepBreakVisual(dt){
+    if (!broken) { shutdownT = -1; return; }
+    if (shutdownT < 0) shutdownT = 0;
+    else if (shutdownT < shutdownDur) shutdownT += dt;
+  }
+
+  /* ============ 主渲染：屏幕合成 ============ */
+  function renderScreen(){
+    ctx.clearRect(0, 0, CW, CH);
+
+    if (broken){
+      /* 经典 CRT 关机：先收缩成一条白线，再缩成一个点，然后熄灭 */
+      var p = Math.min(1, shutdownT / shutdownDur);
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0, 0, CW, CH);
+      if (p < 1){
+        var lineH = Math.max(0.6, 10 * (1 - p));
+        var dotW = p > 0.7 ? Math.max(0, 60 * (1 - (p - 0.7) / 0.3)) : 60;
+        ctx.fillStyle = '#eef7f2';
+        ctx.fillRect(CW/2 - dotW/2, CH/2 - lineH/2, dotW, lineH);
+      }
+      drawVignette();
+      return;
+    }
+
+    var s = signal;
+    /* 干净的节目层画到离屏，再叠加噪声/重影/滚动 */
+    var progCv = progCanvas;
+    var pctx = progCanvas.getContext('2d');
+    var savedCtx = ctx;
+    ctx = pctx;
+    pctx.clearRect(0, 0, CW, CH);
+    if (channel === 0) drawSoccer(clockT);
+    else if (channel === 1) drawCartoon(clockT);
+    else drawTestCard(clockT);
+    ctx = savedCtx;
+
+    if (s < 25){
+      /* 满屏雪花，几乎看不见节目 */
+      paintNoise(0.9);
+      ctx.globalAlpha = 0.08;
+      ctx.drawImage(progCv, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.drawImage(noiseCv, 0, 0);
+    } else if (s < 60){
+      /* 若隐若现 + 重影 + 纵向滚动 */
+      var rollSpeed = 40;
+      var rollOff = (clockT * rollSpeed) % CH;
+      var t2 = (s - 25) / 35; /* 0~1 */
+      ctx.globalAlpha = 0.35 + t2 * 0.35;
+      drawRolled(progCv, rollOff);
+      ctx.globalAlpha = 0.22;
+      drawRolled(progCv, rollOff + 6);
+      ctx.globalAlpha = 1;
+      paintNoise(0.5 - t2 * 0.22);
+      ctx.drawImage(noiseCv, 0, 0);
+    } else if (s < 85){
+      /* 基本清楚，偶尔闪一下滚一下 */
+      ctx.globalAlpha = 1;
+      ctx.drawImage(progCv, 0, 0);
+      var glitchNow = ((clockT * 37) % 5.2) < 0.12;
+      if (glitchNow){
+        var rollOff2 = (clockT * 240) % CH;
+        drawRolled(progCv, rollOff2);
+      }
+      paintNoise(0.1);
+      ctx.globalAlpha = 0.16;
+      ctx.drawImage(noiseCv, 0, 0);
+      ctx.globalAlpha = 1;
+    } else {
+      /* 干净稳定 */
+      ctx.drawImage(progCv, 0, 0);
+      paintNoise(0.04);
+      ctx.globalAlpha = 0.05;
+      ctx.drawImage(noiseCv, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+
+    /* 拍击撕裂毛刺 150ms */
+    if (clockT - glitchT < 0.15){
+      var gp = 1 - (clockT - glitchT) / 0.15;
+      var slices = 5;
+      for (var i = 0; i < slices; i++){
+        var yy = Math.random() * CH;
+        var hh = 4 + Math.random() * 14;
+        var dx = (Math.random() - 0.5) * 40 * gp;
+        ctx.drawImage(progCv, 0, yy, CW, hh, dx, yy, CW, hh);
+      }
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.3 * gp) + ')';
+      ctx.fillRect(0, 0, CW, CH);
+    }
+
+    /* 换台雪花闪一下 */
+    if (clockT - screenFlashT < 0.18){
+      paintNoise(1 - (clockT - screenFlashT) / 0.18);
+      ctx.drawImage(noiseCv, 0, 0);
+    }
+
+    drawVignette();
+  }
+
+  function drawRolled(srcCv, offY){
+    var o = ((offY % CH) + CH) % CH;
+    ctx.drawImage(srcCv, 0, CH - o, CW, o, 0, 0, CW, o);
+    ctx.drawImage(srcCv, 0, 0, CW, CH - o, 0, o, CW, CH - o);
+  }
+
+  /* 暗角 + 扫描线，随时可见的 CRT 质感 */
+  var vignetteCache = null;
+  function drawVignette(){
+    if (!vignetteCache){
+      var vc = document.createElement('canvas');
+      vc.width = CW; vc.height = CH;
+      var vctx = vc.getContext('2d');
+      var g = vctx.createRadialGradient(CW/2, CH/2, CH*0.25, CW/2, CH/2, CH*0.72);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,.45)');
+      vctx.fillStyle = g;
+      vctx.fillRect(0, 0, CW, CH);
+      vctx.strokeStyle = 'rgba(0,0,0,.5)';
+      vctx.lineWidth = 6;
+      vctx.strokeRect(3, 3, CW-6, CH-6);
+      vignetteCache = vc;
+    }
+    ctx.drawImage(vignetteCache, 0, 0);
+    ctx.fillStyle = 'rgba(0,0,0,.12)';
+    for (var y = 0; y < CH; y += 3){
+      ctx.fillRect(0, y, CW, 1);
+    }
+  }
+
+  var progCanvas = document.createElement('canvas');
+  progCanvas.width = CW; progCanvas.height = CH;
+
+  /* ============ 机身抖动 / 屏幕位置跟随 svg 缩放 ============ */
+  function layoutScreen(){
+    var svgRect = svg.getBoundingClientRect();
+    var stageRect = stage.getBoundingClientRect();
+    var scaleX = svgRect.width / 700;
+    var scaleY = svgRect.height / 520;
+    var bx = 238 * scaleX, by = 220 * scaleY;
+    var bw = 224 * scaleX, bh = 150 * scaleY;
+    cv.style.left = (svgRect.left - stageRect.left + bx) + 'px';
+    cv.style.top = (svgRect.top - stageRect.top + by) + 'px';
+    cv.style.width = bw + 'px';
+    cv.style.height = bh + 'px';
+    cv.style.borderRadius = (16 * Math.min(scaleX, scaleY)) + 'px';
+  }
+  window.addEventListener('resize', layoutScreen);
+
+  function applyShake(){
+    if (reducedMotion){ svg.style.transform = ''; return; }
+    var dt2 = clockT - shakeT;
+    if (dt2 < 0.18){
+      var p = 1 - dt2 / 0.18;
+      var mag = 6 * p;
+      var dx = (Math.random() - 0.5) * mag;
+      var dy = (Math.random() - 0.5) * mag * 0.6;
+      var rot = (Math.random() - 0.5) * mag * 0.5;
+      svg.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) rotate(' + rot.toFixed(2) + 'deg)';
+      cv.style.transform = 'translate(' + (dx*0.9).toFixed(1) + 'px,' + (dy*0.9).toFixed(1) + 'px)';
+    } else {
+      svg.style.transform = '';
+      cv.style.transform = '';
+    }
+  }
+
+  /* ============ 音效：WebAudio 合成 ============ */
+  var AC = null, master = null;
+  function ensureAudio(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.55;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  }
+
+  function tone(f, t0, dur, vol, type){
+    if (!AC) return;
+    var o = AC.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.value = f;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.015);
+    g.gain.setValueAtTime(vol, Math.max(t0 + 0.015, t0 + dur - 0.03));
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+    return o;
+  }
+
+  function noiseBurst(t0, dur, vol, type, freq){
+    if (!AC) return null;
+    var nb = AC.createBuffer(1, Math.max(1, AC.sampleRate * dur), AC.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    var ns = AC.createBufferSource();
+    ns.buffer = nb;
+    var f = AC.createBiquadFilter();
+    f.type = type || 'lowpass';
+    f.frequency.value = freq || 2200;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.05);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    ns.connect(f); f.connect(g); g.connect(master);
+    ns.start(t0);
+    return {source: ns, gain: g};
+  }
+
+  /* 持续雪花嘶声：常驻噪声源，增益随 (100-S) 走 */
+  var hissNode = null, hissGain = null;
+  function ensureHiss(){
+    if (!AC || hissNode) return;
+    var dur = 2;
+    var nb = AC.createBuffer(1, AC.sampleRate * dur, AC.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    hissNode = AC.createBufferSource();
+    hissNode.buffer = nb;
+    hissNode.loop = true;
+    var f = AC.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.value = 1800;
+    hissGain = AC.createGain();
+    hissGain.gain.value = 0;
+    hissNode.connect(f); f.connect(hissGain); hissGain.connect(master);
+    hissNode.start();
+  }
+  function updateHiss(){
+    if (!AC) return;
+    ensureHiss();
+    if (!hissGain) return;
+    var vol;
+    if (broken) vol = 0;
+    else vol = Math.max(0, (100 - signal) / 100) * 0.16;
+    hissGain.gain.setTargetAtTime(vol, AC.currentTime, 0.15);
+  }
+
+  /* 节目音效：足球哨/欢呼、动画俏皮声、测试音，随信号淡入 */
+  var progGain = null;
+  function ensureProgGain(){
+    if (!AC || progGain) return;
+    progGain = AC.createGain();
+    progGain.gain.value = 0;
+    progGain.connect(master);
+  }
+  var testToneOsc = null, testToneGain = null;
+  function updateProgAudio(dt){
+    if (!AC) return;
+    ensureProgGain();
+    var vol = broken ? 0 : Math.max(0, (signal - 60) / 40) * 0.5;
+    progGain.gain.setTargetAtTime(vol, AC.currentTime, 0.2);
+
+    if (channel === 2){
+      if (!testToneOsc){
+        testToneOsc = AC.createOscillator();
+        testToneOsc.type = 'sine';
+        testToneOsc.frequency.value = 1000;
+        testToneGain = AC.createGain();
+        testToneGain.gain.value = 0.05;
+        testToneOsc.connect(testToneGain); testToneGain.connect(progGain);
+        testToneOsc.start();
+      }
+    } else if (testToneOsc){
+      testToneOsc.stop();
+      testToneOsc.disconnect();
+      testToneOsc = null;
+    }
+
+    if (channel === 1 && !broken && signal > 60){
+      cartoonBeepAcc += dt;
+      if (cartoonBeepAcc > 0.9 + Math.random() * 0.7){
+        cartoonBeepAcc = 0;
+        var t0 = AC.currentTime;
+        var n1 = AC.createOscillator(); n1.type = 'square';
+        n1.frequency.setValueAtTime(520, t0);
+        n1.frequency.exponentialRampToValueAtTime(880, t0 + 0.12);
+        var g1 = AC.createGain();
+        g1.gain.setValueAtTime(0.0001, t0);
+        g1.gain.linearRampToValueAtTime(0.14, t0 + 0.02);
+        g1.gain.linearRampToValueAtTime(0.0001, t0 + 0.15);
+        n1.connect(g1); g1.connect(progGain);
+        n1.start(t0); n1.stop(t0 + 0.18);
+      }
+    }
+  }
+  var cartoonBeepAcc = 0;
+
+  function knobClickSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    tone(1400, t, 0.03, 0.12, 'square');
+    noiseBurst(t, 0.04, 0.08, 'highpass', 3000);
+  }
+
+  function thudSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    tone(90, t, 0.16, 0.32, 'sine');
+    tone(58, t + 0.01, 0.14, 0.22, 'sine');
+    noiseBurst(t, 0.12, 0.16, 'lowpass', 350);
+  }
+
+  function popSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    tone(220, t, 0.08, 0.2, 'sine');
+    tone(70, t + 0.03, 0.3, 0.28, 'sine');
+    noiseBurst(t + 0.02, 0.18, 0.14, 'lowpass', 260);
+  }
+
+  function cheerSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    tone(1600, t, 0.5, 0.14, 'square');
+    tone(2000, t + 0.05, 0.4, 0.1, 'square');
+    var b = noiseBurst(t, 1.6, 0.001, 'bandpass', 1200);
+    if (b){
+      b.gain.gain.cancelScheduledValues(t);
+      b.gain.gain.setValueAtTime(0.0001, t);
+      b.gain.gain.linearRampToValueAtTime(0.22, t + 0.5);
+      b.gain.gain.linearRampToValueAtTime(0.0001, t + 1.6);
+    }
+  }
+
+  /* 修理滴答声：一次性把整段时长的每一声都预先排进 AudioContext 自己的时钟，
+     不用 setTimeout（后台标签页会被节流打乱间隔），计时口径统一交给 performance.now()
+     驱动的主循环之外、音频自身最精确的 AC.currentTime。 */
+  function tickSoundLoop(totalDur){
+    if (!AC) return;
+    var count = Math.round(totalDur / 0.42);
+    var base = AC.currentTime;
+    for (var i = 0; i < count; i++){
+      tone(1800, base + i * 0.42, 0.045, 0.1, 'square');
+    }
+  }
+
+  /* ============ 主循环（rAF，真实时间补帧，参照 birds 写法） ============ */
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(2, (now - last) / 1000);
+    last = now;
+    var STEP = 0.033;
+    while (dt > 0){
+      var h = Math.min(STEP, dt);
+      tickState(h);
+      dt -= h;
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function tickState(dt){
+    clockT += dt;
+    if (!broken){
+      stepLuck(dt);
+      stepHumanBoost(dt);
+      signal = computeSignal();
+      stepGoal(dt);
+    }
+    stepBreakVisual(dt);
+    if (repairing){
+      repairT += dt;
+      if (repairT >= REPAIR_DUR){
+        finishRepair();
+      }
+    }
+    stepHint(dt);
+    stepCaption(dt);
+    updateHiss();
+    updateProgAudio(dt);
+  }
+
+  function render(){
+    renderScreen();
+    applyShake();
+    var pct = broken ? 0 : Math.round(signal);
+    meterFill.style.width = pct + '%';
+    meterFill.classList.toggle('broken', broken);
+    powerLamp.setAttribute('fill', broken ? '#3a2b26' : '#d43a2f');
+  }
+
+  /* ============ 初始化 ============ */
+  updateAntennaSvg();
+  layoutScreen();
+  paintNoise(1);
+  window.addEventListener('load', layoutScreen);
+  requestAnimationFrame(function(){ layoutScreen(); requestAnimationFrame(loop); });
+})();
+</script>
+</body>
+</html>

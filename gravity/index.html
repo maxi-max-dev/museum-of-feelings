@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>重力商店 · 感觉博物馆</title>
+<meta name="description" content="眼睛商店与耳朵商店的第三家分店，出售同一双腿在六个世界的用法。扔球、跳一跳、称体重，感受地球、月球、火星、木星、太阳和空间站的重力差别。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  /* ---- 货架 ---- */
+  .shelf-label{
+    display:flex;align-items:center;gap:14px;
+    margin:0 0 12px;color:var(--ink-soft);font-size:12px;letter-spacing:.3em;
+  }
+  .shelf-label::before,.shelf-label::after{content:"";flex:1;border-top:1px solid var(--line);}
+  .shelf{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:18px;}
+  .wbtn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.05em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--line);
+    border-radius:10px;padding:9px 14px;cursor:pointer;text-align:center;
+    transition:transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .wbtn .n{display:block;}
+  .wbtn .g{display:block;font-size:10.5px;color:var(--ink-soft);margin-top:2px;}
+  .wbtn:hover{transform:translateY(-2px);border-color:var(--seal);}
+  .wbtn.on{
+    background:var(--seal);color:#fdf6ee;border-color:var(--seal);
+    box-shadow:0 8px 18px rgba(181,64,44,.18);transform:translateY(-2px);
+  }
+  .wbtn.on .g{color:#f3d9d0;}
+  .wbtn.deny{opacity:.62;}
+  .wbtn.deny .g{color:#a8412f;}
+
+  /* ---- 舞台 ---- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    overflow:hidden;animation:rise .8s .1s ease both;background:#9ec6e6;
+  }
+  .stage canvas{display:block;width:100%;height:auto;touch-action:none;}
+  #flashOverlay{
+    position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;
+    transition:opacity .12s linear;z-index:4;
+  }
+  #flashOverlay.on{opacity:1;}
+  #caption{
+    position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:5;
+    background:rgba(30,26,22,.86);color:#f5efe2;font-size:13.5px;letter-spacing:.06em;
+    line-height:1.7;padding:9px 16px;border-radius:8px;max-width:88%;text-align:center;
+    opacity:0;transition:opacity .4s;pointer-events:none;
+  }
+  #caption.show{opacity:1;}
+
+  /* ---- 控制区 ---- */
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hud{
+    display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;
+    font-size:13px;color:#453e30;letter-spacing:.03em;margin-bottom:14px;
+    border-bottom:1px dashed var(--line);padding-bottom:12px;
+  }
+  .hud b{color:var(--seal);}
+  .row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin-bottom:12px;}
+  .row:last-child{margin-bottom:0;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .scalebox{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#453e30;}
+  .scalebox input{
+    width:76px;font-family:var(--serif);font-size:14px;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:7px;padding:6px 8px;background:#fffdf6;
+  }
+  .scalebox .r{font-size:19px;color:var(--seal);}
+  .hint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:8px;letter-spacing:.03em;}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque + .plaque{margin-top:14px;}
+
+  table.cmp{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:7px 6px;text-align:center;}
+  table.cmp th{background:#efe6d2;color:#453e30;font-weight:normal;letter-spacing:.04em;}
+  table.cmp td{color:#453e30;}
+  table.cmp td.n{color:var(--ink-soft);}
+
+  .quote{
+    text-align:center;font-size:16px;line-height:2;color:#453e30;
+    padding:18px 10px 4px;letter-spacing:.03em;
+  }
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+  @media(max-width:640px){
+    .row{gap:10px;}
+    table.cmp{font-size:11.5px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №015</span>
+  </div>
+
+  <header>
+    <h1>重力商店</h1>
+    <div class="en">GRAVITY SHOP</div>
+    <p class="sub">眼睛商店与耳朵商店的第三家分店，出售同一双腿在六个世界的用法</p>
+  </header>
+
+  <div class="shelf-label">货架 · 选一个世界</div>
+  <div class="shelf" id="shelf"></div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="460"></canvas>
+    <div id="flashOverlay"></div>
+    <div id="caption"></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="hud" id="hud"></div>
+    <div class="row">
+      <button class="btn" id="jumpBtn">🧍 跳一跳</button>
+      <div class="scalebox">
+        <span>你在地球的体重</span>
+        <input type="number" id="weightInput" value="60" min="1" max="500" step="1"> 公斤
+        <span>→ 秤读数 <span class="r" id="scaleRead">60.0</span> 公斤</span>
+      </div>
+    </div>
+    <div class="hint">在舞台上按住球拖动再松手，把它甩出去；空间站里的球会飘着不落地。</div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 失重的真相</div>
+    <div class="pb">
+      <b>空间站高度的地球重力，还有地面的约 90%。</b>宇航员飘着不是因为没有重力，是因为空间站带着他们一起往下掉，只是它一直在往前飞，永远掉不到地上。这种一直在掉却永远掉不到的状态，本名叫自由落体，「失重」只是它看起来的样子。
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 木星没有地面</div>
+    <div class="pb">
+      <b>24.79 是木星云顶的数字，往下只有越来越稠的气体，你没有地方可以站。</b>太阳同理，而且烫，所以只能隔着窗户体验。两个货架商品都没有真正的地面，秤上的数字量的是一个假设：假设你能站在那里。
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 六个世界对照表</div>
+    <div class="pb">
+      同一颗球、同一双腿、同一台体重秤（以 60 公斤为例），六个世界给出六种答案。
+      <table class="cmp">
+        <tr><th>世界</th><th>g（m/s²）</th><th>跳起高度</th><th>滞空时间</th><th>秤读数（60kg）</th></tr>
+        <tr><td>🌍 地球</td><td class="n">9.81</td><td>0.50 米</td><td>0.64 秒</td><td>60.0 公斤</td></tr>
+        <tr><td>🌕 月球</td><td class="n">1.62</td><td>3.03 米</td><td>3.87 秒</td><td>9.9 公斤</td></tr>
+        <tr><td>🔴 火星</td><td class="n">3.71</td><td>1.32 米</td><td>1.69 秒</td><td>22.7 公斤</td></tr>
+        <tr><td>🟠 木星</td><td class="n">24.79</td><td>0.20 米</td><td>0.25 秒</td><td>151.6 公斤</td></tr>
+        <tr><td>☀️ 太阳</td><td class="n">274</td><td>1.8 厘米</td><td>0.023 秒</td><td>1675.8 公斤</td></tr>
+        <tr><td>🛰️ 空间站</td><td class="n">≈0</td><td>飘出画面</td><td>直到抓住扶手</td><td>0.0 公斤</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="quote">「你从没觉得自己会飞，只是你恰好出生在了 9.8 的地方。」</div>
+
+  <footer>
+    ※ 各世界重力加速度为公开天文数据的近似值，动画为简化演示，不作科学计算参考<br>
+    感觉博物馆 · 展厅 №015 · Max 造<br>
+    <a href="../tv/">下一个展厅：拍一下就好了 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================== 世界数据 ==================== */
+  var WORLDS = [
+    { id:'earth',   emoji:'🌍', name:'地球',   tag:'g=9.81',        g:9.81,        sell:true },
+    { id:'moon',    emoji:'🌕', name:'月球',   tag:'g=1.62',        g:1.62,        sell:true },
+    { id:'mars',    emoji:'🔴', name:'火星',   tag:'g=3.71',        g:3.71,        sell:true },
+    { id:'jupiter', emoji:'🟠', name:'木星',   tag:'g=24.79 云顶',  g:24.79,       sell:true },
+    { id:'sun',     emoji:'☀️', name:'太阳',   tag:'g=274 隔窗',    g:274,         sell:true },
+    { id:'iss',     emoji:'🛰️', name:'空间站', tag:'g≈0 失重',      g:0.0000001,   sell:true },
+    { id:'neutron', emoji:'⚫', name:'中子星', tag:'不出售',        g:1.4e12,      sell:false }
+  ];
+  var G_EARTH = 9.81;
+  var current = WORLDS[0];
+  var prevSellable = WORLDS[0]; /* 中子星彩蛋结束后要恢复到的世界 */
+
+  /* ==================== DOM ==================== */
+  var shelf = document.getElementById('shelf');
+  var hud = document.getElementById('hud');
+  var jumpBtn = document.getElementById('jumpBtn');
+  var weightInput = document.getElementById('weightInput');
+  var scaleRead = document.getElementById('scaleRead');
+  var flashOverlay = document.getElementById('flashOverlay');
+  var captionEl = document.getElementById('caption');
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 780, H = 460;
+  var PPM = 56; /* px per meter */
+  var GROUND_Y = H - 46; /* 地面线像素位置（大多数世界通用） */
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==================== 货架按钮 ==================== */
+  WORLDS.forEach(function(w){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'wbtn' + (w.id === 'earth' ? ' on' : '') + (w.sell ? '' : ' deny');
+    b.id = 'shelf-' + w.id;
+    b.innerHTML = '<span class="n">' + w.emoji + ' ' + w.name + '</span><span class="g">' + w.tag + '</span>';
+    b.addEventListener('click', function(){ onShelfClick(w); });
+    shelf.appendChild(b);
+  });
+
+  function setShelfOn(id){
+    var nodes = shelf.querySelectorAll('.wbtn');
+    for (var i = 0; i < nodes.length; i++){
+      nodes[i].classList.toggle('on', nodes[i].id === 'shelf-' + id);
+    }
+  }
+
+  /* ==================== 提示字幕 ==================== */
+  var captionTimer = null;
+  function showCaption(text, ms){
+    captionEl.textContent = text;
+    captionEl.classList.add('show');
+    clearTimeout(captionTimer);
+    captionTimer = setTimeout(function(){ captionEl.classList.remove('show'); }, ms || 3200);
+  }
+
+  /* ==================== HUD ==================== */
+  var lastJump = null; /* {h, t} 或 {iss:true} */
+  function updateHud(){
+    var scale = weightKg() * current.g / G_EARTH;
+    var jumpTxt;
+    if (!lastJump) jumpTxt = '还没跳过，点「跳一跳」试试';
+    else if (lastJump.iss) jumpTxt = '上次跳跃 <b>飘出画面</b> · 2.5 秒后抓住了扶手';
+    else jumpTxt = '上次跳跃 <b>' + lastJump.h.toFixed(2) + ' 米</b> · 滞空 <b>' + lastJump.t.toFixed(2) + ' 秒</b>';
+    hud.innerHTML =
+      '当前世界 <b>' + current.emoji + ' ' + current.name + '</b>　·　' +
+      'g = <b>' + gDisplay(current.g) + ' m/s²</b>　·　' +
+      '秤读数 <b>' + scale.toFixed(1) + ' 公斤</b>　·　' +
+      jumpTxt;
+  }
+  function gDisplay(g){
+    if (g >= 1e9) return g.toExponential(1).replace('e+', '×10^');
+    if (g < 0.001) return '≈0';
+    return (Math.round(g * 100) / 100).toString();
+  }
+
+  function weightKg(){
+    var v = +weightInput.value;
+    if (!isFinite(v) || v <= 0) v = 60;
+    return v;
+  }
+  function updateScale(){
+    var scale = weightKg() * current.g / G_EARTH;
+    scaleRead.textContent = scale.toFixed(1);
+    updateHud();
+  }
+  weightInput.addEventListener('input', updateScale);
+
+  /* ==================== 音效（WebAudio 合成） ==================== */
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function playThock(speed){
+    /* speed: 撞击速度 m/s，决定音量音高 */
+    if (!AC) return;
+    var t = AC.currentTime;
+    var vol = Math.min(0.55, 0.08 + speed * 0.02);
+    var freq = 120 + Math.min(160, speed * 9);
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 0.5), t + 0.09);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.18);
+  }
+  function playWhoosh(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var buf = AC.createBuffer(1, AC.sampleRate * 0.3, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    var src = AC.createBufferSource();
+    src.buffer = buf;
+    var bp = AC.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 900;
+    bp.Q.value = 0.7;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.14, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+    src.connect(bp); bp.connect(g); g.connect(master);
+    src.start(t);
+  }
+
+  /* ==================== 场景绘制 ==================== */
+  var stars = [];
+  for (var s = 0; s < 40; s++){
+    stars.push({ x: Math.random() * W, y: Math.random() * (H * 0.6), r: 0.6 + Math.random() * 1.4, tw: Math.random() * Math.PI * 2 });
+  }
+  var clouds = [
+    { x: 120, y: 70, s: 1 }, { x: 340, y: 50, s: .8 }, { x: 560, y: 88, s: 1.1 }
+  ];
+  var jupBands = [
+    { y: 60, h: 34, c: '#d9b382' }, { y: 100, h: 22, c: '#c99a63' }, { y: 128, h: 40, c: '#e2c397' },
+    { y: 174, h: 20, c: '#b8895a' }, { y: 200, h: 30, c: '#dab27f' }
+  ];
+
+  function drawBackground(){
+    ctx.clearRect(0, 0, W, H);
+    switch (current.id){
+      case 'earth': drawEarthBg(); break;
+      case 'moon': drawMoonBg(); break;
+      case 'mars': drawMarsBg(); break;
+      case 'jupiter': drawJupiterBg(); break;
+      case 'sun': drawSunBg(); break;
+      case 'iss': drawIssBg(); break;
+      default: drawEarthBg();
+    }
+    drawRulers();
+  }
+
+  function drawRulers(){
+    /* 左侧米数刻度线 1m~8m */
+    ctx.save();
+    ctx.strokeStyle = 'rgba(60,50,40,.16)';
+    ctx.fillStyle = 'rgba(60,50,40,.38)';
+    ctx.font = '10.5px "Noto Serif SC",serif';
+    ctx.lineWidth = 1;
+    for (var m = 1; m <= 8; m++){
+      var y = GROUND_Y - m * PPM;
+      if (y < 6) break;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(14, y);
+      ctx.stroke();
+      ctx.fillText(m + 'm', 17, y + 3);
+    }
+    ctx.restore();
+  }
+
+  function drawEarthBg(){
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#8fc2ea'); sky.addColorStop(1, '#dff0e0');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.globalAlpha = .9;
+    clouds.forEach(function(c){
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, 34 * c.s, 13 * c.s, 0, 0, Math.PI * 2);
+      ctx.ellipse(c.x + 26 * c.s, c.y - 5, 22 * c.s, 10 * c.s, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#f4d764';
+    ctx.beginPath(); ctx.arc(700, 64, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7fbf6e';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.strokeStyle = '#5c9a4e'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+    /* 一棵树 */
+    ctx.fillStyle = '#7d5233';
+    ctx.fillRect(668, GROUND_Y - 70, 12, 70);
+    ctx.fillStyle = '#4f8f4f';
+    ctx.beginPath(); ctx.arc(674, GROUND_Y - 92, 34, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(650, GROUND_Y - 76, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(700, GROUND_Y - 78, 22, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function drawMoonBg(){
+    ctx.fillStyle = '#0c0e22'; ctx.fillRect(0, 0, W, H);
+    stars.forEach(function(st){
+      var a = 0.4 + 0.6 * Math.abs(Math.sin(st.tw + performance.now() / 900));
+      ctx.fillStyle = 'rgba(240,236,220,' + a.toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+    });
+    /* 天上挂着的地球 */
+    ctx.save();
+    ctx.beginPath(); ctx.arc(660, 76, 30, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = '#3f6fae'; ctx.fillRect(630, 46, 60, 60);
+    ctx.fillStyle = '#5c9a4e';
+    ctx.beginPath(); ctx.ellipse(648, 66, 14, 9, .4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(672, 88, 12, 8, -.3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(660, 76, 30, 0, Math.PI * 2); ctx.stroke();
+    /* 地面：月灰 + 环形山 */
+    ctx.fillStyle = '#9a978f';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.strokeStyle = '#807d74'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+    [[130, 18], [300, 26], [500, 15], [620, 22]].forEach(function(c){
+      ctx.strokeStyle = 'rgba(110,106,96,.7)';
+      ctx.beginPath(); ctx.ellipse(c[0], GROUND_Y + 10, c[1], c[1] * 0.32, 0, 0, Math.PI * 2); ctx.stroke();
+    });
+  }
+
+  function drawMarsBg(){
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#d9a55c'); sky.addColorStop(1, '#e9c88f');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#c4703f';
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y - 30);
+    ctx.quadraticCurveTo(180, GROUND_Y - 60, 380, GROUND_Y - 26);
+    ctx.quadraticCurveTo(600, GROUND_Y + 4, W, GROUND_Y - 20);
+    ctx.lineTo(W, GROUND_Y + 40); ctx.lineTo(0, GROUND_Y + 40); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#a8552e';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.strokeStyle = '#8a441f'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+    /* 几块红岩 */
+    [[100, 0.9], [560, 1.2], [660, 0.7]].forEach(function(r){
+      ctx.fillStyle = '#8a441f';
+      ctx.beginPath();
+      ctx.moveTo(r[0], GROUND_Y);
+      ctx.lineTo(r[0] + 18 * r[1], GROUND_Y - 22 * r[1]);
+      ctx.lineTo(r[0] + 34 * r[1], GROUND_Y);
+      ctx.closePath(); ctx.fill();
+    });
+  }
+
+  function drawJupiterBg(){
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#efe0c4'); sky.addColorStop(1, '#dab27f');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    jupBands.forEach(function(b){
+      ctx.fillStyle = b.c;
+      ctx.globalAlpha = .55;
+      ctx.fillRect(0, b.y, W, b.h);
+    });
+    ctx.globalAlpha = 1;
+    /* 云顶观景台：悬空平台，没有地面 */
+    ctx.fillStyle = '#6b5642';
+    ctx.fillRect(0, GROUND_Y, W, 10);
+    ctx.fillStyle = '#4d3f30';
+    for (var i = 0; i < W; i += 26){
+      ctx.fillRect(i, GROUND_Y + 10, 3, 14);
+    }
+    ctx.fillStyle = 'rgba(70,50,30,.5)';
+    ctx.font = '11px "Noto Serif SC",serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('云顶观景台 · 往下没有地面', W - 10, GROUND_Y - 8);
+    ctx.textAlign = 'left';
+  }
+
+  function drawSunBg(){
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#ff9d3d'); sky.addColorStop(1, '#ff5a1f');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    var glow = ctx.createRadialGradient(W * 0.5, H * 0.4, 20, W * 0.5, H * 0.4, 300);
+    glow.addColorStop(0, 'rgba(255,224,140,.55)');
+    glow.addColorStop(1, 'rgba(255,224,140,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    /* 警示条纹地板 */
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, GROUND_Y, W, H - GROUND_Y); ctx.clip();
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+    ctx.fillStyle = '#e8b53a';
+    for (var x = -40; x < W + 40; x += 40){
+      ctx.beginPath();
+      ctx.moveTo(x, GROUND_Y); ctx.lineTo(x + 20, GROUND_Y);
+      ctx.lineTo(x + 20 - (H - GROUND_Y), H); ctx.lineTo(x - (H - GROUND_Y), H);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#5a3a20'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+    /* 隔窗体验角标 */
+    ctx.fillStyle = 'rgba(40,20,10,.55)';
+    ctx.fillRect(W - 128, 14, 114, 26);
+    ctx.fillStyle = '#fff2d8';
+    ctx.font = '12px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🪟 隔窗体验', W - 71, 31);
+    ctx.textAlign = 'left';
+  }
+
+  function drawIssBg(){
+    ctx.fillStyle = '#e9e6de'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#c9c4b6';
+    ctx.fillRect(0, 0, 26, H); ctx.fillRect(W - 26, 0, 26, H);
+    ctx.fillRect(0, 0, W, 26); ctx.fillRect(0, H - 26, W, 26);
+    for (var i = 40; i < H - 40; i += 46){
+      ctx.fillStyle = '#b9b4a4';
+      ctx.fillRect(0, i, 26, 6); ctx.fillRect(W - 26, i, 26, 6);
+    }
+    /* 舷窗看见地球 */
+    var cx = W - 110, cy = 120, r = 46;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = '#0d1233'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    stars.slice(0, 14).forEach(function(st){
+      ctx.fillStyle = 'rgba(240,236,220,.7)';
+      ctx.beginPath(); ctx.arc(cx - r + (st.x % (r * 2)), cy - r + (st.y % (r * 2)), 0.9, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.fillStyle = '#3f6fae';
+    ctx.beginPath(); ctx.arc(cx + 6, cy + 10, 34, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#5c9a4e';
+    ctx.beginPath(); ctx.ellipse(cx - 6, cy, 15, 10, .3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 20, cy + 22, 12, 8, -.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = '#8a8478'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#8a8071'; ctx.font = '11.5px "Noto Serif SC",serif';
+    ctx.fillText('舷窗 · 地球在下面', cx - 62, cy + r + 20);
+    /* 扶手 */
+    ctx.strokeStyle = '#a39d8c'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(60, H - 80); ctx.lineTo(140, H - 80); ctx.stroke();
+    ctx.fillStyle = '#8a8478'; ctx.font = '10.5px "Noto Serif SC",serif';
+    ctx.fillText('扶手', 82, H - 90);
+  }
+
+  /* ==================== 小人（跳一跳） ==================== */
+  function drawPerson(x, y, world){
+    /* y = 脚底所在像素位置（相对画布），简笔小人，按世界换装 */
+    ctx.save();
+    ctx.translate(x, y);
+    var headR = 8;
+    var bodyH = 26;
+    var skin = '#e8b58a', hair = '#3a2a20';
+    ctx.strokeStyle = '#2a2521'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+
+    if (world.id === 'moon' || world.id === 'mars'){
+      /* 宇航服 */
+      ctx.fillStyle = '#eceae2';
+      ctx.beginPath(); ctx.arc(0, -bodyH - headR - 4, headR + 4, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#8a8478'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, -bodyH - headR - 4, headR + 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#3a3a3a';
+      ctx.beginPath(); ctx.arc(0, -bodyH - headR - 4, headR - 1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#eceae2';
+      ctx.fillRect(-11, -bodyH - headR + 2, 22, bodyH + headR - 2);
+      ctx.fillStyle = world.id === 'moon' ? '#d8d4c6' : '#d8926a';
+      ctx.fillRect(-13, -bodyH + 4, 26, 12);
+      ctx.strokeStyle = '#8a8478'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(-11, -bodyH); ctx.lineTo(-19, -bodyH + 16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(11, -bodyH); ctx.lineTo(19, -bodyH + 16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(-9, 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(9, 20); ctx.stroke();
+    } else if (world.id === 'sun'){
+      /* 隔热服 */
+      ctx.fillStyle = '#f2b23a';
+      ctx.beginPath(); ctx.arc(0, -bodyH - headR - 4, headR + 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3a2a10';
+      ctx.fillRect(-6, -bodyH - headR - 6, 12, 5);
+      ctx.strokeStyle = '#2a2521'; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(0, -bodyH - 2); ctx.lineTo(0, 0); ctx.stroke();
+      ctx.strokeStyle = '#f2b23a'; ctx.lineWidth = 8; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, -bodyH + 4); ctx.lineTo(0, -2); ctx.stroke();
+      ctx.strokeStyle = '#2a2521'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(-2, -bodyH); ctx.lineTo(-13, -bodyH + 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(2, -bodyH); ctx.lineTo(13, -bodyH + 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(-8, 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(8, 20); ctx.stroke();
+    } else if (world.id === 'iss'){
+      /* 舱内服 */
+      ctx.fillStyle = skin;
+      ctx.beginPath(); ctx.arc(0, -bodyH - headR - 4, headR, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = hair; ctx.beginPath(); ctx.arc(0, -bodyH - headR * 2 - 2, headR - 1, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = '#5b7fd4'; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(0, -bodyH - 2); ctx.lineTo(0, 0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -bodyH + 4); ctx.lineTo(-13, -bodyH + 8); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -bodyH + 4); ctx.lineTo(13, -bodyH + 8); ctx.stroke();
+      ctx.strokeStyle = '#2a2521';
+      ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(-8, 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(8, 20); ctx.stroke();
+    } else {
+      /* 地球/木星：便服 */
+      ctx.fillStyle = skin;
+      ctx.beginPath(); ctx.arc(0, -bodyH - headR - 4, headR, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = hair; ctx.beginPath(); ctx.arc(0, -bodyH - headR * 2 - 2, headR - 1, Math.PI, 0); ctx.fill();
+      ctx.strokeStyle = '#5b7fd4'; ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(0, -bodyH - 2); ctx.lineTo(0, 0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -bodyH + 4); ctx.lineTo(-13, -bodyH + 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -bodyH + 4); ctx.lineTo(13, -bodyH + 6); ctx.stroke();
+      ctx.strokeStyle = '#3a3530'; ctx.lineWidth = 2.6;
+      ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(-9, 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(9, 20); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ==================== 球（物理体） ==================== */
+  var BALL_R = 14;
+  var ball = { x: W * 0.32, y: GROUND_Y - BALL_R, vx: 0, vy: 0, moving: false, trail: [] };
+  function resetBall(){
+    ball.x = W * 0.32; ball.y = GROUND_Y - BALL_R; ball.vx = 0; ball.vy = 0; ball.moving = false; ball.trail = [];
+  }
+
+  function drawBall(){
+    ctx.save();
+    /* 轨迹 */
+    for (var i = 0; i < ball.trail.length; i++){
+      var p = ball.trail[i];
+      var a = (i / ball.trail.length) * 0.5;
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = 'rgba(181,64,44,' + a.toFixed(2) + ')';
+      ctx.lineWidth = 1.4;
+      if (i > 0){
+        ctx.beginPath();
+        ctx.moveTo(ball.trail[i - 1].x, ball.trail[i - 1].y);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+    var grad = ctx.createRadialGradient(ball.x - 5, ball.y - 5, 2, ball.x, ball.y, BALL_R);
+    grad.addColorStop(0, '#e2574c'); grad.addColorStop(1, '#a8321f');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#7e2b1c'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ==================== 拖拽扔球 ==================== */
+  var dragging = false;
+  var dragHist = []; /* [{x,y,t}] 最近位移历史，用来算末速度 */
+  var V_CAP = 18; /* m/s 初速度上限 */
+
+  function toCanvasXY(clientX, clientY){
+    var r = cv.getBoundingClientRect();
+    return {
+      x: (clientX - r.left) * (W / r.width),
+      y: (clientY - r.top) * (H / r.height)
+    };
+  }
+  function eventXY(e){
+    if (e.touches && e.touches.length) return toCanvasXY(e.touches[0].clientX, e.touches[0].clientY);
+    if (e.changedTouches && e.changedTouches.length) return toCanvasXY(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    return toCanvasXY(e.clientX, e.clientY);
+  }
+  function distToBall(p){
+    return Math.hypot(p.x - ball.x, p.y - ball.y);
+  }
+
+  function pointerDown(e){
+    var p = eventXY(e);
+    if (distToBall(p) > BALL_R + 24) return;
+    e.preventDefault();
+    ensureAC();
+    dragging = true;
+    ball.moving = false;
+    ball.vx = 0; ball.vy = 0; ball.trail = [];
+    dragHist = [{ x: p.x, y: p.y, t: performance.now() }];
+  }
+  function pointerMove(e){
+    if (!dragging) return;
+    e.preventDefault();
+    var p = eventXY(e);
+    ball.x = p.x; ball.y = p.y;
+    dragHist.push({ x: p.x, y: p.y, t: performance.now() });
+    while (dragHist.length > 2 && performance.now() - dragHist[0].t > 120) dragHist.shift();
+  }
+  function pointerUp(e){
+    if (!dragging) return;
+    dragging = false;
+    var now = performance.now();
+    var recent = dragHist.filter(function(h){ return now - h.t <= 80; });
+    if (recent.length < 2) recent = dragHist.slice(-2);
+    if (recent.length >= 2){
+      var a = recent[0], b = recent[recent.length - 1];
+      var dt = (b.t - a.t) / 1000;
+      if (dt > 0.008){
+        var pvx = (b.x - a.x) / dt; /* px/s */
+        var pvy = (b.y - a.y) / dt;
+        var vx = pvx / PPM, vy = pvy / PPM; /* m/s */
+        var sp = Math.hypot(vx, vy);
+        if (sp > V_CAP){ vx *= V_CAP / sp; vy *= V_CAP / sp; }
+        ball.vx = vx; ball.vy = vy;
+        if (sp > 0.4) ball.moving = true;
+      }
+    }
+    if (ball.moving) playWhoosh();
+  }
+  cv.addEventListener('mousedown', pointerDown);
+  window.addEventListener('mousemove', pointerMove);
+  window.addEventListener('mouseup', pointerUp);
+  cv.addEventListener('touchstart', pointerDown, { passive: false });
+  cv.addEventListener('touchmove', pointerMove, { passive: false });
+  cv.addEventListener('touchend', pointerUp, { passive: false });
+
+  /* ==================== 球的物理步进 ==================== */
+  var REST = 0.72; /* 反弹恢复系数 */
+  var FRICTION = 2.4; /* 地面滚动摩擦（速度衰减/秒） */
+
+  function stepBall(dt){
+    if (!ball.moving) return;
+    if (current.id === 'iss'){
+      /* 空间站：近似 0g，缓慢漂移，四壁反弹，轻微阻尼 */
+      ball.x += ball.vx * PPM * dt;
+      ball.y += ball.vy * PPM * dt;
+      var damp = Math.pow(0.985, dt * 60);
+      ball.vx *= damp; ball.vy *= damp;
+      var margin = 30;
+      if (ball.x < margin + BALL_R){ ball.x = margin + BALL_R; ball.vx = Math.abs(ball.vx) * 0.8; playThock(Math.abs(ball.vx)); }
+      if (ball.x > W - margin - BALL_R){ ball.x = W - margin - BALL_R; ball.vx = -Math.abs(ball.vx) * 0.8; playThock(Math.abs(ball.vx)); }
+      if (ball.y < margin + BALL_R){ ball.y = margin + BALL_R; ball.vy = Math.abs(ball.vy) * 0.8; playThock(Math.abs(ball.vy)); }
+      if (ball.y > H - margin - BALL_R){ ball.y = H - margin - BALL_R; ball.vy = -Math.abs(ball.vy) * 0.8; playThock(Math.abs(ball.vy)); }
+      pushTrail();
+      return;
+    }
+    /* 抛体：允许飞出顶部，等它落回来 */
+    ball.vy += current.g * dt;
+    ball.x += ball.vx * PPM * dt;
+    ball.y += ball.vy * PPM * dt;
+    if (ball.x < BALL_R){ ball.x = BALL_R; ball.vx = Math.abs(ball.vx) * REST; }
+    if (ball.x > W - BALL_R){ ball.x = W - BALL_R; ball.vx = -Math.abs(ball.vx) * REST; }
+    var floorY = GROUND_Y - BALL_R;
+    if (ball.y >= floorY){
+      ball.y = floorY;
+      if (Math.abs(ball.vy) > 0.25){
+        var impactSpeed = Math.abs(ball.vy);
+        ball.vy = -ball.vy * REST;
+        playThock(impactSpeed);
+      } else {
+        ball.vy = 0;
+      }
+      /* 地面摩擦滚动 */
+      if (Math.abs(ball.vy) < 0.35){
+        ball.vy = 0;
+        var sign = ball.vx > 0 ? 1 : -1;
+        var mag = Math.max(0, Math.abs(ball.vx) - FRICTION * dt);
+        ball.vx = sign * mag;
+        if (Math.abs(ball.vx) < 0.05 && Math.abs(ball.vy) < 0.05) ball.moving = false;
+      }
+    }
+    pushTrail();
+  }
+  function pushTrail(){
+    ball.trail.push({ x: ball.x, y: ball.y });
+    if (ball.trail.length > 26) ball.trail.shift();
+  }
+
+  /* ==================== 跳一跳 ==================== */
+  var V0_JUMP = 3.13; /* m/s，理论：地球跳高 0.5 米 */
+  var jumping = false;
+  var jumpState = null; /* {phase, t, footY, startFootY} */
+  var PERSON_X = W * 0.68;
+
+  function jumpTheory(g){
+    var h = (V0_JUMP * V0_JUMP) / (2 * g);
+    var t = (2 * V0_JUMP) / g;
+    return { h: h, t: t };
+  }
+
+  jumpBtn.addEventListener('click', function(){
+    if (jumping) return;
+    ensureAC();
+    if (current.id === 'neutron') return; /* 中子星货架已单独处理点击，不走跳一跳 */
+    jumping = true;
+    playWhoosh();
+    if (current.id === 'iss'){
+      jumpState = { mode: 'iss', t: 0, footY: GROUND_Y };
+    } else {
+      var th = jumpTheory(current.g);
+      jumpState = { mode: 'normal', t: 0, dur: th.t, peakH: th.h, footY: GROUND_Y };
+    }
+  });
+
+  function stepJump(dt){
+    if (!jumping || !jumpState) return;
+    jumpState.t += dt;
+    if (jumpState.mode === 'iss'){
+      if (jumpState.t < 2.5){
+        /* 飘出画面顶部 */
+        jumpState.footY = GROUND_Y - Math.min(jumpState.t * 240, H + 60);
+      } else if (jumpState.t < 4.5){
+        if (!jumpState.captioned){
+          jumpState.captioned = true;
+          showCaption('他抓住了扶手。在空间站，跳一下等于告别地面。', 3200);
+        }
+        jumpState.footY = GROUND_Y - 40 + (jumpState.t - 2.5) / 2 * 40;
+      } else {
+        jumping = false;
+        jumpState = null;
+        lastJump = { iss: true };
+        updateHud();
+      }
+      return;
+    }
+    /* normal：抛物线跳跃 */
+    var t = jumpState.t;
+    var dur = jumpState.dur;
+    if (t >= dur){
+      jumping = false;
+      lastJump = { h: jumpState.peakH, t: jumpState.dur };
+      jumpState = null;
+      updateHud();
+      return;
+    }
+    var h = V0_JUMP * t - 0.5 * current.g * t * t;
+    jumpState.footY = GROUND_Y - Math.max(0, h) * PPM;
+  }
+  /* ==================== 中子星彩蛋 ==================== */
+  var neutronClicks = 0;
+  var neutronBusy = false;
+  var sunEnterTime = null;
+  var sunWarned = false;
+
+  function onShelfClick(w){
+    if (w.id === 'neutron'){
+      neutronClicks++;
+      if (neutronClicks === 1){ showCaption('此商品不出售。', 2600); return; }
+      if (neutronClicks === 2){ showCaption('真的不卖。', 2600); return; }
+      /* 第三次：全屏黑闪 + 压扁动画 + 恢复 */
+      neutronClicks = 0;
+      triggerNeutronEgg();
+      return;
+    }
+    prevSellable = w;
+    switchWorld(w.id);
+  }
+
+  function triggerNeutronEgg(){
+    if (neutronBusy) return;
+    neutronBusy = true;
+    var restoreTo = prevSellable;
+    var scale = (weightKg() * 1.4e12 / G_EARTH);
+    var scaleYi = (scale / 1000 / 1e8).toFixed(0);
+    flashOverlay.classList.add('on');
+    if (AC) playThock(18);
+    setTimeout(function(){
+      flashOverlay.classList.remove('on');
+      showCaption('重力 1.4×10¹² m/s²。你的体重读数 ' + scaleYi + ' 亿吨，你现在的厚度是一层原子。重力商店概不负责售后。', 3360);
+      squashAnim = { t: 0, dur: 0.55, hold: true };
+    }, 140);
+    setTimeout(function(){
+      squashAnim = null;
+      neutronBusy = false;
+      switchWorld(restoreTo.id);
+    }, 3500);
+  }
+  var squashAnim = null;
+
+  /* ==================== 切换世界 ==================== */
+  function switchWorld(id){
+    var w = null;
+    for (var i = 0; i < WORLDS.length; i++) if (WORLDS[i].id === id) { w = WORLDS[i]; break; }
+    if (!w) return;
+    current = w;
+    setShelfOn(id);
+    resetBall();
+    jumping = false; jumpState = null; lastJump = null;
+    if (id === 'sun'){ sunEnterTime = performance.now(); sunWarned = false; }
+    else { sunEnterTime = null; }
+    updateHud();
+  }
+
+  /* ==================== 太阳彩蛋：停留 10 秒 ==================== */
+  function checkSunEgg(){
+    if (current.id !== 'sun' || sunWarned || sunEnterTime === null) return;
+    if (performance.now() - sunEnterTime >= 10000){
+      sunWarned = true;
+      showCaption('玻璃开始融化了，建议尽快换一个世界。', 3600);
+    }
+  }
+
+  /* ==================== 主渲染：小人 + HUD 联动 ==================== */
+  function drawJumperAndBall(){
+    if (squashAnim){
+      /* 中子星彩蛋：压扁动画，独立于跳跃状态，压到底后维持压扁姿态 */
+      var p = Math.min(1, squashAnim.t / squashAnim.dur);
+      var ease = p < 1 ? Math.sin(p * Math.PI * 0.5) : 1;
+      var sqY = 1 - ease * 0.985;
+      ctx.save();
+      ctx.translate(PERSON_X, GROUND_Y);
+      ctx.scale(1 + (1 - sqY) * 3, Math.max(0.02, sqY));
+      ctx.translate(-PERSON_X, -GROUND_Y);
+      drawPerson(PERSON_X, GROUND_Y, current);
+      ctx.restore();
+    } else if (jumping && jumpState){
+      drawPerson(PERSON_X, jumpState.footY, current);
+    } else if (!neutronBusy){
+      drawPerson(PERSON_X, GROUND_Y, current);
+    }
+    if (!neutronBusy){
+      drawBall();
+    }
+  }
+
+  /* ==================== 主循环（真实时间补帧，固定子步） ==================== */
+  var last = performance.now();
+  var STEP = 1 / 120;
+
+  function loop(now){
+    var dt = Math.min(0.25, (now - last) / 1000);
+    last = now;
+    if (!reduceMotion){
+      var acc = dt;
+      while (acc > 0){
+        var h = Math.min(STEP, acc);
+        stepBall(h);
+        stepJump(h);
+        if (squashAnim) squashAnim.t += h;
+        acc -= h;
+      }
+    } else {
+      stepBall(dt);
+      stepJump(dt);
+      if (squashAnim) squashAnim.t += dt;
+    }
+    checkSunEgg();
+    drawBackground();
+    drawJumperAndBall();
+    requestAnimationFrame(loop);
+  }
+
+  /* ==================== 初始化 ==================== */
+  updateScale();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

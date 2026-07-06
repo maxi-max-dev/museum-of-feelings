@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>临界点 · 感觉博物馆</title>
+<meta name="description" content="一片森林能不能被烧穿，答案不在闪电，在密度。密度58%只烧掉一小片，61%烧穿整片森林，中间几乎没有过渡。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#3a3226;overflow:hidden;animation:rise .8s .1s ease both;
+    cursor:crosshair;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .hud{
+    display:flex;justify-content:center;gap:18px;flex-wrap:wrap;
+    font-size:13px;color:#57503f;letter-spacing:.05em;
+    background:var(--card);border:1px solid var(--ink);border-top:none;
+    padding:9px 14px;
+  }
+  .hud b{color:var(--seal);}
+
+  .verdict{
+    text-align:center;font-size:15.5px;line-height:1.9;color:#453e30;
+    min-height:1.9em;margin-top:12px;
+  }
+  .verdict b{color:var(--seal);font-size:18px;}
+  .verdict.breach b{color:var(--seal);}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .densrow{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:14px;font-size:14px;color:#453e30;}
+  .densrow input{width:min(360px,55vw);accent-color:var(--seal);}
+  .densrow b{font-size:19px;color:var(--seal);min-width:56px;text-align:center;}
+
+  .presets{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:10px;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 14px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.primary:hover{color:#fdf6ee;background:#96331f;}
+
+  .lab{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 20px 20px;margin-top:16px;
+  }
+  .lab h2{font-size:16px;letter-spacing:.1em;margin-bottom:4px;}
+  .lab .tag{font-size:11.5px;color:var(--seal);letter-spacing:.15em;margin-bottom:12px;}
+  .lab p.desc{font-size:13px;line-height:1.9;color:#57503f;margin-bottom:12px;}
+  .chartwrap{border:1px solid var(--line);background:#fffdf6;padding:12px 10px 8px;}
+  #chartCv{display:block;width:100%;height:auto;}
+  .labfoot{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .punch{
+    text-align:center;font-size:22px;letter-spacing:.1em;color:var(--seal);
+    padding:18px 10px 6px;line-height:1.7;
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №014</span>
+  </div>
+
+  <header>
+    <h1>临界点</h1>
+    <div class="en">The Critical Point</div>
+    <p class="sub">一片森林能不能被烧穿，答案不在闪电，在密度</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="792" height="456"></canvas>
+  </div>
+  <div class="hud">
+    <span>密度 <b id="hudDensity">55%</b></span>
+    <span>树 <b id="hudTrees">0</b> 棵</span>
+    <span>烧毁 <b id="hudBurned">0%</b></span>
+  </div>
+  <div class="verdict" id="verdict">拖动密度滑杆种一片森林，点一下按钮天降闪电。</div>
+
+  <div class="ctrls">
+    <div class="densrow">
+      密度 <input type="range" id="densSlider" min="30" max="75" value="55"> <b id="densVal">55%</b>
+    </div>
+    <div class="presets">
+      <button class="btn" id="btnReplant">🌲 重新种树</button>
+      <button class="btn primary" id="btnLightning">⚡ 天降闪电</button>
+    </div>
+    <div class="presets">
+      <button class="btn" id="btn58">58%</button>
+      <button class="btn" id="btn61">61%</button>
+    </div>
+  </div>
+
+  <div class="lab">
+    <h2>🧪 实验室 · 悬崖长什么样</h2>
+    <div class="tag">把每一局烧成什么样，画成一张图</div>
+    <p class="desc">密度从 42% 扫到 72%，每档瞬时算两次（左列点火，不放动画），把（密度，烧毁%）画成下面的散点。手动烧的每一局也会补一个印章红的点。悬崖形状的曲线，就是这座展厅最硬的证据。</p>
+    <div class="chartwrap">
+      <canvas id="chartCv" width="780" height="260"></canvas>
+    </div>
+    <div class="labfoot">
+      <button class="btn primary" id="btnExperiment">🧪 自动做实验</button>
+      <button class="btn" id="btnClearChart">🧹 清空图表</button>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 这座展厅只有一个数字：59.3</div>
+    <div class="pb">密度 58% 与 61%，同一道闪电，两种结局，中间没有过渡。这种突变叫<b>相变</b>，翻脸的那个位置叫<b>临界点</b>，研究它的数学叫<b>渗流理论</b>。</div>
+    <div class="pb">现实同款：疫情的传播数过 1、谣言的转发率、雪崩前最后一片雪花、电网的连锁跳闸。复杂系统崩溃之前不打招呼，它只认阈值。</div>
+    <div class="pb">防火带为什么有用：它不灭火，它把局部密度按回临界点以下。对付相变不需要消灭全部风险，只要把系统推回线的另一边。</div>
+    <div class="punch">「59% 与 60% 之间，<br>隔着一场大火。」</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №014 · Max 造<br>
+    <a href="../gravity/">下一个展厅：重力商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- 网格与状态 ---------- */
+  var COLS = 132, ROWS = 76, CELL = 6;
+  var W = COLS * CELL, H = ROWS * CELL;
+  var EMPTY = 0, TREE1 = 1, TREE2 = 2, TREE3 = 3, BURN = 4, EMBER = 5;
+
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  cv.width = W; cv.height = H;
+
+  var grid = new Uint8Array(COLS * ROWS);
+  var burnAge = new Uint8Array(COLS * ROWS); /* 燃烧格已停留几步 */
+  var density = 0.55;
+  var treeCount = 0;
+  var initialTreeCount = 0;
+  var burning = false;
+  var reachedRight = false;
+
+  function idx(x, y){ return y * COLS + x; }
+
+  function plant(d){
+    density = d;
+    treeCount = 0;
+    for (var i = 0; i < COLS * ROWS; i++){
+      burnAge[i] = 0;
+      if (Math.random() < d){
+        var r = Math.random();
+        grid[i] = r < 0.34 ? TREE1 : (r < 0.68 ? TREE2 : TREE3);
+        treeCount++;
+      } else {
+        grid[i] = EMPTY;
+      }
+    }
+    initialTreeCount = treeCount;
+    burning = false;
+    reachedRight = false;
+    updateHud();
+    setVerdict('拖动密度滑杆种一片森林，点一下按钮天降闪电。', false);
+  }
+
+  function isTree(v){ return v === TREE1 || v === TREE2 || v === TREE3; }
+
+  function igniteColumn(x){
+    var any = false;
+    for (var y = 0; y < ROWS; y++){
+      var i = idx(x, y);
+      if (isTree(grid[i])){ grid[i] = BURN; burnAge[i] = 0; any = true; }
+    }
+    if (any){ burning = true; }
+    return any;
+  }
+
+  function igniteCell(x, y){
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+    var i = idx(x, y);
+    if (isTree(grid[i])){
+      grid[i] = BURN; burnAge[i] = 0;
+      burning = true;
+    }
+  }
+
+  /* ---------- 模拟节拍：14 步/秒，固定子步追赶 ---------- */
+  var STEP_DT = 1 / 14;
+  var acc = 0;
+
+  function simStep(){
+    var toBurn = [];
+    var stillBurning = 0;
+    for (var y = 0; y < ROWS; y++){
+      for (var x = 0; x < COLS; x++){
+        var i = idx(x, y);
+        if (grid[i] === BURN){
+          burnAge[i]++;
+          if (burnAge[i] >= 2){
+            /* 变灰烬前先点燃四邻的树 */
+            if (x > 0 && isTree(grid[i - 1])) toBurn.push(i - 1);
+            if (x < COLS - 1 && isTree(grid[i + 1])) toBurn.push(i + 1);
+            if (y > 0 && isTree(grid[i - COLS])) toBurn.push(i - COLS);
+            if (y < ROWS - 1 && isTree(grid[i + COLS])) toBurn.push(i + COLS);
+          } else {
+            stillBurning++;
+          }
+        }
+      }
+    }
+    for (var y2 = 0; y2 < ROWS; y2++){
+      for (var x2 = 0; x2 < COLS; x2++){
+        var i2 = idx(x2, y2);
+        if (grid[i2] === BURN && burnAge[i2] >= 2){
+          grid[i2] = EMBER;
+          if (x2 === COLS - 1) reachedRight = true;
+        }
+      }
+    }
+    for (var k = 0; k < toBurn.length; k++){
+      var ti = toBurn[k];
+      if (isTree(grid[ti])){ grid[ti] = BURN; burnAge[ti] = 0; stillBurning++; }
+    }
+    if (stillBurning === 0 && toBurn.length === 0){
+      burning = false;
+      onFireOut();
+    }
+  }
+
+  function countEmber(){
+    var n = 0;
+    for (var i = 0; i < COLS * ROWS; i++){ if (grid[i] === EMBER) n++; }
+    return n;
+  }
+
+  function onFireOut(){
+    var burned = countEmber();
+    var pct = initialTreeCount > 0 ? (burned / initialTreeCount * 100) : 0;
+    updateHud();
+    if (reachedRight){
+      setVerdict('⚡ 烧穿了。烧毁 <b>' + pct.toFixed(0) + '%</b>，火走到了森林另一头', true);
+    } else {
+      setVerdict('火自己停住了。烧毁 <b>' + pct.toFixed(0) + '%</b>', false);
+    }
+    addChartPoint(density * 100, pct, true);
+  }
+
+  function updateHud(){
+    document.getElementById('hudDensity').textContent = Math.round(density * 100) + '%';
+    document.getElementById('hudTrees').textContent = initialTreeCount;
+    var burned = countEmber();
+    var pct = initialTreeCount > 0 ? (burned / initialTreeCount * 100) : 0;
+    document.getElementById('hudBurned').textContent = pct.toFixed(0) + '%';
+  }
+
+  function setVerdict(html, breach){
+    var v = document.getElementById('verdict');
+    v.innerHTML = html;
+    v.classList.toggle('breach', !!breach);
+  }
+
+  /* ---------- 画面 ---------- */
+  var treeColors = ['#4f7042', '#3f5c37', '#5f8a4d'];
+  var emptyColor = '#e8dfc9';
+  var emberColor = '#55504a';
+
+  function draw(t){
+    for (var y = 0; y < ROWS; y++){
+      for (var x = 0; x < COLS; x++){
+        var i = idx(x, y);
+        var v = grid[i];
+        var c;
+        if (v === EMPTY) c = emptyColor;
+        else if (v === TREE1) c = treeColors[0];
+        else if (v === TREE2) c = treeColors[1];
+        else if (v === TREE3) c = treeColors[2];
+        else if (v === EMBER) c = emberColor;
+        else {
+          /* 燃烧：橙红闪烁 */
+          var flick = 0.72 + 0.28 * Math.sin(t * 0.018 + (x * 7 + y * 13));
+          var r = Math.round(214 + 40 * flick);
+          var g = Math.round(96 + 70 * flick);
+          var b = Math.round(28 + 20 * flick);
+          c = 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+        ctx.fillStyle = c;
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+  }
+
+  /* ---------- 主循环：rAF 真实时间补帧 ---------- */
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(0.25, (now - last) / 1000);
+    last = now;
+    if (burning){
+      acc += dt;
+      var guard = 0;
+      while (acc >= STEP_DT && guard < 40){
+        simStep();
+        acc -= STEP_DT;
+        guard++;
+      }
+      updateHud();
+    } else {
+      acc = 0;
+    }
+    draw(now);
+    tickAudio(burning);
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- 交互 ---------- */
+  function toCell(e){
+    var r = cv.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    var gx = Math.floor(cx * (W / r.width) / CELL);
+    var gy = Math.floor(cy * (H / r.height) / CELL);
+    return { x: gx, y: gy };
+  }
+  cv.addEventListener('click', function(e){
+    ensureAudio();
+    var c = toCell(e);
+    igniteCell(c.x, c.y);
+  });
+  cv.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    ensureAudio();
+    var c = toCell(e);
+    igniteCell(c.x, c.y);
+  }, { passive: false });
+
+  document.getElementById('densSlider').addEventListener('input', function(){
+    var d = +this.value / 100;
+    document.getElementById('densVal').textContent = this.value + '%';
+    plant(d);
+  });
+  document.getElementById('btnReplant').addEventListener('click', function(){
+    ensureAudio();
+    plant(density);
+  });
+  document.getElementById('btnLightning').addEventListener('click', function(){
+    ensureAudio();
+    if (burning) return;
+    if (!igniteColumn(0)){
+      setVerdict('这一列没有树，闪电劈了个寂寞。种密一点再试。', false);
+    }
+  });
+  function setDensityUI(pct){
+    document.getElementById('densSlider').value = pct;
+    document.getElementById('densVal').textContent = pct + '%';
+  }
+  document.getElementById('btn58').addEventListener('click', function(){
+    ensureAudio();
+    setDensityUI(58);
+    plant(0.58);
+    igniteColumn(0);
+  });
+  document.getElementById('btn61').addEventListener('click', function(){
+    ensureAudio();
+    setDensityUI(61);
+    plant(0.61);
+    igniteColumn(0);
+  });
+
+  /* ---------- 实验室：瞬时洪泛填充统计 ---------- */
+  var chartCv = document.getElementById('chartCv');
+  var chartCtx = chartCv.getContext('2d');
+  var CW = 780, CH = 260;
+  var chartPoints = []; /* {d, pct, manual} */
+  var PAD_L = 42, PAD_R = 16, PAD_T = 14, PAD_B = 30;
+  var CRIT = 59.3;
+
+  function floodFillSim(d){
+    var g = new Uint8Array(COLS * ROWS);
+    var trees = 0;
+    for (var i = 0; i < COLS * ROWS; i++){
+      if (Math.random() < d){ g[i] = 1; trees++; }
+    }
+    if (trees === 0) return 0;
+    var visited = new Uint8Array(COLS * ROWS);
+    var queue = [];
+    var qh = 0;
+    for (var y = 0; y < ROWS; y++){
+      var i0 = idx(0, y);
+      if (g[i0] === 1 && !visited[i0]){ visited[i0] = 1; queue.push(i0); }
+    }
+    var burned = 0;
+    while (qh < queue.length){
+      var cur = queue[qh++];
+      burned++;
+      var cx = cur % COLS, cy = (cur / COLS) | 0;
+      if (cx > 0){ var l = cur - 1; if (g[l] === 1 && !visited[l]){ visited[l] = 1; queue.push(l); } }
+      if (cx < COLS - 1){ var rr = cur + 1; if (g[rr] === 1 && !visited[rr]){ visited[rr] = 1; queue.push(rr); } }
+      if (cy > 0){ var u = cur - COLS; if (g[u] === 1 && !visited[u]){ visited[u] = 1; queue.push(u); } }
+      if (cy < ROWS - 1){ var dn = cur + COLS; if (g[dn] === 1 && !visited[dn]){ visited[dn] = 1; queue.push(dn); } }
+    }
+    return burned / trees * 100;
+  }
+
+  function addChartPoint(d, pct, manual){
+    chartPoints.push({ d: d, pct: pct, manual: !!manual });
+    drawChart();
+  }
+
+  function drawChart(){
+    chartCtx.clearRect(0, 0, CW, CH);
+    var plotW = CW - PAD_L - PAD_R, plotH = CH - PAD_T - PAD_B;
+    var x0 = PAD_L, y0 = PAD_T;
+
+    function xOf(d){ return x0 + (d - 30) / (80 - 30) * plotW; }
+    function yOf(p){ return y0 + plotH - (p / 100) * plotH; }
+
+    /* 坐标轴 */
+    chartCtx.strokeStyle = '#c9bc9e';
+    chartCtx.lineWidth = 1;
+    chartCtx.beginPath();
+    chartCtx.moveTo(x0, y0);
+    chartCtx.lineTo(x0, y0 + plotH);
+    chartCtx.lineTo(x0 + plotW, y0 + plotH);
+    chartCtx.stroke();
+
+    chartCtx.fillStyle = '#8a8071';
+    chartCtx.font = '10.5px "Noto Serif SC",serif';
+    chartCtx.textAlign = 'right';
+    [0, 25, 50, 75, 100].forEach(function(p){
+      var y = yOf(p);
+      chartCtx.fillText(p + '%', x0 - 6, y + 3);
+      chartCtx.strokeStyle = 'rgba(90,80,60,.12)';
+      chartCtx.beginPath();
+      chartCtx.moveTo(x0, y);
+      chartCtx.lineTo(x0 + plotW, y);
+      chartCtx.stroke();
+    });
+    chartCtx.textAlign = 'center';
+    [30, 40, 50, 59.3, 70, 80].forEach(function(d){
+      if (d === 59.3) return;
+      var x = xOf(d);
+      chartCtx.fillText(Math.round(d) + '%', x, y0 + plotH + 16);
+    });
+
+    /* 轴标题 */
+    chartCtx.save();
+    chartCtx.translate(12, y0 + plotH / 2);
+    chartCtx.rotate(-Math.PI / 2);
+    chartCtx.textAlign = 'center';
+    chartCtx.fillText('烧毁 %', 0, 0);
+    chartCtx.restore();
+    chartCtx.textAlign = 'center';
+    chartCtx.fillText('密度 %', x0 + plotW / 2, CH - 4);
+
+    /* 临界点竖虚线 */
+    var xc = xOf(CRIT);
+    chartCtx.save();
+    chartCtx.setLineDash([4, 4]);
+    chartCtx.strokeStyle = '#b5402c';
+    chartCtx.lineWidth = 1.3;
+    chartCtx.beginPath();
+    chartCtx.moveTo(xc, y0);
+    chartCtx.lineTo(xc, y0 + plotH);
+    chartCtx.stroke();
+    chartCtx.restore();
+    chartCtx.fillStyle = '#b5402c';
+    chartCtx.font = '11px "Noto Serif SC",serif';
+    chartCtx.textAlign = 'left';
+    chartCtx.fillText('临界点 p≈59.3%', Math.min(xc + 6, x0 + plotW - 108), y0 + 12);
+
+    /* 散点 */
+    chartPoints.forEach(function(pt){
+      var x = xOf(pt.d), y = yOf(pt.pct);
+      chartCtx.beginPath();
+      chartCtx.arc(x, y, pt.manual ? 3.6 : 2.4, 0, Math.PI * 2);
+      chartCtx.fillStyle = pt.manual ? 'rgba(181,64,44,.85)' : 'rgba(90,80,60,.4)';
+      chartCtx.fill();
+    });
+  }
+
+  function runExperiment(){
+    var btn = document.getElementById('btnExperiment');
+    btn.disabled = true;
+    var d = 42;
+    function batch(){
+      var count = 0;
+      while (d <= 72 && count < 3){
+        for (var t = 0; t < 2; t++){
+          var pct = floodFillSim(d / 100);
+          chartPoints.push({ d: d, pct: pct, manual: false });
+        }
+        d++;
+        count++;
+      }
+      drawChart();
+      if (d <= 72){
+        requestAnimationFrame(batch);
+      } else {
+        btn.disabled = false;
+      }
+    }
+    batch();
+  }
+  document.getElementById('btnExperiment').addEventListener('click', function(){
+    ensureAudio();
+    runExperiment();
+  });
+  document.getElementById('btnClearChart').addEventListener('click', function(){
+    chartPoints = [];
+    drawChart();
+  });
+
+  /* ---------- 音效：滤波噪声 + 随机 pop，跟燃烧格数走 ---------- */
+  var actx = null, noiseSrc = null, noiseGain = null, filter = null;
+  var audioReady = false;
+
+  function ensureAudio(){
+    if (audioReady) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      actx = new AC();
+      var bufLen = actx.sampleRate * 2;
+      var buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < bufLen; i++){ data[i] = Math.random() * 2 - 1; }
+      noiseSrc = actx.createBufferSource();
+      noiseSrc.buffer = buf;
+      noiseSrc.loop = true;
+      filter = actx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1800;
+      filter.Q.value = 0.7;
+      noiseGain = actx.createGain();
+      noiseGain.gain.value = 0;
+      noiseSrc.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(actx.destination);
+      noiseSrc.start();
+      audioReady = true;
+    } catch (e){ audioReady = false; }
+    if (actx && actx.state === 'suspended') actx.resume();
+  }
+
+  var lastPopAt = 0;
+  function tickAudio(isBurning){
+    if (!audioReady || !actx) return;
+    var burnCount = 0;
+    if (isBurning){
+      for (var i = 0; i < COLS * ROWS; i++){ if (grid[i] === BURN) burnCount++; }
+    }
+    var target = Math.min(0.05, burnCount * 0.0011);
+    var now = actx.currentTime;
+    noiseGain.gain.setTargetAtTime(target, now, 0.08);
+
+    var t = performance.now();
+    if (burnCount > 0 && t - lastPopAt > (60 + Math.random() * 120)){
+      lastPopAt = t;
+      popSound();
+    }
+  }
+
+  function popSound(){
+    if (!actx) return;
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    var freq = 260 + Math.random() * 700;
+    o.type = 'square';
+    o.frequency.value = freq;
+    g.gain.value = 0.0001;
+    var now = actx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.035 + Math.random() * 0.02, now + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.05 + Math.random() * 0.03);
+    o.connect(g);
+    g.connect(actx.destination);
+    o.start(now);
+    o.stop(now + 0.12);
+  }
+
+  /* ---------- 启动 ---------- */
+  plant(density);
+  drawChart();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
