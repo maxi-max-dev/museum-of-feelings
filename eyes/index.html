@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>眼睛商店 · 感觉博物馆</title>
+<meta name="description" content="换一双眼睛，看同一个世界。近视、色盲、猫、狗、蜜蜂、出生七天的婴儿，九副眼睛任你试戴。">
+<style>
+  :root{
+    --paper:#f5efe2;
+    --card:#fbf7ec;
+    --ink:#2a2521;
+    --ink-soft:#8a8071;
+    --seal:#b5402c;
+    --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);
+    font-family:var(--serif);
+    min-height:100vh;
+    padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+
+  .topbar{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;
+  }
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  /* ---- 橱窗 ---- */
+  .stage{
+    position:relative;
+    border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#ded5c0;
+    overflow:hidden;
+    animation:rise .8s .1s ease both;
+  }
+  .stage svg{display:block;width:100%;height:auto;}
+  .stage video{
+    display:none;width:100%;aspect-ratio:8/5;object-fit:cover;
+    transform:scaleX(-1);background:#111;
+  }
+  .stage.cam-on svg{display:none;}
+  .stage.cam-on video{display:block;}
+
+  .cam-fx{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s;}
+  .cam-fx.fx-mosaic{
+    background-image:radial-gradient(circle, transparent 58%, rgba(20,25,45,.45) 64%, transparent 70%);
+    background-size:30px 30px;
+  }
+  .cam-fx.fx-vig{box-shadow:inset 0 0 130px 70px rgba(10,8,6,.8);}
+  .stage.cam-on.fxon-mosaic .fx-mosaic{opacity:1;}
+  .stage.cam-on.fxon-vig .fx-vig{opacity:1;}
+
+  .stage-btns{
+    position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:5;
+  }
+  .stage-btns button{
+    font-family:var(--serif);
+    border:1px solid rgba(42,37,33,.55);border-radius:8px;
+    background:rgba(251,247,236,.88);color:var(--ink);
+    font-size:13px;letter-spacing:.08em;
+    padding:8px 12px;cursor:pointer;
+    transition:transform .15s, background .15s;
+  }
+  .stage-btns button:hover{transform:translateY(-1px);background:#fffdf6;}
+  .stage.cam-on #btnNight{display:none;}
+
+  .cam-note{
+    position:absolute;left:12px;bottom:10px;z-index:5;
+    font-size:11.5px;letter-spacing:.1em;color:#f5efe2;
+    background:rgba(30,26,22,.55);border-radius:6px;padding:5px 9px;
+    display:none;
+  }
+  .stage.cam-on .cam-note{display:block;}
+
+  #toast{
+    position:absolute;left:50%;bottom:14px;transform:translate(-50%,8px);z-index:6;
+    background:rgba(30,26,22,.88);color:#f5efe2;
+    font-size:13px;letter-spacing:.06em;line-height:1.7;
+    padding:9px 16px;border-radius:8px;max-width:86%;text-align:center;
+    opacity:0;pointer-events:none;transition:opacity .4s, transform .4s;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0);}
+
+  /* ---- 货架 ---- */
+  .shelf-label{
+    display:flex;align-items:center;gap:14px;
+    margin:30px 0 14px;color:var(--ink-soft);font-size:12px;letter-spacing:.3em;
+  }
+  .shelf-label::before,.shelf-label::after{content:"";flex:1;border-top:1px solid var(--line);}
+  .shelf{
+    display:flex;gap:10px;overflow-x:auto;padding:6px 2px 14px;
+    scrollbar-width:none;
+  }
+  .shelf::-webkit-scrollbar{display:none;}
+  .eye-card{
+    flex:0 0 auto;min-width:96px;
+    font-family:var(--serif);
+    background:var(--card);
+    border:1.5px solid var(--line);border-radius:10px;
+    padding:12px 10px 10px;text-align:center;cursor:pointer;
+    transition:transform .18s, border-color .18s, box-shadow .18s;
+  }
+  .eye-card:hover{transform:translateY(-3px);}
+  .eye-card .e{font-size:26px;display:block;margin-bottom:6px;}
+  .eye-card .n{font-size:13px;color:var(--ink);display:block;margin-bottom:3px;letter-spacing:.05em;}
+  .eye-card .t{font-size:10.5px;color:var(--ink-soft);display:block;letter-spacing:.05em;}
+  .eye-card.sel{
+    border-color:var(--seal);
+    box-shadow:0 0 0 1px var(--seal),0 8px 18px rgba(181,64,44,.18);
+    transform:translateY(-3px);
+  }
+  .eye-card.sel .n{color:var(--seal);}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);
+    border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:14px;
+  }
+  .plaque .pt{
+    font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;
+  }
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;animation:fadeIn .5s ease both;}
+  .plaque .pb b{color:var(--ink);}
+
+  footer{
+    text-align:center;margin-top:44px;color:var(--ink-soft);
+    font-size:11.5px;letter-spacing:.18em;line-height:2.3;
+  }
+
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+  /* ================= 场景状态 ================= */
+  #scene .night-el{opacity:0;transition:opacity .9s ease;}
+  #scene.night .night-el{opacity:1;}
+  #scene .day-el{opacity:1;transition:opacity .9s ease;}
+  #scene.night .day-el{opacity:0;}
+  #scene .shade{opacity:0;transition:opacity .9s ease;}
+  #scene.night .shade{opacity:.55;}
+  #scene.night.eye-cat .shade{opacity:.15;}
+  #scene .uv-el{opacity:0;transition:opacity .7s ease;}
+  #scene.eye-bee .uv-el{opacity:1;}
+  #scene .cat-night-el{opacity:0;transition:opacity .9s ease;}
+  #scene.night.eye-cat .cat-night-el{opacity:1;}
+  #scene #mosaic{opacity:0;transition:opacity .7s ease;}
+  #scene.eye-bee #mosaic{opacity:.32;}
+  #scene #vig{opacity:0;transition:opacity .7s ease;}
+  #scene.eye-baby #vig{opacity:1;}
+
+  /* 场景小动画 */
+  .cloud{animation:drift 11s ease-in-out infinite alternate;}
+  .cloud.c2{animation-duration:14s;animation-delay:-4s;}
+  .kite{transform-box:fill-box;transform-origin:center;animation:bob 5s ease-in-out infinite alternate;}
+  .bfly{animation:flit 9s ease-in-out infinite alternate;}
+  .bfly .wings{transform-box:fill-box;transform-origin:center;animation:flap .4s ease-in-out infinite alternate;}
+  .tail{transform-box:fill-box;transform-origin:20% 90%;animation:sway 3.5s ease-in-out infinite alternate;}
+  .firefly{animation:glow 2.6s ease-in-out infinite;}
+  .firefly.f2{animation-delay:-.9s}.firefly.f3{animation-delay:-1.7s}
+  .firefly.f4{animation-delay:-.4s}.firefly.f5{animation-delay:-2.1s}.firefly.f6{animation-delay:-1.3s}
+  .star-tw{animation:glow 3.8s ease-in-out infinite;}
+  .star-tw.s2{animation-delay:-1.5s}.star-tw.s3{animation-delay:-2.6s}
+  .cateyes{animation:blink 6s steps(1) infinite;}
+  @keyframes drift{from{transform:translateX(-10px)}to{transform:translateX(14px)}}
+  @keyframes bob{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(9px) rotate(3deg)}}
+  @keyframes flit{
+    0%{transform:translate(0,0)}25%{transform:translate(-26px,-14px)}
+    50%{transform:translate(-10px,6px)}75%{transform:translate(-38px,-6px)}100%{transform:translate(-4px,-18px)}
+  }
+  @keyframes flap{from{transform:scaleX(1)}to{transform:scaleX(.45)}}
+  @keyframes sway{from{transform:rotate(0deg)}to{transform:rotate(9deg)}}
+  @keyframes glow{0%,100%{opacity:.15}50%{opacity:1}}
+  @keyframes blink{0%,7%,100%{opacity:1}3%{opacity:0}}
+  #scene:not(.night) .firefly,#scene:not(.night) .star-tw{animation:none;}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №001</span>
+  </div>
+
+  <header>
+    <h1>眼睛商店</h1>
+    <div class="en">The Eye Shop</div>
+    <p class="sub">换一双眼睛，看同一个世界</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <!-- ===================== 场景 ===================== -->
+    <svg id="scene" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="一座花园：苹果树、野餐布、猫、花丛和远处的横幅">
+      <defs>
+        <linearGradient id="skyDay" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a4d4ee"/>
+          <stop offset="1" stop-color="#f6ecd2"/>
+        </linearGradient>
+        <linearGradient id="skyNight" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#101638"/>
+          <stop offset="1" stop-color="#3d4470"/>
+        </linearGradient>
+        <radialGradient id="lampGlow">
+          <stop offset="0" stop-color="#ffe294" stop-opacity=".95"/>
+          <stop offset="1" stop-color="#ffe294" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="vigGrad" cx=".5" cy=".45" r=".8">
+          <stop offset="0" stop-color="#0f0c0a" stop-opacity="0"/>
+          <stop offset=".42" stop-color="#0f0c0a" stop-opacity="0"/>
+          <stop offset="1" stop-color="#0f0c0a" stop-opacity=".92"/>
+        </radialGradient>
+        <pattern id="gingham" width="28" height="28" patternUnits="userSpaceOnUse">
+          <rect width="28" height="28" fill="#fdf6ee"/>
+          <rect width="14" height="14" fill="#e2574c" opacity=".55"/>
+          <rect x="14" y="14" width="14" height="14" fill="#e2574c" opacity=".55"/>
+        </pattern>
+        <pattern id="omma" width="26" height="26" patternUnits="userSpaceOnUse">
+          <circle cx="6.5" cy="6.5" r="9" fill="none" stroke="#141a2e" stroke-opacity=".55" stroke-width="1.6"/>
+          <circle cx="19.5" cy="19.5" r="9" fill="none" stroke="#141a2e" stroke-opacity=".55" stroke-width="1.6"/>
+        </pattern>
+
+        <!-- ============ 眼睛滤镜 ============ -->
+        <filter id="f-myopia" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+          <feGaussianBlur stdDeviation="7"/>
+        </filter>
+        <filter id="f-astig" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.1" result="b"/>
+          <feOffset in="b" dx="7" dy="4" result="o1"/>
+          <feComponentTransfer in="o1" result="g1"><feFuncA type="linear" slope="0.5"/></feComponentTransfer>
+          <feOffset in="b" dx="-6" dy="5" result="o2"/>
+          <feComponentTransfer in="o2" result="g2"><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+          <feComponentTransfer in="b" result="bt"><feFuncA type="linear" slope="0.85"/></feComponentTransfer>
+          <feMerge>
+            <feMergeNode in="g1"/><feMergeNode in="g2"/><feMergeNode in="bt"/>
+          </feMerge>
+        </filter>
+        <filter id="f-deutan" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/>
+        </filter>
+        <filter id="f-tritan" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/>
+        </filter>
+        <filter id="f-cat" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0.55 0.45 0 0 0  0.55 0.45 0 0 0  0 0.25 0.75 0 0  0 0 0 1 0" result="c1"/>
+          <feColorMatrix in="c1" type="saturate" values="0.55" result="c2"/>
+          <feGaussianBlur in="c2" stdDeviation="2.2"/>
+        </filter>
+        <filter id="f-dog" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0" result="c1"/>
+          <feColorMatrix in="c1" type="saturate" values="0.7" result="c2"/>
+          <feGaussianBlur in="c2" stdDeviation="1.6"/>
+        </filter>
+        <filter id="f-bee" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+          <feColorMatrix type="matrix" values="0 0.35 0.5 0 0  0 0.6 0.4 0 0  0 0.15 0.95 0 0  0 0 0 1 0" result="c1"/>
+          <feGaussianBlur in="c1" stdDeviation="1"/>
+        </filter>
+        <filter id="f-baby" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+          <feColorMatrix type="saturate" values="0.12" result="c1"/>
+          <feGaussianBlur in="c1" stdDeviation="8" result="c2"/>
+          <feComponentTransfer in="c2">
+            <feFuncR type="linear" slope="0.9"/><feFuncG type="linear" slope="0.9"/><feFuncB type="linear" slope="0.9"/>
+          </feComponentTransfer>
+        </filter>
+      </defs>
+
+      <g id="world">
+        <!-- 天空 -->
+        <rect width="800" height="500" fill="url(#skyDay)"/>
+        <rect class="night-el" width="800" height="500" fill="url(#skyNight)"/>
+
+        <!-- 白天天象 -->
+        <g class="day-el">
+          <circle cx="653" cy="88" r="50" fill="#ffd76e" opacity=".28"/>
+          <circle cx="653" cy="88" r="30" fill="#ffd76e"/>
+          <g class="cloud">
+            <ellipse cx="150" cy="74" rx="46" ry="16" fill="#ffffff" opacity=".95"/>
+            <ellipse cx="186" cy="64" rx="30" ry="13" fill="#ffffff" opacity=".95"/>
+            <ellipse cx="118" cy="64" rx="26" ry="11" fill="#ffffff" opacity=".95"/>
+          </g>
+          <g class="cloud c2">
+            <ellipse cx="452" cy="52" rx="40" ry="13" fill="#ffffff" opacity=".85"/>
+            <ellipse cx="484" cy="44" rx="24" ry="10" fill="#ffffff" opacity=".85"/>
+          </g>
+          <g class="kite">
+            <polygon points="255,72 278,98 255,124 232,98" fill="#e2574c" stroke="#b5402c" stroke-width="2"/>
+            <line x1="255" y1="72" x2="255" y2="124" stroke="#b5402c" stroke-width="1.5"/>
+            <line x1="232" y1="98" x2="278" y2="98" stroke="#b5402c" stroke-width="1.5"/>
+            <path d="M255,124 Q245,150 252,170 Q258,186 250,202" fill="none" stroke="#8a8071" stroke-width="1.6"/>
+            <path d="M247,146 l8,-5 M254,176 l8,-5" stroke="#5b7fd4" stroke-width="3"/>
+          </g>
+        </g>
+
+        <!-- 远山与草地 -->
+        <path d="M0,302 Q210,258 420,292 Q620,320 800,286 L800,500 L0,500 Z" fill="#b9d489"/>
+        <path d="M0,348 Q240,316 480,342 Q660,360 800,334 L800,500 L0,500 Z" fill="#8fbf68"/>
+
+        <!-- 小路 -->
+        <path d="M336,500 C362,436 470,412 556,416 C648,420 706,442 800,432 L800,468 C696,478 622,458 552,454 C466,450 402,462 386,500 Z" fill="#e8d6ab" opacity=".92"/>
+
+        <!-- 欢迎横幅（近视测试点） -->
+        <g>
+          <line x1="345" y1="122" x2="345" y2="208" stroke="#8a5a3b" stroke-width="5" stroke-linecap="round"/>
+          <line x1="615" y1="122" x2="615" y2="208" stroke="#8a5a3b" stroke-width="5" stroke-linecap="round"/>
+          <path d="M345,132 Q480,120 615,132 L615,168 Q480,182 345,168 Z" fill="#fdf8ea" stroke="#c9b98f" stroke-width="1.5"/>
+          <text x="480" y="157" text-anchor="middle" font-family="'Noto Serif SC','Songti SC',serif" font-size="17" letter-spacing="2" fill="#b5402c">感觉博物馆 · 欢迎光临</text>
+        </g>
+
+        <!-- 苹果树（红绿色盲测试点） -->
+        <g>
+          <path d="M108,218 C104,262 100,300 96,338 L134,338 C128,298 126,260 126,218 Z" fill="#7d5233"/>
+          <path d="M114,240 Q92,222 82,206 M120,252 Q142,236 154,224" fill="none" stroke="#7d5233" stroke-width="7" stroke-linecap="round"/>
+          <circle cx="78" cy="162" r="46" fill="#467f45"/>
+          <circle cx="132" cy="132" r="52" fill="#4f8f4f"/>
+          <circle cx="176" cy="172" r="42" fill="#5c9e56"/>
+          <circle cx="112" cy="188" r="40" fill="#4f8f4f"/>
+          <g>
+            <circle cx="72" cy="150" r="8.5" fill="#d23b28"/><circle cx="69.5" cy="147" r="2.4" fill="#f2846f"/>
+            <circle cx="124" cy="116" r="8.5" fill="#d23b28"/><circle cx="121.5" cy="113" r="2.4" fill="#f2846f"/>
+            <circle cx="170" cy="158" r="8.5" fill="#d23b28"/><circle cx="167.5" cy="155" r="2.4" fill="#f2846f"/>
+            <circle cx="98" cy="196" r="8.5" fill="#d23b28"/><circle cx="95.5" cy="193" r="2.4" fill="#f2846f"/>
+            <circle cx="148" cy="196" r="8.5" fill="#d23b28"/><circle cx="145.5" cy="193" r="2.4" fill="#f2846f"/>
+            <circle cx="186" cy="122" r="8.5" fill="#d23b28"/><circle cx="183.5" cy="119" r="2.4" fill="#f2846f"/>
+            <circle cx="52" cy="182" r="8.5" fill="#d23b28"/><circle cx="49.5" cy="179" r="2.4" fill="#f2846f"/>
+          </g>
+        </g>
+
+        <!-- 灯笼（散光测试点） -->
+        <g>
+          <line x1="520" y1="298" x2="520" y2="420" stroke="#5c4a3a" stroke-width="4.5" stroke-linecap="round"/>
+          <rect x="505" y="266" width="30" height="36" rx="5" fill="#5c4a3a"/>
+          <rect x="509" y="271" width="22" height="26" rx="3" fill="#e8e4d2"/>
+          <rect x="516" y="258" width="8" height="8" rx="2" fill="#5c4a3a"/>
+        </g>
+
+        <!-- 花丛（蜜蜂紫外线彩蛋） -->
+        <g>
+          <path d="M610,372 Q608,396 610,420 M683,356 Q681,384 683,412 M645,404 Q644,414 645,426 M728,392 Q726,410 728,428" fill="none" stroke="#5d9c50" stroke-width="3.5" stroke-linecap="round"/>
+          <path d="M610,392 Q596,386 590,376 M683,382 Q698,376 704,366 M728,410 Q714,406 708,398" fill="none" stroke="#5d9c50" stroke-width="3" stroke-linecap="round"/>
+
+          <!-- 黄雏菊 + UV 蜜源跑道 -->
+          <g>
+            <g>
+              <ellipse cx="610" cy="340" rx="7" ry="15" fill="#ffd94d"/>
+              <ellipse cx="610" cy="376" rx="7" ry="15" fill="#ffd94d"/>
+              <ellipse cx="592" cy="358" rx="15" ry="7" fill="#ffd94d"/>
+              <ellipse cx="628" cy="358" rx="15" ry="7" fill="#ffd94d"/>
+              <ellipse cx="597" cy="345" rx="12" ry="7" transform="rotate(-45 597 345)" fill="#ffd94d"/>
+              <ellipse cx="623" cy="371" rx="12" ry="7" transform="rotate(-45 623 371)" fill="#ffd94d"/>
+              <ellipse cx="623" cy="345" rx="12" ry="7" transform="rotate(45 623 345)" fill="#ffd94d"/>
+              <ellipse cx="597" cy="371" rx="12" ry="7" transform="rotate(45 597 371)" fill="#ffd94d"/>
+            </g>
+            <g class="uv-el">
+              <path d="M610,358 L610,330 M610,358 L610,386 M610,358 L582,358 M610,358 L638,358 M610,358 L590,338 M610,358 L630,378 M610,358 L630,338 M610,358 L590,378" stroke="#2f2360" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="610" cy="358" r="14" fill="none" stroke="#2f2360" stroke-width="3.5"/>
+            </g>
+            <circle cx="610" cy="358" r="10" fill="#f0a713"/>
+          </g>
+
+          <!-- 红罂粟（蜜蜂看不见它） -->
+          <g>
+            <circle cx="674" cy="336" r="12" fill="#d84437"/>
+            <circle cx="692" cy="336" r="12" fill="#c93a2e"/>
+            <circle cx="683" cy="326" r="12" fill="#d84437"/>
+            <circle cx="683" cy="347" r="12" fill="#c93a2e"/>
+            <circle cx="683" cy="337" r="6" fill="#3a2a24"/>
+          </g>
+
+          <!-- 蓝矢车菊 -->
+          <g>
+            <ellipse cx="645" cy="386" rx="6" ry="12" fill="#6c8fe0"/>
+            <ellipse cx="645" cy="410" rx="6" ry="12" fill="#6c8fe0"/>
+            <ellipse cx="633" cy="398" rx="12" ry="6" fill="#6c8fe0"/>
+            <ellipse cx="657" cy="398" rx="12" ry="6" fill="#6c8fe0"/>
+            <ellipse cx="637" cy="389" rx="10" ry="6" transform="rotate(-45 637 389)" fill="#7e9de6"/>
+            <ellipse cx="653" cy="407" rx="10" ry="6" transform="rotate(-45 653 407)" fill="#7e9de6"/>
+            <ellipse cx="653" cy="389" rx="10" ry="6" transform="rotate(45 653 389)" fill="#7e9de6"/>
+            <ellipse cx="637" cy="407" rx="10" ry="6" transform="rotate(45 637 407)" fill="#7e9de6"/>
+            <circle cx="645" cy="398" r="5.5" fill="#3b5bb5"/>
+          </g>
+
+          <!-- 粉波斯菊 + UV 光环 -->
+          <g>
+            <ellipse cx="728" cy="364" rx="6" ry="13" fill="#eb9cc0"/>
+            <ellipse cx="728" cy="392" rx="6" ry="13" fill="#eb9cc0"/>
+            <ellipse cx="714" cy="378" rx="13" ry="6" fill="#eb9cc0"/>
+            <ellipse cx="742" cy="378" rx="13" ry="6" fill="#eb9cc0"/>
+            <ellipse cx="718" cy="368" rx="11" ry="6" transform="rotate(-45 718 368)" fill="#f3b1d0"/>
+            <ellipse cx="738" cy="388" rx="11" ry="6" transform="rotate(-45 738 388)" fill="#f3b1d0"/>
+            <ellipse cx="738" cy="368" rx="11" ry="6" transform="rotate(45 738 368)" fill="#f3b1d0"/>
+            <ellipse cx="718" cy="388" rx="11" ry="6" transform="rotate(45 718 388)" fill="#f3b1d0"/>
+            <g class="uv-el">
+              <circle cx="728" cy="378" r="16" fill="none" stroke="#33255e" stroke-width="3.5"/>
+            </g>
+            <circle cx="728" cy="378" r="6" fill="#c2578d"/>
+          </g>
+        </g>
+
+        <!-- 蝴蝶 -->
+        <g class="bfly day-el">
+          <g class="wings">
+            <ellipse cx="576" cy="298" rx="9" ry="6" transform="rotate(-24 576 298)" fill="#e88ab0"/>
+            <ellipse cx="592" cy="298" rx="9" ry="6" transform="rotate(24 592 298)" fill="#e88ab0"/>
+            <ellipse cx="578" cy="306" rx="6" ry="4.5" transform="rotate(-16 578 306)" fill="#f3b1d0"/>
+            <ellipse cx="590" cy="306" rx="6" ry="4.5" transform="rotate(16 590 306)" fill="#f3b1d0"/>
+          </g>
+          <ellipse cx="584" cy="302" rx="2.2" ry="6.5" fill="#4a3b30"/>
+        </g>
+
+        <!-- 野餐布 + 静物 -->
+        <g>
+          <polygon points="298,418 468,406 506,472 276,484" fill="url(#gingham)" stroke="#c94f43" stroke-width="2.5"/>
+          <path d="M402,398 L436,396 L442,420 L398,422 Z" fill="#a5703f" stroke="#8a5a30" stroke-width="2"/>
+          <path d="M404,404 L440,402 M402,412 L441,410" stroke="#8a5a30" stroke-width="1.5"/>
+          <path d="M408,396 Q419,378 432,395" fill="none" stroke="#8a5a30" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="386" cy="428" r="8" fill="#d23b28"/><circle cx="383.6" cy="425.4" r="2.2" fill="#f2846f"/>
+          <rect x="448" y="416" width="13" height="24" rx="4" fill="#5b7fd4" transform="rotate(8 454 428)"/>
+          <g>
+            <path d="M318,444 L348,438 L352,452 L322,458 Z" fill="#fdfbf3" stroke="#c9c2ae" stroke-width="1.5"/>
+            <path d="M348,438 L378,442 L376,456 L352,452 Z" fill="#f6f2e6" stroke="#c9c2ae" stroke-width="1.5"/>
+            <path d="M326,446 l16,-3 M328,451 l14,-2.6 M356,444 l14,1.8 M355,449 l13,1.6" stroke="#b9b2a0" stroke-width="1.4"/>
+          </g>
+        </g>
+
+        <!-- 猫 -->
+        <g>
+          <path class="tail" d="M282,394 Q306,384 308,362 Q309,348 300,342" fill="none" stroke="#e8973f" stroke-width="9" stroke-linecap="round"/>
+          <ellipse cx="252" cy="396" rx="33" ry="23" fill="#ef9f45"/>
+          <ellipse cx="244" cy="404" rx="14" ry="10" fill="#fbe1bd"/>
+          <path d="M258,382 q6,-8 14,-4 M266,392 q7,-6 14,-2" fill="none" stroke="#d97f2e" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="229" cy="360" r="18" fill="#ef9f45"/>
+          <polygon points="216,350 210,330 228,342" fill="#ef9f45"/>
+          <polygon points="242,348 250,329 231,341" fill="#ef9f45"/>
+          <polygon points="217,347 214,336 224,343" fill="#d97f2e"/>
+          <polygon points="240,346 244,335 234,342" fill="#d97f2e"/>
+          <ellipse cx="222" cy="358" rx="2.6" ry="3.4" fill="#3f6b34"/>
+          <ellipse cx="236" cy="358" rx="2.6" ry="3.4" fill="#3f6b34"/>
+          <polygon points="229,364 226,367 232,367" fill="#b5573b"/>
+          <path d="M229,367 q0,4 -5,5 M229,367 q0,4 5,5" fill="none" stroke="#8a5a30" stroke-width="1.4"/>
+          <path d="M214,364 l-12,-2 M214,368 l-11,2 M244,364 l12,-2 M244,368 l11,2" stroke="#fdf6ee" stroke-width="1.3" opacity=".85"/>
+        </g>
+
+        <!-- 草丛（夜的秘密都在这里） -->
+        <g>
+          <ellipse cx="722" cy="436" rx="46" ry="30" fill="#3f6d3d"/>
+          <ellipse cx="768" cy="446" rx="40" ry="34" fill="#35603a"/>
+          <ellipse cx="700" cy="456" rx="34" ry="24" fill="#47784a"/>
+        </g>
+
+        <!-- 老鼠（只有夜里的猫看得见） -->
+        <g class="cat-night-el">
+          <ellipse cx="648" cy="468" rx="16" ry="10" fill="#b9bac4"/>
+          <circle cx="633" cy="462" r="5.5" fill="#b9bac4"/>
+          <circle cx="630" cy="455" r="3.4" fill="#a8a9b4"/>
+          <circle cx="637" cy="455" r="3.2" fill="#a8a9b4"/>
+          <path d="M664,468 Q680,475 687,462" fill="none" stroke="#b9bac4" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="630.5" cy="461" r="1.3" fill="#2a2521"/>
+        </g>
+
+        <!-- 夜幕 -->
+        <rect class="shade" width="800" height="500" fill="#0d1233"/>
+
+        <!-- 夜里的光（在夜幕之上） -->
+        <g class="night-el">
+          <circle cx="653" cy="88" r="28" fill="#f2ebc8"/>
+          <circle cx="643" cy="82" r="6" fill="#e0d8b2"/>
+          <circle cx="660" cy="96" r="4" fill="#e0d8b2"/>
+          <circle cx="120" cy="60" r="2.2" fill="#fdf8e0" class="star-tw"/>
+          <circle cx="210" cy="96" r="1.7" fill="#fdf8e0" class="star-tw s2"/>
+          <circle cx="330" cy="52" r="2" fill="#fdf8e0" class="star-tw s3"/>
+          <circle cx="430" cy="84" r="1.6" fill="#fdf8e0" class="star-tw s2"/>
+          <circle cx="520" cy="46" r="2.1" fill="#fdf8e0" class="star-tw"/>
+          <circle cx="580" cy="120" r="1.5" fill="#fdf8e0" class="star-tw s3"/>
+          <circle cx="720" cy="150" r="1.8" fill="#fdf8e0" class="star-tw"/>
+          <circle cx="760" cy="60" r="2" fill="#fdf8e0" class="star-tw s2"/>
+          <circle cx="60" cy="120" r="1.6" fill="#fdf8e0" class="star-tw s3"/>
+          <circle cx="280" cy="130" r="1.5" fill="#fdf8e0" class="star-tw"/>
+
+          <circle cx="520" cy="284" r="40" fill="url(#lampGlow)"/>
+          <rect x="509" y="271" width="22" height="26" rx="3" fill="#ffe294"/>
+
+          <circle cx="612" cy="300" r="2.2" fill="#ffe66d" class="firefly"/>
+          <circle cx="662" cy="330" r="2" fill="#ffe66d" class="firefly f2"/>
+          <circle cx="702" cy="288" r="2.3" fill="#ffe66d" class="firefly f3"/>
+          <circle cx="560" cy="342" r="2" fill="#ffe66d" class="firefly f4"/>
+          <circle cx="742" cy="332" r="2.1" fill="#ffe66d" class="firefly f5"/>
+          <circle cx="632" cy="268" r="1.9" fill="#ffe66d" class="firefly f6"/>
+
+          <g class="cateyes">
+            <circle cx="753" cy="428" r="3.4" fill="#d7f26a"/>
+            <circle cx="766" cy="428" r="3.4" fill="#d7f26a"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- 感知层（不属于场景，属于眼睛本身） -->
+      <rect id="mosaic" width="800" height="500" fill="url(#omma)"/>
+      <rect id="vig" width="800" height="500" fill="url(#vigGrad)"/>
+    </svg>
+
+    <video id="cam" playsinline muted></video>
+    <div class="cam-fx fx-mosaic"></div>
+    <div class="cam-fx fx-vig"></div>
+
+    <div class="stage-btns">
+      <button id="btnNight" type="button">🌙 入夜</button>
+      <button id="btnCam" type="button">📷 用你的眼睛</button>
+    </div>
+    <div class="cam-note">摄像头画面 · 效果为近似模拟 · 画面不会离开你的设备</div>
+    <div id="toast"></div>
+  </div>
+
+  <div class="shelf-label">货架 · 九副眼睛</div>
+  <div class="shelf" id="shelf"></div>
+
+  <div class="plaque">
+    <div class="pt" id="plaqueTitle">现在戴着 · 你的眼睛</div>
+    <div class="pb" id="plaqueBody"></div>
+  </div>
+
+  <footer>
+    ※ 所有效果均为科学近似演示，供体验与科普，不作医学参考<br>
+    感觉博物馆 · 展厅 №001 · Max 造
+  </footer>
+</div>
+
+<script>
+(function(){
+  var eyes = [
+    {
+      id:'human', emoji:'👓', name:'你的眼睛', tag:'出厂设置', filter:null, camCss:'none',
+      plaque:'<b>三种视锥细胞，大约能分辨一百万种颜色。</b>这是本店的出厂设置。先记住这个世界原本的样子：树上有七个红苹果，花丛里开着四种颜色的花，远处的横幅写着字。接下来，去试试别的眼睛。'
+    },
+    {
+      id:'myopia', emoji:'🌫️', name:'近视 600 度', tag:'眼镜掉了', filter:'f-myopia', camCss:'blur(7px)',
+      plaque:'<b>光线聚焦在视网膜前面，远处的世界糊成一片。</b>现在试试读出远处横幅上的字。中国有超过六亿人不同程度地戴着这副眼睛，把眼镜摘掉，他们看到的就是这个。'
+    },
+    {
+      id:'astig', emoji:'💫', name:'散光', tag:'灯会长毛', filter:'f-astig', camCss:'blur(2px) contrast(1.02)',
+      plaque:'<b>角膜不够圆，每一道光都被拉出重影。</b>白天只是微微叠影，切到夜晚再看灯笼和月亮：光会往外长毛。这就是散光的人夜里不太敢开车的原因。'
+    },
+    {
+      id:'deutan', emoji:'🍎', name:'红绿色盲', tag:'8% 的男生', filter:'f-deutan', camCss:'saturate(.45) contrast(.95)',
+      plaque:'<b>大约 8% 的男性、0.5% 的女性，天生戴着这副眼睛。</b>树上的七个红苹果去哪了？红和绿在这里几乎是同一种颜色。所以红绿灯不能只靠颜色，还得靠位置分辨。好的设计，从来不只用颜色说话。'
+    },
+    {
+      id:'tritan', emoji:'🫐', name:'蓝黄色盲', tag:'万里挑一', filter:'f-tritan', camCss:'saturate(.55) hue-rotate(20deg)',
+      plaque:'<b>极罕见的一副眼睛，大约万分之一的人拥有。</b>蓝和绿开始纠缠，黄和粉开始撒谎，天空和花坛整个换了一套配色。同一座花园，换一套颜色系统，就是另一个星球。'
+    },
+    {
+      id:'cat', emoji:'🐱', name:'猫', tag:'夜巡模式', filter:'f-cat', camCss:'saturate(.45) blur(2px) brightness(1.05)',
+      plaque:'<b>白天的猫其实有点近视，颜色也淡淡的。</b>但它只需要人类六分之一的光。现在点右上角「入夜」，然后看右下角的草丛，那里有一样东西，人类的眼睛永远看不见。'
+    },
+    {
+      id:'dog', emoji:'🐶', name:'狗', tag:'蓝黄电视', filter:'f-dog', camCss:'saturate(.5) sepia(.2) blur(1px)',
+      plaque:'<b>狗看到的不是黑白电视，而是一台蓝黄双色的电视。</b>红色玩具掉进绿草地，对它来说约等于消失。所以想让狗接得住，就买蓝色的玩具，那是它世界里最亮眼的颜色。'
+    },
+    {
+      id:'bee', emoji:'🐝', name:'蜜蜂', tag:'紫外线跑道', filter:'f-bee', camCss:'saturate(1.3) hue-rotate(120deg) brightness(.92)',
+      plaque:'<b>蜜蜂看不见红色，却看得见紫外线。</b>红罂粟在它眼里几乎是黑的，而黄雏菊的花瓣上，此刻正亮着人眼看不见的「蜜源跑道」，一圈圈直指花蜜。这是花和蜜蜂之间，几千万年的暗号。'
+    },
+    {
+      id:'baby', emoji:'👶', name:'出生 7 天的婴儿', tag:'30 厘米的世界', filter:'f-baby', camCss:'saturate(.1) blur(8px) brightness(.92)',
+      plaque:'<b>只能看清 20 到 30 厘米，差不多是吃奶时到妈妈脸的距离。</b>颜色还没上线，世界又糊又暗。但没关系，最重要的那张脸，刚好停在看得清的地方。'
+    }
+  ];
+
+  var scene = document.getElementById('scene');
+  var world = document.getElementById('world');
+  var stage = document.getElementById('stage');
+  var shelf = document.getElementById('shelf');
+  var plaqueTitle = document.getElementById('plaqueTitle');
+  var plaqueBody = document.getElementById('plaqueBody');
+  var btnNight = document.getElementById('btnNight');
+  var btnCam = document.getElementById('btnCam');
+  var cam = document.getElementById('cam');
+  var toastEl = document.getElementById('toast');
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  var camStream = null;
+  var current = null;
+
+  eyes.forEach(function(e){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'eye-card';
+    b.id = 'card-' + e.id;
+    b.innerHTML = '<span class="e">' + e.emoji + '</span><span class="n">' + e.name + '</span><span class="t">' + e.tag + '</span>';
+    b.addEventListener('click', function(){ selectEye(e.id); });
+    shelf.appendChild(b);
+  });
+
+  function toast(msg, ms){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(function(){ toastEl.classList.remove('show'); }, ms || 3200);
+  }
+
+  function camFilterFor(e){
+    if (e.filter && !isSafari) return 'url(#' + e.filter + ')';
+    return e.camCss || 'none';
+  }
+
+  function selectEye(id){
+    var e = eyes.find(function(x){ return x.id === id; });
+    if (!e) return;
+    current = e;
+    ['eye-cat','eye-bee','eye-baby'].forEach(function(c){ scene.classList.remove(c); });
+    if (id === 'cat' || id === 'bee' || id === 'baby') scene.classList.add('eye-' + id);
+    if (e.filter) world.setAttribute('filter', 'url(#' + e.filter + ')');
+    else world.removeAttribute('filter');
+
+    document.querySelectorAll('.eye-card').forEach(function(c){ c.classList.remove('sel'); });
+    document.getElementById('card-' + id).classList.add('sel');
+
+    plaqueTitle.textContent = '现在戴着 · ' + e.name;
+    plaqueBody.innerHTML = e.plaque;
+    plaqueBody.style.animation = 'none';
+    void plaqueBody.offsetWidth;
+    plaqueBody.style.animation = '';
+
+    stage.classList.toggle('fxon-mosaic', id === 'bee');
+    stage.classList.toggle('fxon-vig', id === 'baby');
+    if (camStream) cam.style.filter = camFilterFor(e);
+  }
+
+  btnNight.addEventListener('click', function(){
+    var night = scene.classList.toggle('night');
+    btnNight.textContent = night ? '☀️ 天亮' : '🌙 入夜';
+    if (night && current && current.id === 'cat'){
+      toast('看右下角的草丛。');
+    }
+  });
+
+  btnCam.addEventListener('click', function(){
+    if (camStream){ stopCam(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      toast('这个环境打不开摄像头。用本地服务器或 https 打开就可以了。');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(function(stream){
+      camStream = stream;
+      cam.srcObject = stream;
+      cam.play();
+      stage.classList.add('cam-on');
+      btnCam.textContent = '✕ 回到花园';
+      if (current) cam.style.filter = camFilterFor(current);
+    }).catch(function(){
+      toast('摄像头没有打开。可以在浏览器地址栏旁边允许访问后再试。');
+    });
+  });
+
+  function stopCam(){
+    if (camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); }
+    camStream = null;
+    cam.srcObject = null;
+    stage.classList.remove('cam-on');
+    btnCam.textContent = '📷 用你的眼睛';
+  }
+
+  selectEye('human');
+})();
+</script>
+</body>
+</html>
