@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一屋子人的生日 · 感觉博物馆</title>
+<meta name="description" content="23 个人的房间，撞生日的概率就过半了。看一间屋子怎么撞上，开一万间屋子验证铁证，再和你自己的生日对照一遍，找到这个悖论真正的钥匙。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .shelf-label{
+    display:flex;align-items:center;gap:14px;
+    margin:26px 0 12px;color:var(--ink-soft);font-size:12px;letter-spacing:.3em;
+  }
+  .shelf-label::before,.shelf-label::after{content:"";flex:1;border-top:1px solid var(--line);}
+
+  /* ---- 舞台一：房间 ---- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    overflow:hidden;animation:rise .8s .1s ease both;background:#efe6d2;
+  }
+  .stage canvas{display:block;width:100%;height:auto;touch-action:none;}
+  #banner{
+    position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:5;
+    background:rgba(42,37,33,.9);color:#fdf6ee;font-size:14px;letter-spacing:.05em;
+    line-height:1.8;padding:10px 18px;border-radius:9px;max-width:90%;text-align:center;
+    opacity:0;transition:opacity .35s;pointer-events:none;
+  }
+  #banner.show{opacity:1;}
+  #banner b{color:#ffd8ba;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hud{
+    display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;
+    font-size:13px;color:#453e30;letter-spacing:.03em;margin-bottom:14px;
+    border-bottom:1px dashed var(--line);padding-bottom:12px;
+  }
+  .hud b{color:var(--seal);}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  /* ---- 舞台二：理论曲线 ---- */
+  .chartwrap{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .chartwrap h2{font-size:15.5px;letter-spacing:.1em;margin-bottom:2px;}
+  .chartwrap .tag{font-size:11.5px;color:var(--seal);letter-spacing:.12em;margin-bottom:10px;}
+  #chartCv{display:block;width:100%;height:auto;background:#fffdf6;border:1px solid var(--line);}
+  .trialrow{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin-top:12px;}
+  .trialresult{
+    text-align:center;font-size:14.5px;line-height:1.9;color:#453e30;margin-top:10px;min-height:26px;
+  }
+  .trialresult b{color:var(--seal);font-size:19px;}
+
+  /* ---- 舞台三：和你同一天 ---- */
+  .mecounter{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .mecounter h2{font-size:17px;letter-spacing:.12em;margin-bottom:4px;}
+  .mecounter .tag{font-size:11.5px;color:var(--seal);letter-spacing:.15em;margin-bottom:12px;}
+  .mecounter p.desc{font-size:13.5px;line-height:2;color:#57503f;margin-bottom:14px;}
+  .pickrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-bottom:14px;}
+  .pickrow select{
+    font-family:var(--serif);font-size:14px;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:7px;padding:8px 10px;background:#fffdf6;
+  }
+  #meStage{
+    position:relative;border:1px solid var(--line);background:#fffdf6;overflow:hidden;
+  }
+  #meCv{display:block;width:100%;height:auto;}
+  .meresult{
+    text-align:center;font-size:15px;line-height:2;color:#453e30;margin-top:12px;min-height:30px;
+  }
+  .meresult b{color:var(--seal);font-size:22px;}
+  .memedian{font-size:12.5px;color:var(--ink-soft);text-align:center;letter-spacing:.03em;}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque + .plaque{margin-top:14px;}
+  .footnote{font-size:12.5px;color:var(--ink-soft);}
+
+  .quote{
+    text-align:center;font-size:16.5px;line-height:2;color:#453e30;
+    padding:22px 10px 4px;letter-spacing:.03em;
+  }
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+  @media(max-width:640px){
+    .row{gap:9px;}
+    .hud{gap:7px 14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №018</span>
+  </div>
+
+  <header>
+    <h1>一屋子人的生日</h1>
+    <div class="en">THE BIRTHDAY PARADOX</div>
+    <p class="sub">23 个人的房间，撞生日的概率就过半了</p>
+  </header>
+
+  <div class="shelf-label">舞台一 · 进人</div>
+
+  <div class="stage" id="stage">
+    <canvas id="roomCv" width="800" height="420"></canvas>
+    <div id="banner"></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="hud" id="hud">
+      当前人数 <b id="hudN">0</b> · 此刻理论碰撞概率 <b id="hudP">0%</b>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnAgain">🚪 再来一屋子</button>
+      <button class="btn" id="btnFast">⏩ 快进（10 倍速）</button>
+    </div>
+  </div>
+
+  <div class="chartwrap">
+    <h2>📈 理论曲线，和你开过的每一间屋子</h2>
+    <div class="tag">舞台二 · 万屋实验</div>
+    <canvas id="chartCv" width="780" height="280"></canvas>
+    <div class="trialrow">
+      <button class="btn" id="btnTrial">🧪 开一万间 23 人的屋子</button>
+    </div>
+    <div class="trialresult" id="trialResult">点一下，瞬间开一万间屋子，看看和理论值差多远。</div>
+  </div>
+
+  <div class="mecounter">
+    <h2>🎂 和你同一天</h2>
+    <div class="tag">舞台三 · 对照实验，这是本厅的钥匙</div>
+    <p class="desc">同一间屋子，换一个问法：这次不是「屋里随便哪两个人撞上」，是「有人和你撞上」。选好你的生日，点开始，人还是一个个进来，但这次只认一个日子。</p>
+    <div class="pickrow">
+      我的生日是 <select id="meMonth"></select> 月 <select id="meDay"></select> 日
+      <button class="btn" id="btnMe">▶ 开始进人</button>
+    </div>
+    <div id="meStage">
+      <canvas id="meCv" width="780" height="90"></canvas>
+    </div>
+    <div class="meresult" id="meResult">选好生日，点开始进人。</div>
+    <div class="memedian">常驻参考：一半的情况，要等到大约 <b style="color:var(--seal)">253</b> 人进门，才会有人和你同一天。</div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 253 张彩票</div>
+    <div class="pb">
+      <b>为什么是 23：因为比较的从来不是 23 个人，是 23×22÷2＝253 对。</b>每一对都是一次独立的抽奖，253 张彩票凑出五成中奖率，一点也不奇怪。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 直觉错在哪</div>
+    <div class="pb">
+      你默认故事的主角是自己。「有人和我同一天」确实要等到大约 253 人才过半，但「屋里任意两人同一天」在 23 人就过半了。巧合不围着你转，它发生在所有人之间，你只是恰好也在场。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 现实同款</div>
+    <div class="pb">
+      密码学里的生日攻击，找一对哈希碰撞比想象中容易得多，用的就是这道题。教室里总有人同月同日生，群聊里总有人撞网名，原理都一样：只要「对数」够多，稀罕事就变成了常态。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pb footnote">
+      脚注：2 月 29 日出生的朋友抱歉，为了公式干净，这座展厅把你们的生日临时借给了 3 月 1 日。
+    </div>
+  </div>
+
+  <div class="quote">「你以为的巧合，是有人撞上你。世界上的巧合，是有人撞上有人。」</div>
+
+  <footer>
+    感觉博物馆 · 展厅 №018 · Max 造<br>
+    <a href="../ink/">下一个展厅：一滴墨水 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DAYS = 365; /* 闰日 2月29日 不参与，说明牌里交代 */
+  var recordRoomResult = function(){}; /* 舞台二定义后会被替换成真正的实现 */
+
+  /* ==================== 声音（WebAudio 全合成） ==================== */
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  }
+  function tone(f, t0, dur, vol, type){
+    if (!AC) return;
+    var o = AC.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.value = f;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+    g.gain.setValueAtTime(vol, t0 + dur - 0.03);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function popSound(n){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var f = 340 + Math.min(n, 40) * 3.2; /* 音高随人数微升 */
+    tone(f, t, 0.09, 0.1, 'sine');
+  }
+  function dingSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    tone(880, t, 0.32, 0.14, 'triangle');
+    tone(1318.5, t + 0.05, 0.36, 0.12, 'triangle');
+  }
+
+  /* ==================== 概率工具 ==================== */
+  function theoryP(n){
+    var q = 1;
+    for (var k = 0; k < n; k++) q *= (DAYS - k) / DAYS;
+    return 1 - q;
+  }
+  function randDay(){ return Math.floor(Math.random() * DAYS); }
+  var MONTH_LEN = [31,28,31,30,31,30,31,31,30,31,30,31];
+  function dayToLabel(d){
+    var m = 0, rest = d;
+    while (rest >= MONTH_LEN[m]){ rest -= MONTH_LEN[m]; m++; }
+    return (m + 1) + '月' + (rest + 1) + '日';
+  }
+  function monthDayToIndex(month, day){
+    var idx = 0;
+    for (var i = 0; i < month - 1; i++) idx += MONTH_LEN[i];
+    return idx + (day - 1);
+  }
+
+  /* ==================== 舞台一：进人房间 ==================== */
+  var roomCv = document.getElementById('roomCv');
+  var rctx = roomCv.getContext('2d');
+  var RW = 800, RH = 420;
+  var bannerEl = document.getElementById('banner');
+  var hudN = document.getElementById('hudN');
+  var hudP = document.getElementById('hudP');
+
+  var SPOTS = (function(){
+    /* 预先铺好座位网格，够 70 人站，进屋顺序打乱使用 */
+    var pts = [];
+    var cols = 10, rows = 7;
+    var padX = 70, padY = 70;
+    var gx = (RW - padX * 2) / (cols - 1);
+    var gy = (RH - padY * 2 - 20) / (rows - 1);
+    for (var r = 0; r < rows; r++){
+      for (var c = 0; c < cols; c++){
+        var jx = (Math.random() - 0.5) * gx * 0.32;
+        var jy = (Math.random() - 0.5) * gy * 0.32;
+        pts.push({x: padX + c * gx + jx, y: padY + r * gy + jy});
+      }
+    }
+    /* 洗牌 */
+    for (var i = pts.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = pts[i]; pts[i] = pts[j]; pts[j] = t;
+    }
+    return pts;
+  })();
+
+  var COLORS = ['#c96f52','#7a8f6b','#6b84a8','#c9a052','#8a6ba8','#b5716b','#6ba894','#a8916b'];
+
+  var room = {
+    people: [], /* {x,y,day,color,popT} */
+    seenDays: {},
+    collided: false,
+    collideIdx: [-1,-1],
+    frozen: false,
+    n: 0,
+    acc: 0, /* 进人计时累加器 */
+    speedMul: 1,
+    doneNoCollision: false
+  };
+
+  function resetRoom(){
+    room.people = [];
+    room.seenDays = {};
+    room.collided = false;
+    room.collideIdx = [-1, -1];
+    room.frozen = false;
+    room.n = 0;
+    room.acc = 0;
+    room.speedMul = 1;
+    room.doneNoCollision = false;
+    document.getElementById('btnFast').classList.remove('on');
+    bannerEl.classList.remove('show');
+    bannerEl.innerHTML = '';
+    hudN.textContent = '0';
+    hudP.textContent = '0%';
+    plotStage2Point(null); /* 只是占位，见下方定义 */
+  }
+
+  function showBanner(html){
+    bannerEl.innerHTML = html;
+    bannerEl.classList.add('show');
+  }
+
+  function addPerson(){
+    if (room.frozen) return;
+    var idx = room.n;
+    if (idx >= SPOTS.length) idx = SPOTS.length - 1;
+    var spot = SPOTS[idx];
+    var day = randDay();
+    var person = {
+      x: spot.x, y: spot.y, day: day,
+      color: COLORS[room.n % COLORS.length],
+      pop: 1
+    };
+    room.people.push(person);
+    room.n++;
+    popSound(room.n);
+
+    hudN.textContent = String(room.n);
+    hudP.textContent = (theoryP(room.n) * 100).toFixed(1) + '%';
+
+    if (room.seenDays.hasOwnProperty(day)){
+      room.collided = true;
+      room.collideIdx = [room.seenDays[day], room.people.length - 1];
+      room.frozen = true;
+      dingSound();
+      showBanner('第 <b>' + room.n + '</b> 个人进门时撞上了：<b>' + dayToLabel(day) + '</b>');
+      recordRoomResult(room.n);
+    } else {
+      room.seenDays[day] = room.people.length - 1;
+      if (room.n >= 70){
+        room.frozen = true;
+        room.doneNoCollision = true;
+        showBanner('进满 70 人也没人撞生日：这间屋子是<b>千里挑一</b>的无碰撞屋');
+      }
+    }
+  }
+
+  function drawRoom(){
+    rctx.clearRect(0, 0, RW, RH);
+    /* 地板 */
+    rctx.fillStyle = '#efe6d2';
+    rctx.fillRect(0, 0, RW, RH);
+    rctx.strokeStyle = 'rgba(140,120,90,.14)';
+    rctx.lineWidth = 1;
+    for (var gx = 60; gx < RW; gx += 60){
+      rctx.beginPath(); rctx.moveTo(gx, 20); rctx.lineTo(gx, RH - 20); rctx.stroke();
+    }
+
+    for (var i = 0; i < room.people.length; i++){
+      var p = room.people[i];
+      var isHi = room.collided && (i === room.collideIdx[0] || i === room.collideIdx[1]);
+      var scale = p.pop;
+      rctx.save();
+      rctx.translate(p.x, p.y);
+      rctx.scale(scale, scale);
+      /* 身子 */
+      rctx.fillStyle = p.color;
+      rctx.beginPath();
+      rctx.ellipse(0, 14, 12, 16, 0, 0, Math.PI * 2);
+      rctx.fill();
+      /* 头 */
+      rctx.beginPath();
+      rctx.arc(0, -6, 10, 0, Math.PI * 2);
+      rctx.fill();
+      if (isHi){
+        rctx.strokeStyle = '#b5402c';
+        rctx.lineWidth = 2.4;
+        rctx.beginPath();
+        rctx.arc(0, -6, 13, 0, Math.PI * 2);
+        rctx.stroke();
+        rctx.beginPath();
+        rctx.ellipse(0, 14, 15, 19, 0, 0, Math.PI * 2);
+        rctx.stroke();
+      }
+      rctx.restore();
+
+      /* 生日签 */
+      rctx.font = (isHi ? 'bold ' : '') + '11px "Noto Serif SC",serif';
+      rctx.textAlign = 'center';
+      rctx.fillStyle = isHi ? '#b5402c' : '#6b6152';
+      rctx.fillText(dayToLabel(p.day), p.x, p.y - 26);
+    }
+
+    /* 撞上的连线 */
+    if (room.collided){
+      var a = room.people[room.collideIdx[0]];
+      var b = room.people[room.collideIdx[1]];
+      if (a && b){
+        rctx.strokeStyle = 'rgba(181,64,44,.65)';
+        rctx.lineWidth = 2;
+        rctx.setLineDash([5, 4]);
+        rctx.beginPath();
+        rctx.moveTo(a.x, a.y);
+        rctx.lineTo(b.x, b.y);
+        rctx.stroke();
+        rctx.setLineDash([]);
+      }
+    }
+  }
+
+  var ROOM_INTERVAL = 0.3; /* 秒 */
+  function stepRoom(dt){
+    for (var i = 0; i < room.people.length; i++){
+      var p = room.people[i];
+      if (p.pop < 1) p.pop = Math.min(1, p.pop + dt * 6);
+    }
+    if (room.frozen) return;
+    room.acc += dt * room.speedMul;
+    while (room.acc >= ROOM_INTERVAL && !room.frozen){
+      room.acc -= ROOM_INTERVAL;
+      var idx = room.people.length;
+      addPerson();
+      if (room.people[idx]) room.people[idx].pop = 0.2;
+    }
+  }
+
+  document.getElementById('btnAgain').addEventListener('click', function(){
+    ensureAC();
+    resetRoom();
+  });
+  document.getElementById('btnFast').addEventListener('click', function(){
+    ensureAC();
+    room.speedMul = room.speedMul === 1 ? 10 : 1;
+    this.classList.toggle('on', room.speedMul === 10);
+  });
+  roomCv.addEventListener('pointerdown', function(){ ensureAC(); });
+
+  /* ==================== 舞台二：理论曲线 + 万屋实验 ==================== */
+  var chartCv = document.getElementById('chartCv');
+  var cctx = chartCv.getContext('2d');
+  var CW = 780, CH = 280;
+  var NMAX = 70;
+  var padL = 46, padR = 16, padT = 18, padB = 34;
+  var plotW = CW - padL - padR, plotH = CH - padT - padB;
+  var roomPoints = []; /* 每间屋子撞上的人数，来自舞台一 */
+  var trialDot = null; /* {n:23, p} 万屋实验的点 */
+
+  function nx(n){ return padL + (n / NMAX) * plotW; }
+  function py(p){ return padT + (1 - p) * plotH; }
+
+  function drawChart(){
+    cctx.clearRect(0, 0, CW, CH);
+
+    /* 网格与坐标轴 */
+    cctx.strokeStyle = '#e3d8c0';
+    cctx.lineWidth = 1;
+    cctx.font = '10.5px "Noto Serif SC",serif';
+    cctx.fillStyle = '#8a8071';
+    for (var pp = 0; pp <= 1; pp += 0.25){
+      var yy = py(pp);
+      cctx.beginPath(); cctx.moveTo(padL, yy); cctx.lineTo(CW - padR, yy); cctx.stroke();
+      cctx.textAlign = 'right';
+      cctx.fillText(Math.round(pp * 100) + '%', padL - 6, yy + 3);
+    }
+    for (var nn = 0; nn <= NMAX; nn += 10){
+      var xx = nx(nn);
+      cctx.textAlign = 'center';
+      cctx.fillText(String(nn), xx, CH - padB + 16);
+    }
+    cctx.textAlign = 'center';
+    cctx.fillText('人数 N', CW / 2, CH - 4);
+
+    /* 50% 虚线 */
+    cctx.strokeStyle = 'rgba(138,128,113,.55)';
+    cctx.setLineDash([4, 4]);
+    cctx.beginPath();
+    cctx.moveTo(padL, py(0.5)); cctx.lineTo(CW - padR, py(0.5));
+    cctx.stroke();
+    /* N=23 竖虚线 */
+    cctx.beginPath();
+    cctx.moveTo(nx(23), padT); cctx.lineTo(nx(23), CH - padB);
+    cctx.stroke();
+    cctx.setLineDash([]);
+
+    /* 理论曲线 */
+    cctx.strokeStyle = '#b5402c';
+    cctx.lineWidth = 2;
+    cctx.beginPath();
+    for (var n = 1; n <= NMAX; n++){
+      var x = nx(n), y = py(theoryP(n));
+      if (n === 1) cctx.moveTo(x, y); else cctx.lineTo(x, y);
+    }
+    cctx.stroke();
+
+    /* 关键点标注 */
+    function markPoint(n, label){
+      var x = nx(n), y = py(theoryP(n));
+      cctx.fillStyle = '#b5402c';
+      cctx.beginPath(); cctx.arc(x, y, 3.6, 0, Math.PI * 2); cctx.fill();
+      cctx.fillStyle = '#453e30';
+      cctx.font = 'bold 12px "Noto Serif SC",serif';
+      cctx.textAlign = n > NMAX - 12 ? 'right' : 'left';
+      cctx.fillText(label, x + (n > NMAX - 12 ? -8 : 8), y - 8);
+    }
+    markPoint(23, '23 人，50.7%');
+    markPoint(50, '50 人，97%');
+
+    /* 舞台一各屋结果的散点 */
+    cctx.fillStyle = 'rgba(107,132,168,.55)';
+    for (var i = 0; i < roomPoints.length; i++){
+      var rn = roomPoints[i];
+      if (rn > NMAX) continue;
+      var rx = nx(rn), ry = py(theoryP(rn));
+      cctx.beginPath();
+      cctx.arc(rx, ry + 5, 2.6, 0, Math.PI * 2);
+      cctx.fill();
+    }
+
+    /* 万屋实验点 */
+    if (trialDot){
+      cctx.fillStyle = '#2a8f6b';
+      cctx.beginPath();
+      cctx.arc(nx(trialDot.n), py(trialDot.p), 5, 0, Math.PI * 2);
+      cctx.fill();
+      cctx.strokeStyle = '#fdf6ee';
+      cctx.lineWidth = 1.4;
+      cctx.stroke();
+    }
+  }
+
+  function plotStage2Point(n){
+    if (n !== null) roomPoints.push(n);
+    drawChart();
+  }
+  recordRoomResult = function(n){ plotStage2Point(n); };
+
+  document.getElementById('btnTrial').addEventListener('click', function(){
+    ensureAC();
+    var TRIALS = 10000, N = 23, hits = 0;
+    for (var t = 0; t < TRIALS; t++){
+      var seen = Object.create(null);
+      var collided = false;
+      for (var i = 0; i < N; i++){
+        var d = randDay();
+        if (seen[d]){ collided = true; break; }
+        seen[d] = true;
+      }
+      if (collided) hits++;
+    }
+    var rate = hits / TRIALS;
+    trialDot = {n: N, p: rate};
+    drawChart();
+    document.getElementById('trialResult').innerHTML =
+      '一万间 23 人的屋子，撞上的有 <b>' + (rate * 100).toFixed(1) + '%</b>　对比　理论 <b>' + (theoryP(N) * 100).toFixed(1) + '%</b>';
+  });
+
+  /* ==================== 舞台三：和你同一天 ==================== */
+  var meMonthSel = document.getElementById('meMonth');
+  var meDaySel = document.getElementById('meDay');
+  for (var m = 1; m <= 12; m++){
+    var opt = document.createElement('option');
+    opt.value = String(m);
+    opt.textContent = m + ' 月';
+    if (m === 1) opt.selected = true;
+    meMonthSel.appendChild(opt);
+  }
+  function refillDays(){
+    var month = +meMonthSel.value;
+    var maxDay = MONTH_LEN[month - 1];
+    var prev = +meDaySel.value || 1;
+    meDaySel.innerHTML = '';
+    for (var d = 1; d <= maxDay; d++){
+      var o = document.createElement('option');
+      o.value = String(d);
+      o.textContent = d + ' 日';
+      if (d === Math.min(prev, maxDay)) o.selected = true;
+      meDaySel.appendChild(o);
+    }
+  }
+  meMonthSel.addEventListener('change', refillDays);
+  refillDays();
+
+  var meCv = document.getElementById('meCv');
+  var mctx = meCv.getContext('2d');
+  var MEW = 780, MEH = 90;
+  var meRunning = false;
+  var meTargetDay = 0;
+  var meCount = 0;
+  var meAcc = 0;
+  var mePeople = []; /* 最近若干个头像用于滚动展示 */
+
+  function drawMe(){
+    mctx.clearRect(0, 0, MEW, MEH);
+    mctx.fillStyle = '#fffdf6';
+    mctx.fillRect(0, 0, MEW, MEH);
+    var y = MEH / 2;
+    for (var i = 0; i < mePeople.length; i++){
+      var p = mePeople[i];
+      var x = MEW - 40 - i * 26;
+      if (x < -20) continue;
+      mctx.fillStyle = p.hit ? '#b5402c' : (p.color || '#8a8071');
+      mctx.beginPath();
+      mctx.arc(x, y, 9, 0, Math.PI * 2);
+      mctx.fill();
+      if (p.hit){
+        mctx.strokeStyle = '#2a2521';
+        mctx.lineWidth = 1.6;
+        mctx.beginPath();
+        mctx.arc(x, y, 12, 0, Math.PI * 2);
+        mctx.stroke();
+      }
+    }
+    mctx.fillStyle = '#8a8071';
+    mctx.font = '11px "Noto Serif SC",serif';
+    mctx.textAlign = 'left';
+    mctx.fillText('← 进门顺序', 8, MEH - 10);
+  }
+
+  /* 越等越快：前 60 人保留戏剧感，之后旋转门逐级提速，运气再差也不用干等 */
+  function meInterval(){
+    if (meCount < 60) return 0.09;
+    if (meCount < 200) return 0.035;
+    if (meCount < 500) return 0.012;
+    return 0.004;
+  }
+  function stepMe(dt){
+    if (!meRunning) return;
+    meAcc += dt;
+    var itv = meInterval();
+    while (meAcc >= itv && meRunning){
+      meAcc -= itv;
+      meCount++;
+      itv = meInterval();
+      var d = randDay();
+      var hit = d === meTargetDay;
+      mePeople.unshift({hit: hit, color: COLORS[meCount % COLORS.length]});
+      if (mePeople.length > 34) mePeople.length = 34;
+      if (hit){
+        meRunning = false;
+        dingSound();
+        document.getElementById('meResult').innerHTML =
+          '进了 <b>' + meCount + '</b> 个人，第 ' + meCount + ' 个和你同一天：<b>' + dayToLabel(meTargetDay) + '</b>';
+      } else {
+        popSound(meCount);
+        if (meCount % 5 === 0){
+          document.getElementById('meResult').innerHTML =
+            '进人中……已经进了 <b>' + meCount + '</b> 个人，还没有人撞上你';
+        }
+      }
+    }
+  }
+
+  document.getElementById('btnMe').addEventListener('click', function(){
+    ensureAC();
+    meTargetDay = monthDayToIndex(+meMonthSel.value, +meDaySel.value);
+    meRunning = true;
+    meCount = 0;
+    meAcc = 0;
+    mePeople = [];
+    document.getElementById('meResult').textContent = '进人中……';
+  });
+
+  /* ==================== 主循环（真实时间补帧，参照鸟群展厅） ==================== */
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(2, (now - last) / 1000);
+    last = now;
+    if (reduceMotion){
+      /* 降级：不做连续动画补帧，只保留交互后的一次性绘制 */
+      drawRoom();
+      drawMe();
+      requestAnimationFrame(loop);
+      return;
+    }
+    while (dt > 0){
+      var h = Math.min(0.05, dt);
+      stepRoom(h);
+      stepMe(h);
+      dt -= h;
+    }
+    drawRoom();
+    drawMe();
+    requestAnimationFrame(loop);
+  }
+
+  resetRoom();
+  drawChart();
+  drawMe();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>换不换门 · 感觉博物馆</title>
+<meta name="description" content="三扇门，一辆车，两只山羊，和全世界集体翻车的直觉。主持人知道车在哪，他永远只开有山羊的门。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  /* ---------- 主持人规则条 ---------- */
+  .hostrule{
+    background:#2a2521;color:#f5efe2;text-align:center;
+    padding:12px 18px;margin-bottom:16px;font-size:14.5px;line-height:1.8;
+    letter-spacing:.05em;border-radius:4px;animation:rise .8s .05s ease both;
+  }
+  .hostrule b{color:#ffd76e;}
+
+  /* ---------- 舞台 ---------- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:var(--card);overflow:hidden;animation:rise .8s .1s ease both;
+    padding:26px 18px 20px;min-height:300px;
+  }
+  .modebar{display:flex;justify-content:center;gap:8px;margin-bottom:18px;}
+  .modebtn{
+    font-family:var(--serif);font-size:13px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink-soft);border:1.5px solid var(--line);
+    border-radius:8px;padding:7px 14px;cursor:pointer;
+  }
+  .modebtn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  .caption{
+    text-align:center;min-height:28px;font-size:14.5px;color:#57503f;margin-bottom:16px;
+    letter-spacing:.03em;
+  }
+  .caption b{color:var(--seal);}
+
+  /* 三门 */
+  .doors3{display:flex;justify-content:center;gap:28px;flex-wrap:wrap;padding:10px 0 6px;}
+  .door{
+    cursor:pointer;user-select:none;-webkit-user-select:none;
+    transition:transform .15s ease;touch-action:manipulation;
+  }
+  .door:hover{transform:translateY(-4px);}
+  .door.disabled{cursor:default;}
+  .door.disabled:hover{transform:none;}
+  .door svg{display:block;width:118px;height:168px;}
+  @media(max-width:640px){.door svg{width:96px;height:138px;}}
+
+  /* 百门 */
+  .doors100{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));
+    gap:5px;max-width:640px;margin:6px auto 0;
+  }
+  @media(max-width:640px){.doors100{grid-template-columns:repeat(auto-fill,minmax(26px,1fr));gap:3px;}}
+  .cell{
+    aspect-ratio:2/3;border-radius:3px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;color:#8a7550;background:#e7dcc2;
+    border:1px solid var(--line);transition:transform .1s, background .2s, opacity .3s;
+  }
+  @media(max-width:640px){.cell{font-size:7.5px;}}
+  .cell:hover{transform:scale(1.06);}
+  .cell.picked{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .cell.opened{background:#cfc3a4;opacity:.35;cursor:default;font-size:13px;}
+  .cell.opened:hover{transform:none;}
+  .cell.remaining{background:#f2c14e;border-color:#c99a2e;color:#3a2f18;}
+  .cell.reveal-car{background:#7fae6a;color:#fff;font-size:14px;}
+  .cell.reveal-goat{background:#b9b0a3;color:#fff;font-size:13px;}
+
+  .banner{
+    text-align:center;margin-top:14px;min-height:26px;font-size:15.5px;color:#453e30;
+    animation:rise .4s ease both;
+  }
+  .banner b{color:var(--seal);}
+
+  /* 控制区（换/不换） */
+  .choice{display:flex;justify-content:center;gap:16px;margin-top:16px;flex-wrap:wrap;}
+  .cbtn{
+    font-family:var(--serif);font-size:16px;letter-spacing:.1em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:12px;
+    padding:14px 26px;cursor:pointer;box-shadow:0 4px 0 #7e2b1c;
+    transition:transform .08s, box-shadow .08s;
+  }
+  .cbtn:active{transform:translateY(3px);box-shadow:0 1px 0 #7e2b1c;}
+  .cbtn.ghost{background:var(--card);color:var(--ink);border:1.5px solid var(--ink);box-shadow:0 4px 0 var(--ink-soft);}
+  .cbtn.ghost:active{box-shadow:0 1px 0 var(--ink-soft);}
+
+  /* ---------- 记分板 ---------- */
+  .scoreboard{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;
+  }
+  @media(max-width:640px){.scoreboard{grid-template-columns:1fr;}}
+  .score{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 3px var(--card),0 0 0 4px var(--line);
+    padding:14px 16px;text-align:center;
+  }
+  .score .k{font-size:12px;letter-spacing:.15em;color:var(--ink-soft);margin-bottom:6px;}
+  .score .v{font-size:24px;color:var(--ink);}
+  .score .v b{color:var(--seal);}
+  .score .n{font-size:12px;color:var(--ink-soft);margin-top:3px;}
+
+  .ctrls{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    margin-top:14px;
+  }
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 17px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+
+  .simwrap{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:14px;display:none;
+  }
+  .simwrap.show{display:block;}
+  .simwrap .st{font-size:12.5px;letter-spacing:.1em;color:var(--ink-soft);margin-bottom:10px;text-align:center;}
+  #simCv{display:block;width:100%;height:auto;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb p{margin-bottom:14px;}
+  .plaque .pb p:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque .quote{
+    text-align:center;margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);
+    font-size:17px;color:var(--seal);letter-spacing:.06em;line-height:1.9;
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №017</span>
+  </div>
+
+  <header>
+    <h1>换不换门</h1>
+    <div class="en">THE MONTY HALL PROBLEM</div>
+    <p class="sub">三扇门，一辆车，两只山羊，和全世界集体翻车的直觉</p>
+  </header>
+
+  <div class="hostrule">🎩 主持人知道车在哪，他<b>永远只开</b>有山羊的门。</div>
+
+  <div class="stage">
+    <div class="modebar">
+      <button class="modebtn on" id="btnMode3">🚪 三扇门</button>
+      <button class="modebtn" id="btnMode100">💯 一百扇门</button>
+    </div>
+
+    <div class="caption" id="caption">选一扇门。</div>
+
+    <div id="doors3" class="doors3"></div>
+    <div id="doors100" class="doors100" style="display:none;"></div>
+
+    <div class="banner" id="banner"></div>
+
+    <div class="choice" id="choiceBtns" style="display:none;">
+      <button class="cbtn" id="btnSwitch">🔁 换到另一扇</button>
+      <button class="cbtn ghost" id="btnStay">✋ 坚持不换</button>
+    </div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score">
+      <div class="k">🔁 换门战绩</div>
+      <div class="v" id="scoreSwitch"><b>0</b>胜 / 0 局</div>
+      <div class="n" id="pctSwitch">0%</div>
+    </div>
+    <div class="score">
+      <div class="k">✋ 不换战绩</div>
+      <div class="v" id="scoreStay"><b>0</b>胜 / 0 局</div>
+      <div class="n" id="pctStay">0%</div>
+    </div>
+  </div>
+
+  <div class="ctrls">
+    <button class="btn" id="btnSim">⚡ 让机器玩一万局</button>
+    <button class="btn" id="btnReset">🔁 记分板清零</button>
+  </div>
+
+  <div class="simwrap" id="simWrap">
+    <div class="st" id="simSt">一万局换门，对照一万局不换</div>
+    <canvas id="simCv" width="760" height="140"></canvas>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 他不是在给你机会</div>
+    <div class="pb">
+      <p><b>你最初选中车的概率是三分之一，这件事从头到尾没变过。</b>主持人开门没有重新洗牌，他只是把剩下三分之二的概率，全部搬到了另一扇门上。</p>
+      <p>直觉错在哪：大多数人以为剩两扇门，就是五五开。这个前提本身就是错的。如果主持人是闭着眼随机开门，恰好开到山羊，那才是五五开。他不是。他知道答案，他的每一个动作本身就是信息。</p>
+      <p>现实里同款情形到处都是：对方知道答案的时候，他的每一个选择都在泄露信息。谈判里对方先让掉的条件、考试里出题人排除的选项、商家主动下架的套餐，都在悄悄告诉你，真正的答案在哪一边。</p>
+      <div class="quote">「主持人不是在给你机会，他是在给你信息。」</div>
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №017 · Max 造<br>
+    <a href="../birthday/">下一个展厅：一屋子人的生日 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ==================== 核心逻辑（三门 / N 门通用） ==================== */
+  function pickHostOpen(n, car, pick){
+    /* 返回主持人会打开的门下标数组（除了 car 和 pick 之外全部打开，
+       若 pick 恰好就是 car，则从其余门里随机留一扇不开） */
+    var candidates = [];
+    for (var i = 0; i < n; i++){ if (i !== car && i !== pick) candidates.push(i); }
+    if (pick === car){
+      var keepIdx = (Math.random() * candidates.length) | 0;
+      var keep = candidates[keepIdx];
+      candidates.splice(keepIdx, 1);
+      return { open: candidates, keep: keep };
+    }
+    /* pick 不是 car：candidates 里唯一没被打开的必然是 car 本身 */
+    var openList = candidates.filter(function(x){ return x !== car; });
+    return { open: openList, keep: car };
+  }
+
+  /* ==================== 音效（WebAudio，首次手势后创建） ==================== */
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.55;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  }
+  function creakSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var o = AC.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(90, t + 0.34);
+    var lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.16, t + 0.03);
+    g.gain.linearRampToValueAtTime(0.0001, t + 0.36);
+    o.connect(lp); lp.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.38);
+
+    var nb = AC.createBuffer(1, AC.sampleRate * 0.3, AC.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    var ns = AC.createBufferSource(); ns.buffer = nb;
+    var hp = AC.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1400;
+    var ng = AC.createGain();
+    ng.gain.setValueAtTime(0.0001, t);
+    ng.gain.linearRampToValueAtTime(0.05, t + 0.04);
+    ng.gain.linearRampToValueAtTime(0.0001, t + 0.28);
+    ns.connect(hp); hp.connect(ng); ng.connect(master);
+    ns.start(t);
+  }
+  function goatSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    [0, 0.16].forEach(function(off, idx){
+      var o = AC.createOscillator();
+      o.type = 'square';
+      var base = idx === 0 ? 330 : 300;
+      o.frequency.setValueAtTime(base, t + off);
+      for (var k = 1; k <= 6; k++){
+        o.frequency.linearRampToValueAtTime(base + (k % 2 ? 26 : -14), t + off + k * 0.02);
+      }
+      var g = AC.createGain();
+      g.gain.setValueAtTime(0.0001, t + off);
+      g.gain.linearRampToValueAtTime(0.1, t + off + 0.02);
+      g.gain.setValueAtTime(0.1, t + off + 0.09);
+      g.gain.linearRampToValueAtTime(0.0001, t + off + 0.14);
+      o.connect(g); g.connect(master);
+      o.start(t + off); o.stop(t + off + 0.16);
+    });
+  }
+  function winSound(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    [523, 659, 784, 1046].forEach(function(f, i){
+      var o = AC.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      var t0 = t + i * 0.09;
+      var g = AC.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.16, t0 + 0.02);
+      g.gain.linearRampToValueAtTime(0.0001, t0 + 0.32);
+      o.connect(g); g.connect(master);
+      o.start(t0); o.stop(t0 + 0.34);
+    });
+  }
+
+  /* ==================== 三门模式 UI ==================== */
+  var doors3El = document.getElementById('doors3');
+  var caption = document.getElementById('caption');
+  var banner = document.getElementById('banner');
+  var choiceBtns = document.getElementById('choiceBtns');
+
+  var N3 = 3;
+  var st3 = { phase: 'idle', car: 0, pick: -1, hostOpen: -1 };
+
+  function doorSVG(num, id){
+    return '<svg viewBox="0 0 118 168" data-id="' + id + '">' +
+      '<rect x="4" y="4" width="110" height="160" rx="6" fill="#c9a86b" stroke="#5a4326" stroke-width="3"/>' +
+      '<rect x="13" y="13" width="92" height="142" rx="3" fill="#dcc08a" stroke="#7a5c33" stroke-width="1.5"/>' +
+      '<rect x="21" y="22" width="36" height="58" rx="2" fill="none" stroke="#7a5c33" stroke-width="2"/>' +
+      '<rect x="61" y="22" width="36" height="58" rx="2" fill="none" stroke="#7a5c33" stroke-width="2"/>' +
+      '<rect x="21" y="88" width="36" height="52" rx="2" fill="none" stroke="#7a5c33" stroke-width="2"/>' +
+      '<rect x="61" y="88" width="36" height="52" rx="2" fill="none" stroke="#7a5c33" stroke-width="2"/>' +
+      '<circle cx="98" cy="88" r="4" fill="#5a4326"/>' +
+      '<circle cx="59" cy="150" r="15" fill="#fbf7ec" stroke="#5a4326" stroke-width="2.5"/>' +
+      '<text x="59" y="157" text-anchor="middle" font-size="16" font-family="serif" fill="#5a4326">' + num + '</text>' +
+      '</svg>';
+  }
+
+  function renderDoors3(){
+    doors3El.innerHTML = '';
+    for (var i = 0; i < N3; i++){
+      var wrap = document.createElement('div');
+      wrap.className = 'door';
+      wrap.dataset.idx = i;
+      wrap.innerHTML = doorSVG(i + 1, i);
+      doors3El.appendChild(wrap);
+    }
+  }
+
+  function svgOf3(idx){
+    return doors3El.querySelector('[data-idx="' + idx + '"]');
+  }
+
+  function reset3(){
+    st3.phase = 'idle';
+    st3.car = (Math.random() * N3) | 0;
+    st3.pick = -1;
+    st3.hostOpen = -1;
+    renderDoors3();
+    Array.prototype.forEach.call(doors3El.children, function(d){ d.classList.remove('disabled'); });
+    caption.innerHTML = '选一扇门。';
+    banner.textContent = '';
+    choiceBtns.style.display = 'none';
+  }
+
+  function paintGoat(idx){
+    var el = svgOf3(idx);
+    if (!el) return;
+    var svg = el.querySelector('svg');
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.innerHTML = '<rect x="13" y="13" width="92" height="142" rx="3" fill="#3a3128" opacity=".82"/>' +
+      '<text x="59" y="98" text-anchor="middle" font-size="46">🐐</text>';
+    svg.appendChild(g);
+  }
+  function paintReveal(idx, isCar){
+    var el = svgOf3(idx);
+    if (!el) return;
+    var svg = el.querySelector('svg');
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.innerHTML = '<rect x="13" y="13" width="92" height="142" rx="3" fill="' + (isCar ? '#e9f2df' : '#3a3128') + '" opacity="' + (isCar ? '1' : '.82') + '"/>' +
+      '<text x="59" y="98" text-anchor="middle" font-size="46">' + (isCar ? '🚗' : '🐐') + '</text>';
+    svg.appendChild(g);
+  }
+
+  function onPick3(idx){
+    if (st3.phase !== 'idle') return;
+    ensureAC();
+    st3.pick = idx;
+    st3.phase = 'hostReveal';
+    var el = svgOf3(idx);
+    var svg = el.querySelector('svg');
+    svg.querySelector('rect').setAttribute('stroke', '#b5402c');
+    svg.querySelector('rect').setAttribute('stroke-width', '5');
+
+    var res = pickHostOpen(N3, st3.car, st3.pick);
+    st3.hostOpen = res.open[0];
+
+    Array.prototype.forEach.call(doors3El.children, function(d){ d.classList.add('disabled'); });
+
+    setTimeout(function(){
+      creakSound();
+      paintGoat(st3.hostOpen);
+      goatSound();
+      caption.innerHTML = '这扇后面是山羊。<b>换，还是不换？</b>';
+      st3.phase = 'choice';
+      choiceBtns.style.display = 'flex';
+    }, 260);
+  }
+
+  function finish3(didSwitch){
+    if (st3.phase !== 'choice') return;
+    st3.phase = 'reveal';
+    choiceBtns.style.display = 'none';
+    var finalPick = st3.pick;
+    if (didSwitch){
+      for (var i = 0; i < N3; i++){
+        if (i !== st3.pick && i !== st3.hostOpen){ finalPick = i; break; }
+      }
+    }
+    var win = finalPick === st3.car;
+    for (var j = 0; j < N3; j++){
+      if (j !== st3.hostOpen) paintReveal(j, j === st3.car);
+    }
+    recordScore(didSwitch, win);
+    if (win){
+      winSound();
+      banner.innerHTML = didSwitch ? '🚗 你换了，赢了车。' : '🚗 你没换，也赢了车，运气不错。';
+    } else {
+      banner.innerHTML = didSwitch ? '🐐 你换了，山羊祝贺你。' : '🐐 你没换，山羊祝贺你。';
+    }
+    caption.innerHTML = '揭晓完毕。';
+    setTimeout(reset3, 2000);
+  }
+
+  doors3El.addEventListener('click', function(e){
+    var d = e.target.closest ? e.target.closest('.door') : null;
+    if (!d) return;
+    onPick3(+d.dataset.idx);
+  });
+  document.getElementById('btnSwitch').addEventListener('click', function(){ finish3(true); });
+  document.getElementById('btnStay').addEventListener('click', function(){ finish3(false); });
+
+  /* ==================== 一百门模式 UI ==================== */
+  var doors100El = document.getElementById('doors100');
+  var N100 = 100;
+  var st100 = { phase: 'idle', car: 0, pick: -1, keep: -1, openQueue: [] };
+
+  function renderDoors100(){
+    doors100El.innerHTML = '';
+    for (var i = 0; i < N100; i++){
+      var c = document.createElement('div');
+      c.className = 'cell';
+      c.dataset.idx = i;
+      c.textContent = i + 1;
+      doors100El.appendChild(c);
+    }
+  }
+  function cellOf(idx){ return doors100El.querySelector('[data-idx="' + idx + '"]'); }
+
+  function reset100(){
+    st100.phase = 'idle';
+    st100.car = (Math.random() * N100) | 0;
+    st100.pick = -1;
+    st100.keep = -1;
+    st100.openQueue = [];
+    renderDoors100();
+    caption.innerHTML = '一百扇门，一辆车。点一扇。';
+    banner.textContent = '';
+    choiceBtns.style.display = 'none';
+  }
+
+  function onPick100(idx){
+    if (st100.phase !== 'idle') return;
+    ensureAC();
+    st100.pick = idx;
+    st100.phase = 'hostReveal';
+    cellOf(idx).classList.add('picked');
+
+    var res = pickHostOpen(N100, st100.car, st100.pick);
+    st100.keep = res.keep;
+    st100.openQueue = res.open.slice();
+
+    caption.innerHTML = '主持人正在打开 98 扇山羊门……';
+
+    var i = 0;
+    var batch = 6;
+    function step(){
+      if (i >= st100.openQueue.length){
+        cellOf(st100.keep).classList.add('remaining');
+        creakSound();
+        caption.innerHTML = '只剩你选的这扇，和<b>另一扇</b>。换，还是不换？';
+        st100.phase = 'choice';
+        choiceBtns.style.display = 'flex';
+        return;
+      }
+      for (var k = 0; k < batch && i < st100.openQueue.length; k++, i++){
+        var el = cellOf(st100.openQueue[i]);
+        if (el){ el.classList.add('opened'); el.textContent = '🐐'; }
+      }
+      if (i % 24 === 0) goatSound();
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function finish100(didSwitch){
+    if (st100.phase !== 'choice') return;
+    st100.phase = 'reveal';
+    choiceBtns.style.display = 'none';
+    var finalPick = didSwitch ? st100.keep : st100.pick;
+    var win = finalPick === st100.car;
+    /* 开全部门：车这扇 + 你选的这扇 + 主持人留的那扇，其余早已在批量动画里开成山羊了 */
+    for (var i = 0; i < N100; i++){
+      var cell = cellOf(i);
+      cell.classList.remove('opened', 'remaining');
+      if (i === st100.car){
+        cell.classList.add('reveal-car');
+        cell.textContent = '🚗';
+      } else if (i === st100.pick || i === st100.keep){
+        cell.classList.add('reveal-goat');
+        cell.textContent = '🐐';
+      }
+    }
+    recordScore(didSwitch, win);
+    if (win){
+      winSound();
+      banner.innerHTML = didSwitch ? '🚗 你换了，赢了车。百分之九十九的人在这个模式里都换对了。' : '🚗 你没换，居然也赢了车，百里挑一的运气。';
+    } else {
+      banner.innerHTML = didSwitch ? '🐐 你换了，山羊祝贺你，这次是百里挑一的倒霉。' : '🐐 你没换，山羊祝贺你。';
+    }
+    caption.innerHTML = '揭晓完毕。';
+    setTimeout(reset100, 2400);
+  }
+
+  doors100El.addEventListener('click', function(e){
+    var c = e.target.closest ? e.target.closest('.cell') : null;
+    if (!c) return;
+    onPick100(+c.dataset.idx);
+  });
+
+  /* ==================== 模式切换 ==================== */
+  var mode = 3;
+  var btnMode3 = document.getElementById('btnMode3');
+  var btnMode100 = document.getElementById('btnMode100');
+  function setMode(m){
+    mode = m;
+    btnMode3.classList.toggle('on', m === 3);
+    btnMode100.classList.toggle('on', m === 100);
+    doors3El.style.display = m === 3 ? 'flex' : 'none';
+    doors100El.style.display = m === 100 ? 'grid' : 'none';
+    choiceBtns.style.display = 'none';
+    banner.textContent = '';
+    if (m === 3) reset3(); else reset100();
+  }
+  btnMode3.addEventListener('click', function(){ setMode(3); });
+  btnMode100.addEventListener('click', function(){ setMode(100); });
+
+  /* 换/不换按钮同时服务两种模式 */
+  var btnSwitch = document.getElementById('btnSwitch');
+  var btnStay = document.getElementById('btnStay');
+  btnSwitch.addEventListener('click', function(){ if (mode === 100) finish100(true); });
+  btnStay.addEventListener('click', function(){ if (mode === 100) finish100(false); });
+
+  /* ==================== 记分板 ==================== */
+  var score = { swWin: 0, swTotal: 0, stWin: 0, stTotal: 0 };
+  function recordScore(didSwitch, win){
+    if (didSwitch){ score.swTotal++; if (win) score.swWin++; }
+    else { score.stTotal++; if (win) score.stWin++; }
+    paintScore();
+  }
+  function paintScore(){
+    document.getElementById('scoreSwitch').innerHTML = '<b>' + score.swWin + '</b>胜 / ' + score.swTotal + ' 局';
+    document.getElementById('scoreStay').innerHTML = '<b>' + score.stWin + '</b>胜 / ' + score.stTotal + ' 局';
+    document.getElementById('pctSwitch').textContent = score.swTotal ? (score.swWin / score.swTotal * 100).toFixed(1) + '%' : '暂无数据';
+    document.getElementById('pctStay').textContent = score.stTotal ? (score.stWin / score.stTotal * 100).toFixed(1) + '%' : '暂无数据';
+  }
+  document.getElementById('btnReset').addEventListener('click', function(){
+    score = { swWin: 0, swTotal: 0, stWin: 0, stTotal: 0 };
+    paintScore();
+    var simWrap = document.getElementById('simWrap');
+    simWrap.classList.remove('show');
+  });
+
+  /* ==================== 一万局模拟 ==================== */
+  document.getElementById('btnSim').addEventListener('click', function(){
+    ensureAC();
+    var trials = 10000;
+    var swWin = 0, stWin = 0;
+    for (var i = 0; i < trials; i++){
+      var car = (Math.random() * N3) | 0;
+      var pick = (Math.random() * N3) | 0;
+      var res = pickHostOpen(N3, car, pick);
+      var hostOpen = res.open[0];
+      var switchPick = -1;
+      for (var k = 0; k < N3; k++){ if (k !== pick && k !== hostOpen){ switchPick = k; break; } }
+      if (switchPick === car) swWin++;
+      if (pick === car) stWin++;
+    }
+    score.swWin += swWin; score.swTotal += trials;
+    score.stWin += stWin; score.stTotal += trials;
+    paintScore();
+    winSound();
+
+    var simWrap = document.getElementById('simWrap');
+    simWrap.classList.add('show');
+    var swPct = swWin / trials * 100;
+    var stPct = stWin / trials * 100;
+    document.getElementById('simSt').innerHTML =
+      '本次模拟：换门 <b style="color:#b5402c">' + swPct.toFixed(1) + '%</b>（' + swWin.toLocaleString() + '/' + trials.toLocaleString() + '） · 不换 <b style="color:#b5402c">' + stPct.toFixed(1) + '%</b>（' + stWin.toLocaleString() + '/' + trials.toLocaleString() + '）';
+    drawSimChart(swPct, stPct);
+  });
+
+  function drawSimChart(swPct, stPct){
+    var cv = document.getElementById('simCv');
+    var ctx = cv.getContext('2d');
+    var W = 760, H = 140;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fbf7ec';
+    ctx.fillRect(0, 0, W, H);
+
+    var barMaxW = W - 220;
+    var rows = [
+      { label: '🔁 换门', pct: swPct, color: '#b5402c' },
+      { label: '✋ 不换', pct: stPct, color: '#8a8071' }
+    ];
+    var barH = 34, gap = 26, top = 22;
+    rows.forEach(function(r, i){
+      var y = top + i * (barH + gap);
+      ctx.fillStyle = '#57503f';
+      ctx.font = '14px "Noto Serif SC",serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(r.label, 4, y + barH / 2 + 5);
+      var w = Math.max(2, barMaxW * r.pct / 100);
+      ctx.fillStyle = '#e7dcc2';
+      ctx.fillRect(96, y, barMaxW, barH);
+      ctx.fillStyle = r.color;
+      ctx.fillRect(96, y, w, barH);
+      ctx.fillStyle = '#2a2521';
+      ctx.font = '15px "Noto Serif SC",serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(r.pct.toFixed(1) + '%', 96 + w + 10, y + barH / 2 + 5);
+    });
+  }
+
+  /* ==================== 初始化 ==================== */
+  reset3();
+  paintScore();
+})();
+</script>
+</body>
+</html>

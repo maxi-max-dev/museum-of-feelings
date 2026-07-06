@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一滴墨水 · 感觉博物馆</title>
+<meta name="description" content="墨水散开就再也回不去。这里有一个倒流按钮，看墨水缩回一滴，再碰它一下看倒流怎么碎掉。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#0d1420;overflow:hidden;animation:rise .8s .1s ease both;
+    cursor:crosshair;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .hud{
+    position:absolute;top:10px;left:12px;right:12px;
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:12px;letter-spacing:.08em;color:rgba(235,228,210,.86);
+    pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6);
+  }
+  .hud b{color:#f0c98a;font-weight:normal;}
+  .caption{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:10px 16px;font-size:13.5px;line-height:1.7;text-align:center;
+    color:rgba(245,236,220,.96);background:rgba(13,20,32,.72);
+    opacity:0;transform:translateY(6px);transition:opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+  }
+  .caption.show{opacity:1;transform:none;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hint{text-align:center;font-size:12.5px;color:var(--ink-soft);letter-spacing:.06em;margin-bottom:12px;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;}
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:11px 18px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn:disabled:hover{border-color:var(--ink);color:var(--ink);}
+  .btn.rev{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.rev:hover{background:#8f3323;border-color:#8f3323;color:#fdf6ee;}
+
+  .entrow{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;font-size:13px;color:#57503f;}
+  .entrow .bar{flex:0 0 auto;width:min(340px,54vw);height:16px;border:1px solid var(--ink);background:#fffdf6;position:relative;border-radius:3px;overflow:hidden;}
+  .entrow .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#8a8071,var(--seal));width:0%;transition:width .2s linear;}
+  .entrow .needle{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--seal);transform:translateX(-1px);}
+  .entrow b{color:var(--seal);min-width:34px;text-align:right;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:var(--ink);
+    padding-top:14px;margin-top:4px;border-top:1px dashed var(--line);
+  }
+  .quote b{color:var(--seal);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №019</span>
+  </div>
+
+  <header>
+    <h1>一滴墨水</h1>
+    <div class="en">The Arrow of Time</div>
+    <p class="sub">墨水散开再也回不去。这里有一个倒流按钮</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="460"></canvas>
+    <div class="hud">
+      <span>粒子 <b id="hudN">0</b></span>
+      <span>混乱度 <b id="hudChaos">0%</b></span>
+      <span id="hudDir">顺流</span>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="ctrls">
+    <p class="hint">点水缸任意处，滴一滴墨</p>
+    <div class="btnrow">
+      <button class="btn" id="btnClear">💧 清空水缸</button>
+      <button class="btn rev" id="btnRev" disabled>⏪ 时间倒流</button>
+      <button class="btn" id="btnPoke" disabled>👆 扰动一粒</button>
+    </div>
+    <div class="entrow">
+      秩序<span class="bar"><span class="fill" id="entFill"></span><span class="needle" id="entNeedle" style="left:0%"></span></span>混乱<b id="entVal">0%</b>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 熵是数数</div>
+    <div class="pb">聚成一滴的分子排法寥寥，均匀散开的排法是天文数字。宇宙不偏心，只是往可能性多的那边走。</div>
+    <div class="pt">说明牌 · 倒流按钮为什么现实里没有</div>
+    <div class="pb">要同时精确反转每个分子的速度，差一根头发丝，碰撞就把误差滚雪球。这缸水给你留了一扇窄窗：二十秒之内它都还找得到回家的路，再久，路就塌了。</div>
+    <div class="pt">说明牌 · 现实同款</div>
+    <div class="pb">凉掉的咖啡、散掉的香水、打碎的杯子、说出去的话。<b>都只往一个方向走。</b></div>
+    <div class="quote">宇宙不禁止墨水回家。只是回家的路只有一条，<b>离家的路有无数条。</b></div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №019 · Max 造<br>
+    <a href="../galton/">下一个展厅：高尔顿钉板 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 物理内核 + 时间倒流的两层设计 =================
+   真实物理层：可逆弹性碰撞（只交换速度分量，不做位置修正，那一步在时间
+   反演下不对称）。但 2600 粒的混沌视界只有零点几秒，纯靠速度取反回不了家。
+   轨迹回放层：正向模拟时把全体粒子位置录进环形缓冲（每4子步一帧，30帧/秒，
+   保留20秒），「⏪时间倒流」= 倒放这段真实历史，墨水精确缩回一滴。
+   倒放中「👆扰动一粒」或缓冲耗尽时切回真实物理，混沌接管，回不了家。
+   魔术是真的历史，崩坏是真的物理。
+================================================================== */
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var W = 780, H = 460;
+var RADIUS = 2;
+var DT = 1 / 120;
+var CELL = RADIUS * 4; // 8px 格边，2x2 邻域覆盖 2r 碰撞半径
+var GX = Math.ceil(W / CELL), GY = Math.ceil(H / CELL);
+var RR = (RADIUS * 2) * (RADIUS * 2);
+var NEI = [[1,0],[0,1],[1,1],[-1,1]]; // 只取半边，保证每对每步只处理一次
+var SPEED_SCALE = 20;
+var MAX_N = 2600;
+var MAX_DROPS = 3;
+var DROP_COLORS = ['#37d7c8', '#e0508f', '#e8a84c']; // 青、品红、琥珀
+
+/* ---------- 确定性伪随机（每次滴墨用不同种子，画面每次都不一样）---------- */
+function makeRng(seed){
+  var s = seed >>> 0;
+  return function(){
+    s = (s + 0x6D2B79F5) | 0;
+    var t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+var rng = makeRng(Date.now() ^ 0x9e3779b9);
+
+/* ---------- 粒子存储：定长数组，复用不重分配 ---------- */
+var n = 0;
+var px = new Float64Array(MAX_N), py = new Float64Array(MAX_N);
+var pvx = new Float64Array(MAX_N), pvy = new Float64Array(MAX_N);
+var pcolor = new Uint8Array(MAX_N); // 每粒属于第几滴（决定颜色）
+var cellHead = new Int32Array(GX * GY);
+var cellNext = new Int32Array(MAX_N);
+
+var dropCount = 0;
+var mode = 'flow';        // 'flow'=真实物理在跑 | 'replay'=倒放轨迹缓冲
+var realReverse = false;  // 缓冲耗尽后切入的真实反向物理（叙事上仍算倒流）
+var replayPos = 0;        // 倒放位置（帧号，浮点，帧间线性插值）
+
+/* ---------- 轨迹环形缓冲：时间倒流的家底 ----------
+   每4个子步（1/30秒）录一帧全体粒子位置，保留最近600帧=20模拟秒。
+   Float32Array 预分配复用：600×2600×2×4B≈12.5MB。 */
+var FRAME_CAP = 600;
+var SUBSTEPS_PER_FRAME = 4;
+var bufX = new Float32Array(FRAME_CAP * MAX_N);
+var bufY = new Float32Array(FRAME_CAP * MAX_N);
+var bufN = new Uint16Array(FRAME_CAP);
+var framesRecorded = 0;        // 本纪元累计录制帧数（覆盖旧帧时只增不减）
+var substepCounter = 0;
+var bufferStartIsHome = false; // 帧0是否=滴墨那一刻（缓冲回绕覆盖后失效）
+var pvx0 = new Float64Array(MAX_N), pvy0 = new Float64Array(MAX_N); // 生成时初速度
+
+/* ---------- 六边形密堆放置：物理上不重叠，视觉上仍是「聚在一起的一滴」----------
+   spec 的 sigma≈14px 高斯聚集在 2600 粒子/半径2px 下无解：2600 个 2px 圆盘
+   不重叠站住的面积下限，对应有效半径≈137px（55%填充率），比 sigma=14px 大了
+   近10倍，14px 的意思是「2600个圆瞪进一个鸡蛋大小的坑」，重叠1300%以上。
+   改用六边形密堆生成不重叠初始位置，肉眼仍是一颗聚在一起的墨滴（有效半径
+   对画布780px而言仍是「一滴」量级），只是不再违反圆盘堆积的物理上限。 */
+function packedPositions(count, cx, cy, seedRng, packFrac){
+  var area = count * Math.PI * RADIUS * RADIUS / packFrac;
+  var R = Math.sqrt(area / Math.PI);
+  var cellSize = RADIUS * 2 * 1.05;
+  var cols = Math.ceil((R * 2) / cellSize) + 2;
+  var positions = [];
+  for (var row = -cols; row <= cols; row++){
+    for (var col = -cols; col <= cols; col++){
+      var offsetX = (row % 2 === 0) ? 0 : cellSize / 2;
+      var qx = col * cellSize + offsetX;
+      var qy = row * cellSize * 0.866;
+      if (qx*qx + qy*qy <= R*R) positions.push([qx, qy]);
+    }
+  }
+  for (var i = positions.length - 1; i > 0; i--){
+    var j = Math.floor(seedRng() * (i + 1));
+    var tmp = positions[i]; positions[i] = positions[j]; positions[j] = tmp;
+  }
+  var jitter = cellSize * 0.12;
+  var xs = new Float64Array(count), ys = new Float64Array(count);
+  for (var k = 0; k < count; k++){
+    var p = positions[k % positions.length];
+    xs[k] = cx + p[0] + (seedRng() - 0.5) * jitter;
+    ys[k] = cy + p[1] + (seedRng() - 0.5) * jitter;
+  }
+  return {xs: xs, ys: ys, R: R};
+}
+
+/* ---------- 滴一滴墨：高斯聚集位置(六边形密堆近似) + 麦克斯韦近似速率 + 成对动量归零 ---------- */
+function spawnDrop(cx, cy){
+  if (mode === 'replay') resumeForwardFromReplay(); // 倒放中滴墨=先回到顺流，再滴
+  if (dropCount >= MAX_DROPS){
+    showCaption('最多同时 3 滴，先清空水缸再滴新的。', 2200);
+    return;
+  }
+  var perDrop = Math.floor(MAX_N / MAX_DROPS);
+  var remain = MAX_N - n;
+  var count = Math.min(perDrop, remain);
+  if (count < 2) return;
+
+  var firstIntoEmpty = (n === 0);
+  var colorIdx = dropCount % DROP_COLORS.length;
+  var packed = packedPositions(count, cx, cy, rng, 0.55);
+  var base = n;
+  for (var k = 0; k < count; k += 2){
+    var ang = rng() * Math.PI * 2;
+    var speed = (rng() + rng()) * SPEED_SCALE;
+    var dvx = Math.cos(ang) * speed, dvy = Math.sin(ang) * speed;
+
+    var i = base + k;
+    px[i] = clamp(packed.xs[k], RADIUS+0.5, W-RADIUS-0.5);
+    py[i] = clamp(packed.ys[k], RADIUS+0.5, H-RADIUS-0.5);
+    pvx[i] = dvx; pvy[i] = dvy; pcolor[i] = colorIdx;
+    pvx0[i] = dvx; pvy0[i] = dvy;
+
+    if (k+1 < count){
+      var j = base + k + 1;
+      px[j] = clamp(packed.xs[k+1], RADIUS+0.5, W-RADIUS-0.5);
+      py[j] = clamp(packed.ys[k+1], RADIUS+0.5, H-RADIUS-0.5);
+      pvx[j] = -dvx; pvy[j] = -dvy; pcolor[j] = colorIdx; // 成对反向动量，总动量归零
+      pvx0[j] = -dvx; pvy0[j] = -dvy;
+    }
+  }
+  n = base + count;
+  dropCount++;
+  if (firstIntoEmpty) resetBuffer(true); // 帧0=滴墨那一刻，这就是「家」
+  chaosBase = computeEntropy(); // 混乱度表以「刚滴下的这缸」为 0 点，回家时表针真正归零
+  playPlop();
+  if (dropCount === 1) showCaption('墨滴散进水里了。', 1800);
+}
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+
+function clearTank(){
+  n = 0; dropCount = 0; chaosBase = 0;
+  mode = 'flow'; realReverse = false;
+  framesRecorded = 0; substepCounter = 0; bufferStartIsHome = false; // 缓冲一起清
+  acc = 0;
+  updateDirUI();
+  hitNinety = false;
+  showCaption('', 0);
+}
+
+/* ---------- 一个物理子步：位置积分 -> 弹性撞墙 -> 空间哈希 -> 粒子间弹性碰撞 ---------- */
+function buildGrid(){
+  cellHead.fill(-1);
+  for (var i = 0; i < n; i++){
+    var gx = (px[i] / CELL) | 0, gy = (py[i] / CELL) | 0;
+    if (gx < 0) gx = 0; else if (gx >= GX) gx = GX - 1;
+    if (gy < 0) gy = 0; else if (gy >= GY) gy = GY - 1;
+    var c = gy * GX + gx;
+    cellNext[i] = cellHead[c];
+    cellHead[c] = i;
+  }
+}
+
+function resolvePair(i, j){
+  var dx = px[j] - px[i], dy = py[j] - py[i];
+  var d2 = dx*dx + dy*dy;
+  if (d2 >= RR || d2 < 1e-12) return;
+  var d = Math.sqrt(d2);
+  var nx = dx / d, ny = dy / d;
+  var rvx = pvx[j] - pvx[i], rvy = pvy[j] - pvy[i];
+  var rvn = rvx*nx + rvy*ny;
+  if (rvn > 0) return; // 已在分离，不重复处理
+  pvx[i] += rvn*nx; pvy[i] += rvn*ny;
+  pvx[j] -= rvn*nx; pvy[j] -= rvn*ny;
+}
+
+function substep(){
+  var i;
+  for (i = 0; i < n; i++){ px[i] += pvx[i]*DT; py[i] += pvy[i]*DT; }
+
+  for (i = 0; i < n; i++){
+    if (px[i] < RADIUS){ px[i] = RADIUS + (RADIUS - px[i]); pvx[i] = -pvx[i]; }
+    else if (px[i] > W-RADIUS){ px[i] = (W-RADIUS) - (px[i] - (W-RADIUS)); pvx[i] = -pvx[i]; }
+    if (py[i] < RADIUS){ py[i] = RADIUS + (RADIUS - py[i]); pvy[i] = -pvy[i]; }
+    else if (py[i] > H-RADIUS){ py[i] = (H-RADIUS) - (py[i] - (H-RADIUS)); pvy[i] = -pvy[i]; }
+  }
+
+  buildGrid();
+  for (var gy = 0; gy < GY; gy++) for (var gx = 0; gx < GX; gx++){
+    var c = gy*GX+gx;
+    for (i = cellHead[c]; i !== -1; i = cellNext[i]){
+      for (var j = cellNext[i]; j !== -1; j = cellNext[j]) resolvePair(i, j);
+      for (var k = 0; k < 4; k++){
+        var nx = gx+NEI[k][0], ny = gy+NEI[k][1];
+        if (nx<0||nx>=GX||ny<0||ny>=GY) continue;
+        var nc = ny*GX+nx;
+        for (j = cellHead[nc]; j !== -1; j = cellNext[j]) resolvePair(i, j);
+      }
+    }
+  }
+}
+
+/* ---------- 环形缓冲读写 ---------- */
+function frameBase(a){ return (a % FRAME_CAP) * MAX_N; }
+
+function recordFrame(){
+  var base = frameBase(framesRecorded);
+  for (var i = 0; i < n; i++){ bufX[base+i] = px[i]; bufY[base+i] = py[i]; }
+  bufN[framesRecorded % FRAME_CAP] = n;
+  framesRecorded++;
+  if (framesRecorded > FRAME_CAP) bufferStartIsHome = false; // 最旧帧被覆盖，家没了
+}
+
+function resetBuffer(startIsHome){
+  framesRecorded = 0; substepCounter = 0;
+  bufferStartIsHome = startIsHome;
+  if (n > 0) recordFrame(); // 当前状态立刻成为新纪元的帧0
+}
+
+function oldestFrame(){ return framesRecorded > FRAME_CAP ? framesRecorded - FRAME_CAP : 0; }
+
+function loadFrame(a){
+  var base = frameBase(a);
+  n = bufN[a % FRAME_CAP];
+  for (var i = 0; i < n; i++){ px[i] = bufX[base+i]; py[i] = bufY[base+i]; }
+}
+
+/* 速度 = (帧aTo - 帧aFrom) × 30帧/秒。只对两帧都存在的粒子有效，其余置零。 */
+function frameDiffVelocity(aFrom, aTo){
+  var b0 = frameBase(aFrom), b1 = frameBase(aTo);
+  var m = Math.min(bufN[aFrom % FRAME_CAP], bufN[aTo % FRAME_CAP], n);
+  for (var i = 0; i < m; i++){
+    pvx[i] = (bufX[b1+i] - bufX[b0+i]) * 30;
+    pvy[i] = (bufY[b1+i] - bufY[b0+i]) * 30;
+  }
+  for (i = m; i < n; i++){ pvx[i] = 0; pvy[i] = 0; }
+}
+
+function syncDropCount(){ dropCount = n > 0 ? pcolor[n-1] + 1 : 0; }
+
+/* ---------- 倒放：真实时间速率往回走缓冲，帧间线性插值 ---------- */
+function decodeReplay(){
+  var lo = oldestFrame(), hi = framesRecorded - 1;
+  var p = replayPos; if (p < lo) p = lo; if (p > hi) p = hi;
+  var k0 = Math.floor(p), k1 = Math.min(k0 + 1, hi);
+  var t = p - k0;
+  var b0 = frameBase(k0), b1 = frameBase(k1);
+  var n0 = bufN[k0 % FRAME_CAP], n1 = bufN[k1 % FRAME_CAP];
+  n = n1;
+  var m = Math.min(n0, n1);
+  for (var i = 0; i < m; i++){
+    px[i] = bufX[b0+i] + (bufX[b1+i] - bufX[b0+i]) * t;
+    py[i] = bufY[b0+i] + (bufY[b1+i] - bufY[b0+i]) * t;
+  }
+  for (i = m; i < n1; i++){ px[i] = bufX[b1+i]; py[i] = bufY[b1+i]; } // 只存在于新帧的粒子(刚滴的墨)
+}
+
+function replayTick(dt){
+  replayPos -= dt * 30;
+  var lo = oldestFrame();
+  if (replayPos <= lo){ arriveBufferStart(lo); return; }
+  decodeReplay();
+}
+
+function arriveBufferStart(lo){
+  loadFrame(lo);
+  syncDropCount();
+  if (lo === 0 && bufferStartIsHome){
+    /* 回到滴墨那一刻：无缝切回正向真实物理（初速度取反），再度自然散开 */
+    for (var i = 0; i < n; i++){
+      pvx[i] = -pvx0[i]; pvy[i] = -pvy0[i];
+      pvx0[i] = pvx[i]; pvy0[i] = pvy[i]; // 新纪元的出发速度
+    }
+    mode = 'flow'; realReverse = false; acc = 0;
+    resetBuffer(true);
+    showCaption('它回来了。物理定律没有禁止这件事，它只是从不发生。', 3200);
+  } else {
+    /* 缓冲里这20秒走完了，家早被覆盖：切真实反向物理继续，自然回不了家 */
+    if (framesRecorded - 1 > lo) frameDiffVelocity(lo + 1, lo); // 沿倒放方向
+    mode = 'flow'; realReverse = true; acc = 0;
+    resetBuffer(false);
+    showCaption('倒流按得越晚，回去得越残缺。', 3200);
+  }
+  updateDirUI();
+}
+
+/* 倒放中按「▶顺流」或滴墨：就地切回正向真实物理，零跳位 */
+function resumeForwardFromReplay(){
+  var lo = oldestFrame(), hi = framesRecorded - 1;
+  var k = Math.round(replayPos); if (k < lo) k = lo; if (k > hi) k = hi;
+  loadFrame(k);
+  syncDropCount();
+  if (k > lo) frameDiffVelocity(k - 1, k); // 顺流方向
+  else if (lo === 0 && bufferStartIsHome){
+    for (var i = 0; i < n; i++){ pvx[i] = pvx0[i]; pvy[i] = pvy0[i]; }
+  }
+  else if (hi > lo) frameDiffVelocity(lo, lo + 1);
+  mode = 'flow'; realReverse = false; acc = 0;
+  resetBuffer(k === 0 && bufferStartIsHome);
+  updateDirUI();
+}
+
+/* ---------- 时间倒流 / 扰动一粒 ---------- */
+function reverseTime(){
+  if (n === 0) return;
+  if (mode === 'replay'){ resumeForwardFromReplay(); playReverse(false); return; }
+  if (realReverse){
+    /* 真实反向物理中再按 = 单纯把速度再取反，回到顺流 */
+    for (var i = 0; i < n; i++){ pvx[i] = -pvx[i]; pvy[i] = -pvy[i]; }
+    realReverse = false;
+    playReverse(false); updateDirUI(); return;
+  }
+  if (framesRecorded === 0) return;
+  recordFrame(); // 先把当前精确状态补录一帧，倒放起点零跳位
+  mode = 'replay';
+  replayPos = framesRecorded - 1;
+  acc = 0;
+  playReverse(true);
+  showCaption('墨水正在往回走。', 1800);
+  updateDirUI();
+}
+
+function pokeOne(){
+  if (n === 0) return;
+  if (mode === 'replay'){
+    /* 从倒放切回真实物理：全体速度=当前帧与相邻帧差分（沿倒放方向），
+       扰动一粒后碰撞把偏差层层传染，倒流中途崩坏。你亲手碰塌了回家的路。 */
+    var lo = oldestFrame(), hi = framesRecorded - 1;
+    var k = Math.round(replayPos); if (k < lo) k = lo; if (k > hi) k = hi;
+    loadFrame(k);
+    syncDropCount();
+    if (k < hi) frameDiffVelocity(k + 1, k);       // 倒放方向
+    else if (k > lo) frameDiffVelocity(k, k - 1);  // 在最新帧：取上一帧差分的反向
+    else { for (var i = 0; i < n; i++){ pvx[i] = -pvx0[i]; pvy[i] = -pvy0[i]; } }
+    mode = 'flow'; realReverse = true; acc = 0;
+    resetBuffer(false); // 时间线已被你污染，回家的路不再收录
+  } else if (!realReverse) return;
+  var idx = Math.floor(rng() * n);
+  var speed = Math.hypot(pvx[idx], pvy[idx]);
+  var ang = rng() * Math.PI * 2;
+  pvx[idx] = Math.cos(ang) * speed;
+  pvy[idx] = Math.sin(ang) * speed;
+  playPoke();
+  showCaption('一粒的偏差，传染给了整缸水。时间之箭就是这样锁死的。', 3200);
+  updateDirUI();
+}
+
+function isRev(){ return mode === 'replay' || realReverse; }
+
+function updateDirUI(){
+  var rev = isRev();
+  document.getElementById('hudDir').textContent = rev ? '倒流' : '顺流';
+  document.getElementById('btnRev').textContent = rev ? '▶ 顺流' : '⏪ 时间倒流';
+  document.getElementById('btnPoke').disabled = !rev || n === 0;
+}
+
+/* ---------- 熵表：24x14 格占用分布的香农熵，归一化到0~100 ---------- */
+var GRID_X = 24, GRID_Y = 14;
+var occGrid = new Int32Array(GRID_X * GRID_Y);
+var maxEntropy = Math.log(GRID_X * GRID_Y);
+var chaosPct = 0;
+var hitNinety = false;
+var lastEntropyUpdate = 0;
+var chaosBase = 0; // 滴墨瞬间的熵基线：粒子有体积，「一滴」本身就占好几格，绝对熵到不了 0
+
+function computeEntropy(){
+  if (n === 0) return 0;
+  occGrid.fill(0);
+  var cw = W / GRID_X, ch = H / GRID_Y;
+  for (var i = 0; i < n; i++){
+    var gx = (px[i] / cw) | 0, gy = (py[i] / ch) | 0;
+    if (gx < 0) gx = 0; else if (gx >= GRID_X) gx = GRID_X - 1;
+    if (gy < 0) gy = 0; else if (gy >= GRID_Y) gy = GRID_Y - 1;
+    occGrid[gy*GRID_X+gx]++;
+  }
+  var H_ = 0;
+  for (var c = 0; c < occGrid.length; c++){
+    if (occGrid[c] === 0) continue;
+    var p = occGrid[c] / n;
+    H_ -= p * Math.log(p);
+  }
+  return Math.round((H_ / maxEntropy) * 100);
+}
+
+/* ---------- 音效：WebAudio 全合成，首次用户手势创建 AudioContext ---------- */
+var actx = null;
+function ensureAudio(){
+  if (!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function playPlop(){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(360, t0);
+  osc.frequency.exponentialRampToValueAtTime(90, t0 + 0.16);
+  gain.gain.setValueAtTime(0.16, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + 0.24);
+
+  var bufLen = Math.floor(actx.sampleRate * 0.06);
+  var buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+  var data = buf.getChannelData(0);
+  for (var i = 0; i < bufLen; i++) data[i] = (Math.random()*2-1) * (1 - i/bufLen);
+  var noise = actx.createBufferSource();
+  noise.buffer = buf;
+  var ngain = actx.createGain();
+  ngain.gain.setValueAtTime(0.05, t0);
+  ngain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.06);
+  noise.connect(ngain); ngain.connect(actx.destination);
+  noise.start(t0);
+}
+function playReverse(entering){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  osc.type = 'sine';
+  if (entering){
+    osc.frequency.setValueAtTime(140, t0);
+    osc.frequency.exponentialRampToValueAtTime(420, t0 + 0.35);
+  } else {
+    osc.frequency.setValueAtTime(420, t0);
+    osc.frequency.exponentialRampToValueAtTime(140, t0 + 0.35);
+  }
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(0.1, t0 + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.4);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + 0.42);
+}
+function playPoke(){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(1200, t0);
+  gain.gain.setValueAtTime(0.05, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.05);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + 0.06);
+}
+
+/* ---------- 字幕 ---------- */
+var capEl = document.getElementById('caption');
+var capTimer = null;
+function showCaption(text, ms){
+  if (capTimer) { clearTimeout(capTimer); capTimer = null; }
+  if (!text){ capEl.classList.remove('show'); return; }
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  if (ms > 0){
+    capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms);
+  }
+}
+
+/* ---------- 渲染：深色缸内，fillRect 批量画 ---------- */
+function draw(){
+  ctx.fillStyle = '#0d1420';
+  ctx.fillRect(0, 0, W, H);
+
+  // 缸壁细描边
+  ctx.strokeStyle = 'rgba(140,170,200,.18)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, W-1, H-1);
+
+  for (var i = 0; i < n; i++){
+    ctx.fillStyle = DROP_COLORS[pcolor[i]];
+    ctx.fillRect(px[i]-RADIUS, py[i]-RADIUS, RADIUS*2, RADIUS*2);
+  }
+}
+
+/* ---------- 主循环：rAF 真实时间补帧 + 固定子步，保证确定性 ---------- */
+var acc = 0;
+var lastT = null;
+var MAX_FRAME = 0.1; // 防止切后台恢复后一次性补太多步
+var MAX_SUBSTEPS_PER_FRAME = 12;
+
+function frame(now){
+  if (lastT === null) lastT = now;
+  var dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > MAX_FRAME) dt = MAX_FRAME;
+
+  if (mode === 'replay'){
+    replayTick(dt); // 倒放真实历史，不跑物理
+  } else {
+    acc += dt;
+    var did = 0;
+    while (acc >= DT && did < MAX_SUBSTEPS_PER_FRAME){
+      substep();
+      substepCounter++;
+      if (substepCounter >= SUBSTEPS_PER_FRAME && n > 0){
+        substepCounter = 0;
+        recordFrame();
+      }
+      acc -= DT;
+      did++;
+    }
+  }
+
+  draw();
+
+  document.getElementById('hudN').textContent = n;
+
+  if (now - lastEntropyUpdate > 200){
+    lastEntropyUpdate = now;
+    var rawEnt = computeEntropy(); // 倒放期间同样按当前(回放)位置实时算
+    chaosPct = Math.max(0, Math.round((rawEnt - chaosBase) / Math.max(1, 100 - chaosBase) * 100));
+    if (chaosPct > 100) chaosPct = 100;
+    document.getElementById('hudChaos').textContent = chaosPct + '%';
+    document.getElementById('entFill').style.width = chaosPct + '%';
+    document.getElementById('entNeedle').style.left = chaosPct + '%';
+    document.getElementById('entVal').textContent = chaosPct + '%';
+
+    if (!isRev() && chaosPct >= 75 && !hitNinety && n > 0){
+      hitNinety = true;
+      showCaption('散开只用了几秒。现在试试那个不该存在的按钮。', 3200);
+    }
+  }
+
+  document.getElementById('btnRev').disabled = (n === 0);
+  document.getElementById('btnPoke').disabled = !isRev() || n === 0;
+
+  requestAnimationFrame(frame);
+}
+
+/* ---------- 交互 ---------- */
+function toCanvas(e){
+  var r = cv.getBoundingClientRect();
+  var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  return { x: cx * (W / r.width), y: cy * (H / r.height) };
+}
+cv.addEventListener('mousedown', function(e){
+  ensureAudio();
+  var p = toCanvas(e);
+  spawnDrop(p.x, p.y);
+});
+cv.addEventListener('touchstart', function(e){
+  e.preventDefault();
+  ensureAudio();
+  var p = toCanvas(e);
+  spawnDrop(p.x, p.y);
+}, {passive:false});
+
+document.getElementById('btnClear').addEventListener('click', function(){
+  ensureAudio();
+  clearTank();
+});
+document.getElementById('btnRev').addEventListener('click', function(){
+  ensureAudio();
+  reverseTime();
+});
+document.getElementById('btnPoke').addEventListener('click', function(){
+  ensureAudio();
+  pokeOne();
+});
+
+updateDirUI();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

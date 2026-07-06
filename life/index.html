@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生命游戏 · 感觉博物馆</title>
+<meta name="description" content="1970年康威写下四条规则，没有一条提到飞行、繁殖、机器。邻居少于2孤独死，多于3拥挤死，恰好3复活，其余不变。滑翔机自己飞了起来。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .rules{
+    text-align:center;font-size:13.5px;line-height:1.9;color:#453e30;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:11px 16px;margin-bottom:16px;letter-spacing:.03em;
+    animation:rise .8s .05s ease both;
+  }
+  .rules b{color:var(--seal);}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#fffdf6;overflow:hidden;animation:rise .8s .1s ease both;
+    cursor:crosshair;
+  }
+  .stage canvas{display:block;width:100%;height:auto;touch-action:none;}
+
+  .hud{
+    display:flex;justify-content:center;gap:18px;flex-wrap:wrap;
+    font-size:13px;color:#57503f;letter-spacing:.05em;
+    background:var(--card);border:1px solid var(--ink);border-top:none;
+    padding:9px 14px;
+  }
+  .hud b{color:var(--seal);}
+
+  .caption{
+    text-align:center;min-height:1.7em;font-size:13.5px;color:var(--seal);
+    letter-spacing:.04em;margin-top:8px;line-height:1.7;
+  }
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .row{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-items:center;margin-bottom:12px;}
+  .row:last-child{margin-bottom:0;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 14px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.primary:hover{color:#fdf6ee;background:#96331f;}
+  .speedbox{display:flex;align-items:center;gap:10px;font-size:13px;color:#57503f;letter-spacing:.05em;}
+  .speedbox input{width:150px;accent-color:var(--seal);}
+  .divider{width:100%;border:none;border-top:1px dashed var(--line);margin:2px 0 10px;}
+  .glabel{font-size:11.5px;color:var(--ink-soft);letter-spacing:.15em;text-align:center;width:100%;margin-bottom:2px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .punch{
+    text-align:center;font-size:21px;letter-spacing:.1em;color:var(--seal);
+    padding:16px 10px 4px;line-height:1.7;
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №023</span>
+  </div>
+
+  <header>
+    <h1>生命游戏</h1>
+    <div class="en">Conway's Game of Life</div>
+    <p class="sub">四条规则，没有一条提到飞行、繁殖或机器</p>
+  </header>
+
+  <div class="rules">
+    邻居<b>&lt;2</b> 孤独死　邻居<b>&gt;3</b> 拥挤死　恰好 <b>3</b> 复活　其余不变
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="720" height="420"></canvas>
+  </div>
+  <div class="hud">
+    <span>世代 <b id="hudGen">0</b></span>
+    <span>存活 <b id="hudPop">0</b></span>
+  </div>
+  <div class="caption" id="caption"></div>
+
+  <div class="ctrls">
+    <div class="row">
+      <button class="btn primary" id="btnPlay">▶ 播放</button>
+      <button class="btn" id="btnStep">⏭ 单步</button>
+      <button class="btn" id="btnRandom">🎲 随机汤</button>
+      <button class="btn" id="btnClear">🧹 清空</button>
+    </div>
+    <div class="row">
+      <div class="speedbox">
+        速度 <input type="range" id="speedSlider" min="2" max="30" value="10"> <span id="speedVal">10 代/秒</span>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="row">
+      <span class="glabel">🧬 生物图鉴 · 点一下放到网格中央</span>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnGlider">✈️ 滑翔机</button>
+      <button class="btn" id="btnLwss">🚤 轻型飞船</button>
+      <button class="btn" id="btnPulsar">💠 脉冲星</button>
+      <button class="btn" id="btnGun">🔫 高斯帕滑翔机枪</button>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 没人设计过的复杂</div>
+    <div class="pb">1970 年康威写下四条规则，没有一条提到飞行、繁殖、机器。滑翔机自己飞了起来，滑翔机枪自己造起了滑翔机。这叫<b>涌现</b>：本馆的鸟群、临界点、堵车制造机，讲的都是它，这一厅是它最纯的形态。</div>
+    <div class="pb">这个游戏被证明是<b>图灵完备</b>的：给足够大的棋盘和足够的耐心，它能计算任何可以被计算的东西，包括模拟它自己。</div>
+    <div class="pb">玩法提示：先放一只滑翔机看它走路，再开随机汤看混沌里长出秩序，最后放滑翔机枪。</div>
+    <div class="punch">「造物主只写了四行规则，<br>剩下的都是宇宙自己的主意。」</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №023 · Max 造<br>
+    <a href="../schelling/">下一个展厅：谢林的棋盘 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- 网格与状态 ---------- */
+  var COLS = 120, ROWS = 70, CELL = 6;
+  var W = COLS * CELL, H = ROWS * CELL;
+
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  cv.width = W; cv.height = H;
+
+  /* 0=死 1=活(存活中) 2=新生(刚复活，亮一点，下一帧转回1) */
+  var grid = new Uint8Array(COLS * ROWS);
+  var gen = 0;
+  var playing = false;
+
+  function idx(x, y){
+    /* 环面边界：上下左右相接 */
+    x = ((x % COLS) + COLS) % COLS;
+    y = ((y % ROWS) + ROWS) % ROWS;
+    return y * COLS + x;
+  }
+  function isAlive(v){ return v === 1 || v === 2; }
+
+  function countPop(){
+    var n = 0;
+    for (var i = 0; i < grid.length; i++) if (isAlive(grid[i])) n++;
+    return n;
+  }
+
+  /* ---------- 演化：标准 B3/S23，环面邻居 ---------- */
+  function evolve(){
+    var next = new Uint8Array(COLS * ROWS);
+    for (var y = 0; y < ROWS; y++){
+      for (var x = 0; x < COLS; x++){
+        var n = 0;
+        for (var dy = -1; dy <= 1; dy++){
+          for (var dx = -1; dx <= 1; dx++){
+            if (dx === 0 && dy === 0) continue;
+            if (isAlive(grid[idx(x + dx, y + dy)])) n++;
+          }
+        }
+        var alive = isAlive(grid[idx(x, y)]);
+        var i = idx(x, y);
+        if (alive){
+          next[i] = (n === 2 || n === 3) ? 1 : 0; /* <2 孤独死 >3 拥挤死 */
+        } else {
+          next[i] = (n === 3) ? 2 : 0; /* 恰好3复活，标记新生 */
+        }
+      }
+    }
+    grid = next;
+    gen++;
+  }
+
+  function updateHud(){
+    document.getElementById('hudGen').textContent = gen;
+    document.getElementById('hudPop').textContent = countPop();
+  }
+
+  /* ---------- 图鉴：放置各种生物 ---------- */
+  function place(cells, cx, cy){
+    /* cells: 相对坐标数组，以图案包围盒中心对齐到 (cx,cy) */
+    var minx = Infinity, miny = Infinity, maxx = -Infinity, maxy = -Infinity;
+    cells.forEach(function(c){
+      if (c[0] < minx) minx = c[0]; if (c[0] > maxx) maxx = c[0];
+      if (c[1] < miny) miny = c[1]; if (c[1] > maxy) maxy = c[1];
+    });
+    var ow = maxx - minx, oh = maxy - miny;
+    var ox = Math.round(cx - ow / 2 - minx);
+    var oy = Math.round(cy - oh / 2 - miny);
+    cells.forEach(function(c){
+      grid[idx(ox + c[0], oy + c[1])] = 1;
+    });
+  }
+
+  function findEmptyCenter(){
+    /* 找网格中央偏空处：以中心为起点向外螺旋找一个 16x16 邻域内存活最少的位置 */
+    var cx = Math.floor(COLS / 2), cy = Math.floor(ROWS / 2);
+    var best = {x: cx, y: cy, score: Infinity};
+    var R = 26;
+    for (var oy = -R; oy <= R; oy += 4){
+      for (var ox = -R; ox <= R; ox += 4){
+        var tx = cx + ox, ty = cy + oy;
+        var score = 0;
+        for (var dy = -6; dy <= 6; dy++){
+          for (var dx = -6; dx <= 6; dx++){
+            if (isAlive(grid[idx(tx + dx, ty + dy)])) score++;
+          }
+        }
+        if (score < best.score){ best = {x: tx, y: ty, score: score}; }
+        if (score === 0) return {x: tx, y: ty};
+      }
+    }
+    return best;
+  }
+
+  var GLIDER = [[1,0],[2,1],[0,2],[1,2],[2,2]];
+  var LWSS = [
+    [1,0],[4,0],
+    [0,1],
+    [0,2],[4,2],
+    [0,3],[1,3],[2,3],[3,3]
+  ];
+  var PULSAR = [
+    [2,0],[3,0],[4,0], [8,0],[9,0],[10,0],
+    [0,2],[5,2],[7,2],[12,2],
+    [0,3],[5,3],[7,3],[12,3],
+    [0,4],[5,4],[7,4],[12,4],
+    [2,5],[3,5],[4,5], [8,5],[9,5],[10,5],
+    [2,7],[3,7],[4,7], [8,7],[9,7],[10,7],
+    [0,8],[5,8],[7,8],[12,8],
+    [0,9],[5,9],[7,9],[12,9],
+    [0,10],[5,10],[7,10],[12,10],
+    [2,12],[3,12],[4,12], [8,12],[9,12],[10,12]
+  ];
+  var GOSPER_GUN = [
+    [24,0],
+    [22,1],[24,1],
+    [12,2],[13,2],[20,2],[21,2],[34,2],[35,2],
+    [11,3],[15,3],[20,3],[21,3],[34,3],[35,3],
+    [0,4],[1,4],[10,4],[16,4],[20,4],[21,4],
+    [0,5],[1,5],[10,5],[14,5],[16,5],[17,5],[22,5],[24,5],
+    [10,6],[16,6],[24,6],
+    [11,7],[15,7],
+    [12,8],[13,8]
+  ];
+
+  function setCaption(text, ms){
+    var el = document.getElementById('caption');
+    el.textContent = text || '';
+    if (caption_timer) clearTimeout(caption_timer);
+    if (text && ms){
+      caption_timer = setTimeout(function(){ el.textContent = ''; }, ms);
+    }
+  }
+  var caption_timer = null;
+
+  function placeAtSpot(cells, label){
+    var spot = findEmptyCenter();
+    place(cells, spot.x, spot.y);
+    updateHud();
+    ensureAudio();
+    pingSound();
+    if (label) setCaption(label, 4200);
+  }
+
+  document.getElementById('btnGlider').addEventListener('click', function(){
+    placeAtSpot(GLIDER, '✈️ 滑翔机：往右下角，一步一步飞。');
+  });
+  document.getElementById('btnLwss').addEventListener('click', function(){
+    placeAtSpot(LWSS, '🚤 轻型飞船：横着跑得比滑翔机快。');
+  });
+  document.getElementById('btnPulsar').addEventListener('click', function(){
+    placeAtSpot(PULSAR, '💠 脉冲星：呼吸一样，每 3 代闪回原样。');
+  });
+  document.getElementById('btnGun').addEventListener('click', function(){
+    placeAtSpot(GOSPER_GUN, '看，它开始造滑翔机了。规则里可没写过这个。');
+  });
+
+  /* ---------- 随机汤 / 清空 ---------- */
+  function randomSoup(){
+    for (var i = 0; i < grid.length; i++){
+      grid[i] = Math.random() < 0.22 ? 1 : 0;
+    }
+    gen = 0;
+    updateHud();
+    setCaption('混沌的一锅汤，看看它自己长出什么。', 4200);
+  }
+  function clearGrid(){
+    grid = new Uint8Array(COLS * ROWS);
+    gen = 0;
+    updateHud();
+    setCaption('', 0);
+  }
+  document.getElementById('btnRandom').addEventListener('click', function(){
+    ensureAudio();
+    randomSoup();
+  });
+  document.getElementById('btnClear').addEventListener('click', function(){
+    ensureAudio();
+    clearGrid();
+  });
+
+  /* ---------- 播放 / 暂停 / 单步 / 速度 ---------- */
+  var stepsPerSec = 10;
+  function setPlaying(v){
+    playing = v;
+    var btn = document.getElementById('btnPlay');
+    btn.textContent = playing ? '⏸ 暂停' : '▶ 播放';
+    btn.classList.toggle('primary', !playing);
+  }
+  document.getElementById('btnPlay').addEventListener('click', function(){
+    ensureAudio();
+    setPlaying(!playing);
+  });
+  document.getElementById('btnStep').addEventListener('click', function(){
+    ensureAudio();
+    if (playing) setPlaying(false);
+    evolve();
+    updateHud();
+  });
+  var speedSlider = document.getElementById('speedSlider');
+  speedSlider.addEventListener('input', function(){
+    stepsPerSec = +speedSlider.value;
+    document.getElementById('speedVal').textContent = stepsPerSec + ' 代/秒';
+  });
+
+  /* ---------- 画面 ---------- */
+  var COLOR_EMPTY = '#f5efe2';
+  var COLOR_ALIVE = '#2f4a34'; /* 墨绿 */
+  var COLOR_NEW = '#4f7a5b'; /* 新生亮一点 */
+
+  function draw(){
+    ctx.fillStyle = COLOR_EMPTY;
+    ctx.fillRect(0, 0, W, H);
+    for (var y = 0; y < ROWS; y++){
+      for (var x = 0; x < COLS; x++){
+        var v = grid[idx(x, y)];
+        if (v === 1){
+          ctx.fillStyle = COLOR_ALIVE;
+          ctx.fillRect(x * CELL, y * CELL, CELL - 0.5, CELL - 0.5);
+        } else if (v === 2){
+          ctx.fillStyle = COLOR_NEW;
+          ctx.fillRect(x * CELL, y * CELL, CELL - 0.5, CELL - 0.5);
+        }
+      }
+    }
+  }
+
+  /* 新生格在渲染后立刻归为普通存活，只亮这一帧 */
+  function settleNewborns(){
+    for (var i = 0; i < grid.length; i++){
+      if (grid[i] === 2) grid[i] = 1;
+    }
+  }
+
+  /* ---------- 主循环：rAF 真实时间补帧，固定步长追赶 ---------- */
+  var acc = 0;
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(0.25, (now - last) / 1000);
+    last = now;
+    if (playing){
+      acc += dt;
+      var stepDt = 1 / stepsPerSec;
+      var guard = 0;
+      var advanced = false;
+      while (acc >= stepDt && guard < 60){
+        if (advanced) settleNewborns();
+        evolve();
+        advanced = true;
+        acc -= stepDt;
+        guard++;
+      }
+      if (advanced) updateHud();
+    } else {
+      acc = 0;
+    }
+    draw();
+    if (playing) settleNewborns();
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- 交互：点击 / 拖拽画格子 ---------- */
+  function toCell(e){
+    var r = cv.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    var gx = Math.floor(cx * (W / r.width) / CELL);
+    var gy = Math.floor(cy * (H / r.height) / CELL);
+    return { x: ((gx % COLS) + COLS) % COLS, y: ((gy % ROWS) + ROWS) % ROWS };
+  }
+
+  var dragging = false;
+  var paintValue = 1; /* 起笔那格取反后的值，拖拽时跟随 */
+
+  function paintAt(c){
+    var i = idx(c.x, c.y);
+    grid[i] = paintValue;
+    updateHud();
+  }
+
+  function pointerDown(e){
+    e.preventDefault();
+    ensureAudio();
+    var c = toCell(e);
+    var i = idx(c.x, c.y);
+    paintValue = isAlive(grid[i]) ? 0 : 1; /* 画/擦跟随起笔那格取反 */
+    dragging = true;
+    paintAt(c);
+  }
+  function pointerMove(e){
+    if (!dragging) return;
+    e.preventDefault();
+    paintAt(toCell(e));
+  }
+  function pointerUp(){
+    dragging = false;
+  }
+
+  cv.addEventListener('mousedown', pointerDown);
+  cv.addEventListener('mousemove', pointerMove);
+  document.addEventListener('mouseup', pointerUp);
+  cv.addEventListener('touchstart', pointerDown, { passive: false });
+  cv.addEventListener('touchmove', pointerMove, { passive: false });
+  cv.addEventListener('touchend', pointerUp);
+
+  /* ---------- 音效：克制，仅放置生物时一声轻响，首次手势创建 ---------- */
+  var actx = null, audioReady = false;
+  function ensureAudio(){
+    if (audioReady) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      actx = new AC();
+      audioReady = true;
+    } catch (e){ audioReady = false; }
+    if (actx && actx.state === 'suspended') actx.resume();
+  }
+  function pingSound(){
+    if (!actx) return;
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 660;
+    g.gain.value = 0.0001;
+    var now = actx.currentTime;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.05, now + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    o.connect(g);
+    g.connect(actx.destination);
+    o.start(now);
+    o.stop(now + 0.24);
+  }
+
+  /* ---------- 启动 ---------- */
+  /* 首屏留白：空棋盘是邀请，随机汤留给玩家自己按（说明牌的教学顺序也是这么写的） */
+  document.getElementById('speedVal').textContent = stepsPerSec + ' 代/秒';
+  setCaption('拖一拖画细胞，或点一个生物图鉴按钮，再按播放。', 8000);
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

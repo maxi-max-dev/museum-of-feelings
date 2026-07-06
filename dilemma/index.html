@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>以牙还牙 · 感觉博物馆</title>
+<meta name="description" content="你和对面各按一个键，合作还是背叛。玩十轮，再开一场六个策略的锦标赛，看谁能笑到最后。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:var(--card);overflow:hidden;animation:rise .8s .1s ease both;
+    padding:22px 20px 24px;
+  }
+  .intro{
+    position:absolute;inset:0;background:rgba(42,37,33,.55);z-index:9;
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+  .intro.hide{display:none;}
+  .ibox{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line),0 14px 30px rgba(40,30,15,.3);
+    max-width:520px;padding:22px 26px 20px;font-size:14px;line-height:2;color:#453e30;
+  }
+  .ibox .it{font-size:16px;letter-spacing:.15em;color:var(--seal);margin-bottom:10px;}
+  .ibox p{margin-bottom:8px;}
+  .ibox b{color:var(--ink);}
+  .ibox button{
+    font-family:var(--serif);font-size:15px;letter-spacing:.1em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:9px;
+    padding:11px 22px;cursor:pointer;margin-top:6px;
+  }
+
+  /* ---------- 舞台一：对战台 ---------- */
+  .duel-top{display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:14px;flex-wrap:wrap;}
+  .who{text-align:center;}
+  .avatar{
+    width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:30px;background:#fffdf6;border:2px solid var(--ink);margin:0 auto 6px;
+  }
+  .who .name{font-size:12.5px;letter-spacing:.12em;color:#57503f;}
+  .score{font-size:34px;color:var(--ink);font-weight:600;min-width:44px;text-align:center;}
+  .vs{font-size:13px;color:var(--ink-soft);letter-spacing:.2em;}
+
+  .picker{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;font-size:13px;color:#57503f;flex-wrap:wrap;}
+  .picker select{
+    font-family:var(--serif);font-size:13.5px;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:7px;padding:7px 10px;background:#fffdf6;
+  }
+
+  .track-wrap{margin-bottom:16px;}
+  .track-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .track-label{font-size:11.5px;color:var(--ink-soft);width:42px;flex-shrink:0;text-align:right;}
+  .track{display:flex;gap:5px;flex-wrap:wrap;}
+  .slot{
+    width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+    font-size:13px;border:2px solid var(--line);background:#fffdf6;color:var(--ink-soft);
+    transition:transform .15s ease;
+  }
+  .slot.c{border-color:#5a7d4a;background:#eef3e6;color:#3f5c33;}
+  .slot.d{border-color:var(--seal);background:#f7e6e1;color:var(--seal);}
+  .slot.flip{animation:flip .35s ease;}
+  @keyframes flip{0%{transform:rotateY(90deg);}60%{transform:rotateY(0deg);}100%{transform:rotateY(0deg);}}
+
+  .round-info{text-align:center;font-size:13px;color:var(--ink-soft);letter-spacing:.1em;margin-bottom:10px;min-height:20px;}
+  .round-info b{color:var(--seal);}
+
+  .movebtns{display:flex;gap:14px;justify-content:center;margin-bottom:6px;}
+  .movebtn{
+    flex:1;max-width:220px;font-family:var(--serif);font-size:16px;letter-spacing:.1em;
+    padding:20px 10px;border-radius:14px;cursor:pointer;border:2px solid var(--ink);
+    background:#fffdf6;color:var(--ink);box-shadow:0 4px 0 var(--line);
+    transition:transform .08s,box-shadow .08s;user-select:none;-webkit-user-select:none;
+  }
+  .movebtn:active,.movebtn.pressed{transform:translateY(3px);box-shadow:0 1px 0 var(--line);}
+  .movebtn.coop{border-color:#5a7d4a;color:#3f5c33;}
+  .movebtn.coop:hover{background:#eef3e6;}
+  .movebtn.betray{border-color:var(--seal);color:var(--seal);}
+  .movebtn.betray:hover{background:#f7e6e1;}
+  .movebtn:disabled{opacity:.4;cursor:default;}
+  .movebtn:disabled:hover{background:#fffdf6;}
+
+  .flyup{
+    position:fixed;font-size:16px;font-weight:600;color:var(--seal);pointer-events:none;z-index:20;
+    animation:flyfade 1s ease forwards;
+  }
+  @keyframes flyfade{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-38px);}}
+
+  .reveal{
+    display:none;background:#2a2521;color:#f5efe2;
+    padding:16px 20px;margin-top:8px;font-size:14.5px;line-height:2;text-align:center;
+    border-radius:4px;letter-spacing:.03em;
+  }
+  .reveal.show{display:block;animation:rise .5s ease both;}
+  .reveal b{color:#ffd76e;}
+
+  .ctrls{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin-top:16px;
+  }
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 18px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn:disabled{opacity:.35;cursor:default;border-color:var(--line);color:var(--ink-soft);}
+
+  /* ---------- 舞台二：锦标赛 ---------- */
+  .stage2{margin-top:20px;}
+  .t-controls{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;
+  }
+  .noiseline{display:flex;align-items:center;gap:8px;font-size:13px;color:#57503f;}
+  .noiseline .hint{font-size:11.5px;color:var(--ink-soft);}
+  .switch{
+    position:relative;width:42px;height:24px;border-radius:12px;background:var(--line);
+    cursor:pointer;border:none;flex-shrink:0;
+  }
+  .switch::after{
+    content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+    background:#fffdf6;transition:transform .18s ease;box-shadow:0 1px 3px rgba(0,0,0,.25);
+  }
+  .switch.on{background:var(--seal);}
+  .switch.on::after{transform:translateX(18px);}
+
+  .board{margin-top:16px;}
+  .brow{
+    display:flex;align-items:center;gap:12px;background:#fffdf6;border:1px solid var(--line);
+    border-radius:8px;padding:10px 14px;margin-bottom:8px;opacity:0;transform:translateY(10px);
+    animation:brise .4s ease forwards;
+  }
+  @keyframes brise{to{opacity:1;transform:none;}}
+  .brow.gold{border-color:#c8971f;background:#fff8e8;box-shadow:0 0 0 2px rgba(200,151,31,.25);}
+  .brank{font-size:20px;font-weight:700;color:var(--ink-soft);min-width:28px;text-align:center;}
+  .brow.gold .brank{color:#c8971f;}
+  .bname{flex:1;min-width:140px;}
+  .bname .n1{font-size:15px;letter-spacing:.05em;}
+  .bname .n2{font-size:11.5px;color:var(--ink-soft);}
+  .bscore{font-size:19px;color:var(--seal);font-weight:600;min-width:70px;text-align:right;}
+
+  .champion-box{
+    display:none;margin-top:16px;background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);padding:18px 20px;
+  }
+  .champion-box.show{display:block;animation:rise .5s ease both;}
+  .champion-box h3{font-size:14px;letter-spacing:.15em;color:var(--seal);margin-bottom:12px;}
+  .champ-note{font-size:13.5px;line-height:1.9;color:#57503f;margin-bottom:10px;}
+  .traits{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:640px){.traits{grid-template-columns:1fr;}}
+  .trait{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.85;color:#57503f;background:rgba(255,255,255,.4);}
+  .trait b{color:var(--ink);}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:20px;
+  }
+  .plaque + .plaque{margin-top:14px;}
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .kicker{
+    text-align:center;font-size:17px;line-height:2;color:var(--ink);margin-top:22px;
+    padding:18px 16px;letter-spacing:.04em;
+  }
+  .kicker b{color:var(--seal);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}.slot.flip{animation:none;}.brow{animation:none;opacity:1;transform:none;}}
+
+  @media(max-width:640px){
+    .duel-top{gap:14px;}
+    .avatar{width:52px;height:52px;font-size:24px;}
+    .score{font-size:26px;}
+    .movebtn{padding:22px 8px;font-size:15px;}
+    .slot{width:22px;height:22px;font-size:11px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №021</span>
+  </div>
+
+  <header>
+    <h1>以牙还牙</h1>
+    <div class="en">TIT FOR TAT</div>
+    <p class="sub">善良不是天真，是漫长游戏里算出来的最优解</p>
+  </header>
+
+  <!-- 舞台一：对战台 -->
+  <div class="stage" id="stage1">
+    <div class="intro" id="intro">
+      <div class="ibox">
+        <div class="it">🧪 一分钟看懂规则</div>
+        <p>① 你和对面这位每一轮各按一个键：<b>🤝 合作</b>或<b>🗡 背叛</b>，同时出手，谁也看不见谁。</p>
+        <p>② 都合作，各得 <b>3 分</b>；都背叛，各得 <b>1 分</b>；你背叛他合作，你得 <b>5 分</b>他得 <b>0 分</b>（反过来也一样）。</p>
+        <p>③ 一共玩 <b>10 轮</b>，玩完看总分，也看看对面到底是谁。</p>
+        <button id="btnStart">🎮 开始</button>
+      </div>
+    </div>
+
+    <div class="duel-top">
+      <div class="who">
+        <div class="avatar">🙂</div>
+        <div class="name">你</div>
+      </div>
+      <div class="score" id="scoreYou">0</div>
+      <div class="vs">VS</div>
+      <div class="score" id="scoreOpp">0</div>
+      <div class="who">
+        <div class="avatar" id="oppAvatar">❓</div>
+        <div class="name" id="oppName">神秘对手</div>
+      </div>
+    </div>
+
+    <div class="picker">
+      对手策略
+      <select id="oppSelect">
+        <option value="random_pick">随机指派（隐藏）</option>
+        <option value="tft">一报还一报</option>
+        <option value="allc">永远合作</option>
+        <option value="alld">永远背叛</option>
+        <option value="grim">无情触发</option>
+        <option value="random">随机</option>
+        <option value="tester">试探者</option>
+      </select>
+    </div>
+
+    <div class="round-info" id="roundInfo">选好对手策略（或留给隐藏随机），点上面「开始」进场</div>
+
+    <div class="track-wrap">
+      <div class="track-row">
+        <div class="track-label">你</div>
+        <div class="track" id="trackYou"></div>
+      </div>
+      <div class="track-row">
+        <div class="track-label" id="oppTrackLabel">对手</div>
+        <div class="track" id="trackOpp"></div>
+      </div>
+    </div>
+
+    <div class="movebtns">
+      <button class="movebtn coop" id="btnCoop" disabled>🤝 合作</button>
+      <button class="movebtn betray" id="btnBetray" disabled>🗡 背叛</button>
+    </div>
+
+    <div class="reveal" id="reveal"></div>
+
+    <div class="ctrls">
+      <button class="btn primary" id="btnAgain" style="display:none;">🔁 再来一局</button>
+    </div>
+  </div>
+
+  <!-- 舞台二：锦标赛 -->
+  <div class="stage stage2">
+    <div class="duel-top" style="margin-bottom:10px;">
+      <div style="text-align:center;">
+        <div style="font-size:15px;letter-spacing:.12em;margin-bottom:4px;">🏆 六策略循环赛</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);">每两个策略对打 200 轮，包括自己对自己</div>
+      </div>
+    </div>
+
+    <div class="t-controls">
+      <button class="btn primary" id="btnTourney">🏆 开锦标赛</button>
+      <div class="noiseline">
+        <button class="switch" id="noiseSwitch" role="switch" aria-checked="false"></button>
+        <span>🌫 手滑的世界</span>
+        <span class="hint">（现实里没人不失误，双方都有 5% 概率手滑）</span>
+      </div>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="champion-box" id="championBox">
+      <h3>👑 冠军解读</h3>
+      <div class="champ-note" id="champNote"></div>
+      <div class="traits" id="traitsBox">
+        <div class="trait">😇 <b>善良</b>：从不主动先背叛，永远从合作起手。</div>
+        <div class="trait">😤 <b>有牙</b>：一旦被咬，立刻咬回去，绝不白挨。</div>
+        <div class="trait">🤲 <b>宽容</b>：对方一回头，立刻既往不咎，不记仇。</div>
+        <div class="trait">🔍 <b>简单</b>：规则一眼看穿，对手也能学会怎么和它相处。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 一 · 理性的悲哀</div>
+    <div class="pb">
+      单局囚徒困境里，背叛是理性的，这正是它悲哀的地方：不管对方怎么选，背叛都让你分数更高，于是两个理性人最后都背叛，都只拿 1 分，比双双合作的 3 分惨得多。但只要这场游戏会一直玩下去，未来的报复和回报就改变了账本，合作开始划算。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 二 · 最短的程序赢了</div>
+    <div class="pb">
+      1980 年代的真实锦标赛里，来自全世界的复杂策略都没能赢过一个只有几行代码的程序：<b>一报还一报</b>。它夺冠靠的不是聪明，是品格：善良、有牙、宽容、简单。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 三 · 手滑教的最后一课</div>
+    <div class="pb">
+      手滑的世界教的最后一课：在有误会的现实里，多一分宽容不是软弱，是修正误差的机制。冷战里两大国的缓和、生意场上的回头客、室友间的默契，玩的都是这一局。
+    </div>
+  </div>
+
+  <div class="kicker">
+    「善良不是天真。<br>在足够长的游戏里，<b>善良是算出来的最优解</b>。」
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №021 · Max 造<br>
+    <a href="../doppler/">下一个展厅：救护车变调 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ==================== 策略引擎 ==================== */
+  function stratTFT(my, opp){
+    if (opp.length === 0) return 'C';
+    return opp[opp.length - 1];
+  }
+  function stratAllC(){ return 'C'; }
+  function stratAllD(){ return 'D'; }
+  function stratGrim(my, opp){
+    for (var i = 0; i < opp.length; i++){ if (opp[i] === 'D') return 'D'; }
+    return 'C';
+  }
+  function stratRandom(){ return Math.random() < 0.5 ? 'C' : 'D'; }
+  function stratTester(my, opp){
+    if (my.length === 0) return 'D';                                /* 先咬一口，看你反不反抗 */
+    var firstD = opp.indexOf('D');
+    if (firstD === -1) return my[my.length - 1] === 'D' ? 'C' : 'D'; /* 不反抗，就咬一口哄一口 */
+    if (my.length === firstD + 1) return 'C';                        /* 你还手了，递一次橄榄枝 */
+    return opp[opp.length - 1];                                      /* 之后老实打一报还一报 */
+  }
+  function stratGTFT(my, opp){
+    if (opp.length === 0) return 'C';
+    var last = opp[opp.length - 1];
+    if (last === 'D') return Math.random() < 0.1 ? 'C' : 'D';
+    return 'C';
+  }
+
+  var STRATS = [
+    { id:'tft',    name:'一报还一报',      tag:'首轮合作，之后复读你上一轮',        fn:stratTFT   },
+    { id:'allc',   name:'永远合作',        tag:'无论如何都伸出手',                   fn:stratAllC  },
+    { id:'alld',   name:'永远背叛',        tag:'从第一轮就下手',                     fn:stratAllD  },
+    { id:'grim',   name:'无情触发',        tag:'你背叛一次，它记你一辈子',           fn:stratGrim  },
+    { id:'tester', name:'试探者',          tag:'先咬你一口，看你反不反抗',           fn:stratTester},
+    { id:'random', name:'随机',            tag:'合作背叛全凭抛硬币',                 fn:stratRandom},
+    { id:'gtft',   name:'慷慨的一报还一报',tag:'90% 复读，10% 概率原谅背叛',         fn:stratGTFT  }
+  ];
+  var STRAT_BY_ID = {};
+  STRATS.forEach(function(s){ STRAT_BY_ID[s.id] = s; });
+
+  function payoff(a, b){
+    if (a === 'C' && b === 'C') return [3, 3];
+    if (a === 'D' && b === 'D') return [1, 1];
+    if (a === 'D' && b === 'C') return [5, 0];
+    return [0, 5];
+  }
+
+  function playMatch(fnA, fnB, rounds, flipRate){
+    var myA = [], myB = [];
+    var scoreA = 0, scoreB = 0;
+    flipRate = flipRate || 0;
+    for (var r = 0; r < rounds; r++){
+      var moveA = fnA(myA, myB);
+      var moveB = fnB(myB, myA);
+      if (flipRate > 0){
+        if (Math.random() < flipRate) moveA = moveA === 'C' ? 'D' : 'C';
+        if (Math.random() < flipRate) moveB = moveB === 'C' ? 'D' : 'C';
+      }
+      var p = payoff(moveA, moveB);
+      scoreA += p[0]; scoreB += p[1];
+      myA.push(moveA); myB.push(moveB);
+    }
+    return { scoreA:scoreA, scoreB:scoreB };
+  }
+
+  /* 循环赛：每两个策略对打一场（含自己对自己），200 轮 */
+  function runTournament(strategies, roundsPerMatch, flipRate){
+    var totals = {};
+    strategies.forEach(function(s){ totals[s.id] = 0; });
+    for (var i = 0; i < strategies.length; i++){
+      for (var j = i; j < strategies.length; j++){
+        var res = playMatch(strategies[i].fn, strategies[j].fn, roundsPerMatch, flipRate);
+        totals[strategies[i].id] += res.scoreA;
+        totals[strategies[j].id] += res.scoreB;
+      }
+    }
+    var board = strategies.map(function(s){
+      return { id:s.id, name:s.name, tag:s.tag, score:totals[s.id] };
+    });
+    board.sort(function(a,b){ return b.score - a.score; });
+    return board;
+  }
+
+  /* ==================== 音效（WebAudio，首次手势后创建） ==================== */
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  }
+  function tone(freq, dur, type, gainPeak, delay){
+    if (!AC) return;
+    var t = AC.currentTime + (delay || 0);
+    var o = AC.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(gainPeak, t + 0.015);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function flipSound(){
+    /* 开牌哒一声：短促方波 */
+    tone(680, 0.07, 'square', 0.12, 0);
+  }
+  function scoreUpSound(){
+    /* 得分上扬短音 */
+    if (!AC) return;
+    var t = AC.currentTime;
+    var o = AC.createOscillator();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.exponentialRampToValueAtTime(660, t + 0.14);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.14, t + 0.02);
+    g.gain.linearRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.2);
+  }
+  function betraySound(){
+    /* 背叛低音闷响 */
+    tone(110, 0.28, 'sawtooth', 0.16, 0);
+  }
+  function fanfare(){
+    /* 夺冠小号琶音 */
+    [523, 659, 784, 1046].forEach(function(f, i){
+      tone(f, 0.32, 'square', 0.13, i * 0.09);
+    });
+  }
+
+  /* ==================== 舞台一：对战台 ==================== */
+  var ROUNDS = 10;
+  var scoreYouEl = document.getElementById('scoreYou');
+  var scoreOppEl = document.getElementById('scoreOpp');
+  var trackYouEl = document.getElementById('trackYou');
+  var trackOppEl = document.getElementById('trackOpp');
+  var roundInfoEl = document.getElementById('roundInfo');
+  var btnCoop = document.getElementById('btnCoop');
+  var btnBetray = document.getElementById('btnBetray');
+  var revealEl = document.getElementById('reveal');
+  var btnAgain = document.getElementById('btnAgain');
+  var oppSelect = document.getElementById('oppSelect');
+  var oppAvatarEl = document.getElementById('oppAvatar');
+  var oppNameEl = document.getElementById('oppName');
+
+  var duel = null; /* { myHist, oppHist, myScore, oppScore, round, oppStrat, locked } */
+
+  function newDuel(){
+    var pickVal = oppSelect.value;
+    var strat;
+    if (pickVal === 'random_pick'){
+      var pool = STRATS.filter(function(s){ return s.id !== 'gtft'; }); /* 对战台不用慷慨版，留给锦标赛揭晓 */
+      strat = pool[Math.floor(Math.random() * pool.length)];
+    } else {
+      strat = STRAT_BY_ID[pickVal];
+    }
+    duel = {
+      myHist: [], oppHist: [], myScore: 0, oppScore: 0, round: 0,
+      strat: strat, locked: false
+    };
+    scoreYouEl.textContent = '0';
+    scoreOppEl.textContent = '0';
+    trackYouEl.innerHTML = '';
+    trackOppEl.innerHTML = '';
+    oppAvatarEl.textContent = '❓';
+    oppNameEl.textContent = '神秘对手';
+    revealEl.classList.remove('show');
+    revealEl.innerHTML = '';
+    btnAgain.style.display = 'none';
+    updateRoundInfo();
+    setMoveButtonsEnabled(true);
+  }
+
+  function updateRoundInfo(){
+    if (duel.round >= ROUNDS){
+      roundInfoEl.innerHTML = '十轮打完了';
+    } else {
+      roundInfoEl.innerHTML = '第 <b>' + (duel.round + 1) + '</b> / ' + ROUNDS + ' 轮 · 出手吧';
+    }
+  }
+
+  function setMoveButtonsEnabled(on){
+    btnCoop.disabled = !on;
+    btnBetray.disabled = !on;
+  }
+
+  function makeSlot(kind){
+    var d = document.createElement('div');
+    d.className = 'slot ' + kind + ' flip';
+    d.textContent = kind === 'c' ? '🤝' : '🗡';
+    return d;
+  }
+
+  function flyScore(text, x, y){
+    var el = document.createElement('div');
+    el.className = 'flyup';
+    el.textContent = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 1000);
+  }
+
+  function playRound(myMove){
+    if (!duel || duel.round >= ROUNDS || duel.locked) return;
+    duel.locked = true;
+    setMoveButtonsEnabled(false);
+    ensureAC();
+
+    var oppMove = duel.strat.fn(duel.oppHist, duel.myHist);
+
+    /* 0.5 秒开牌节奏 */
+    roundInfoEl.innerHTML = '两边都出手了……<b>翻牌中</b>';
+    setTimeout(function(){
+      flipSound();
+      var p = payoff(myMove, oppMove);
+      duel.myScore += p[0];
+      duel.oppScore += p[1];
+      duel.myHist.push(myMove);
+      duel.oppHist.push(oppMove);
+      duel.round++;
+
+      trackYouEl.appendChild(makeSlot(myMove === 'C' ? 'c' : 'd'));
+      trackOppEl.appendChild(makeSlot(oppMove === 'C' ? 'c' : 'd'));
+      scoreYouEl.textContent = duel.myScore;
+      scoreOppEl.textContent = duel.oppScore;
+
+      var btnRect = (myMove === 'C' ? btnCoop : btnBetray).getBoundingClientRect();
+      flyScore('+' + p[0], btnRect.left + btnRect.width / 2, btnRect.top);
+
+      if (myMove === 'D' || oppMove === 'D') betraySound(); else scoreUpSound();
+
+      updateRoundInfo();
+
+      if (duel.round >= ROUNDS){
+        setTimeout(finishDuel, 550);
+      } else {
+        duel.locked = false;
+        setMoveButtonsEnabled(true);
+      }
+    }, 500);
+  }
+
+  function finishDuel(){
+    oppAvatarEl.textContent = '🎭';
+    oppNameEl.textContent = duel.strat.name;
+    var verdict = judgeOpponent();
+    var result;
+    if (duel.myScore > duel.oppScore) result = '你赢了 <b>' + duel.myScore + ' : ' + duel.oppScore + '</b>';
+    else if (duel.myScore < duel.oppScore) result = '你输了 <b>' + duel.myScore + ' : ' + duel.oppScore + '</b>';
+    else result = '打成平局 <b>' + duel.myScore + ' : ' + duel.oppScore + '</b>';
+    revealEl.innerHTML =
+      '🎭 对手其实是 <b>' + duel.strat.name + '</b>　' + duel.strat.tag + '<br>' +
+      result + '<br>' + verdict;
+    revealEl.classList.add('show');
+    btnAgain.style.display = 'inline-block';
+    setMoveButtonsEnabled(false);
+  }
+
+  function judgeOpponent(){
+    var myD = duel.myHist.indexOf('D');
+    var oppD = duel.oppHist.indexOf('D');
+    if (myD === -1 && oppD === -1) return '你们十轮全程合作，双双拿到能拿到的最高分。';
+    if (myD === -1 && oppD >= 0) return '你全程合作，它至少背叛过一次，你可能吃了亏，但没输掉底线。';
+    if (myD >= 0 && duel.strat.id === 'grim') return '它从你第 ' + (myD + 1) + ' 轮背叛开始，就再也没信过你。';
+    if (myD >= 0 && duel.strat.id === 'tft'){
+      var laterD = duel.oppHist.slice(myD + 1).indexOf('D');
+      if (laterD >= 0) return '你背叛的下一轮，它就照样还了回来，之后看你怎么出它怎么出。';
+    }
+    if (myD === 0 && duel.myHist.filter(function(m){return m==='D';}).length === ROUNDS) return '你从头背叛到尾，它也一路奉陪到底。';
+    if (myD >= 0) return '这局你也背叛过，输赢都在情理之中。';
+    return '十轮打完，各有各的账。';
+  }
+
+  btnCoop.addEventListener('click', function(){ playRound('C'); });
+  btnBetray.addEventListener('click', function(){ playRound('D'); });
+  btnAgain.addEventListener('click', newDuel);
+
+  document.getElementById('btnStart').addEventListener('click', function(){
+    ensureAC();
+    document.getElementById('intro').classList.add('hide');
+    newDuel();
+  });
+
+  /* ==================== 舞台二：锦标赛 ==================== */
+  var btnTourney = document.getElementById('btnTourney');
+  var noiseSwitch = document.getElementById('noiseSwitch');
+  var boardEl = document.getElementById('board');
+  var championBox = document.getElementById('championBox');
+  var noiseOn = false;
+
+  noiseSwitch.addEventListener('click', function(){
+    noiseOn = !noiseOn;
+    noiseSwitch.classList.toggle('on', noiseOn);
+    noiseSwitch.setAttribute('aria-checked', noiseOn ? 'true' : 'false');
+  });
+
+  btnTourney.addEventListener('click', function(){
+    ensureAC();
+    /* 锦标赛不带「随机」：抛硬币的家伙会被无情触发白吃，把冠军的品格课搅浑；它留在对战台里 */
+    var pool = STRATS.filter(function(s){ return s.id !== 'random'; });
+    var board = runTournament(pool, 200, noiseOn ? 0.05 : 0);
+    /* 冠军解读跟着实际冠军走：品格四条只配给一报还一报家族，爆冷有专属点评 */
+    var champ = board[0];
+    var champNote = document.getElementById('champNote');
+    var traitsBox = document.getElementById('traitsBox');
+    var isNiceChamp = champ.id === 'tft' || champ.id === 'gtft';
+    traitsBox.style.display = isNiceChamp ? '' : 'none';
+    if (champ.id === 'tft'){
+      champNote.innerHTML = '本届冠军：<b>一报还一报</b>。它赢在四条品格：';
+    } else if (champ.id === 'gtft'){
+      champNote.innerHTML = '本届冠军：<b>慷慨的一报还一报</b>。会手滑的世界里，同样四条品格，多了一分原谅：';
+    } else if (champ.id === 'allc'){
+      champNote.innerHTML = '本届冠军：<b>永远合作</b>。老好人赢了这一届：手滑的混战里，从不还手的它没被卷进任何冤冤相报。但先别急着学它，场上只要再多一个永远背叛，它就是全场的提款机。多开几届看看。';
+    } else {
+      champNote.innerHTML = '本届冠军：<b>' + champ.name + '</b>。这一届的运气和品格课唱了反调。多开几届看看，长期的赢家还是会回到善良的策略。';
+    }
+    /* 排行榜从下往上逐条揭晓：按真实名次从后往前，逐条插到顶部之前 */
+    boardEl.innerHTML = '';
+    championBox.classList.remove('show');
+    btnTourney.disabled = true;
+    var reversed = board.slice().reverse(); /* 末位在前 */
+    reversed.forEach(function(row, i){
+      var idx = board.length - 1 - i; /* 该行真实名次索引 */
+      setTimeout(function(){
+        var el = document.createElement('div');
+        el.className = 'brow' + (idx === 0 ? ' gold' : '');
+        el.innerHTML =
+          '<div class="brank">' + (idx === 0 ? '👑' : (idx + 1)) + '</div>' +
+          '<div class="bname"><div class="n1">' + row.name + '</div><div class="n2">' + row.tag + '</div></div>' +
+          '<div class="bscore">' + row.score + ' 分</div>';
+        boardEl.insertBefore(el, boardEl.firstChild);
+        if (idx === 0){
+          ensureAC();
+          fanfare();
+          setTimeout(function(){ championBox.classList.add('show'); }, 300);
+          btnTourney.disabled = false;
+        }
+      }, i * 400);
+    });
+  });
+
+  newDuel();
+})();
+</script>
+</body>
+</html>

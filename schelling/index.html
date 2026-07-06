@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>谢林的棋盘 · 感觉博物馆</title>
+<meta name="description" content="每个人只是不想当少数，城市就割裂了。谢林隔离模型：温和的邻居偏好，加上自由搬家，就足够织出一座泾渭分明的城市。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#efe9da;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .hud{
+    display:flex;justify-content:center;gap:18px;flex-wrap:wrap;
+    font-size:13px;color:#57503f;letter-spacing:.05em;
+    background:var(--card);border:1px solid var(--ink);border-top:none;
+    padding:9px 14px;
+  }
+  .hud b{color:var(--seal);}
+
+  .verdict{
+    text-align:center;font-size:15.5px;line-height:1.9;color:#453e30;
+    min-height:1.9em;margin-top:12px;
+  }
+  .verdict b{color:var(--seal);font-size:18px;}
+  .verdict.settled{color:var(--seal);}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .densrow{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:14px;font-size:14px;color:#453e30;flex-wrap:wrap;text-align:center;}
+  .densrow input{width:min(360px,55vw);accent-color:var(--seal);}
+  .densrow b{font-size:19px;color:var(--seal);min-width:56px;text-align:center;}
+
+  .presets{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:10px;}
+  .presets:last-child{margin-bottom:0;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 14px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.primary:hover{color:#fdf6ee;background:#96331f;}
+  .btn.on{background:var(--ink);color:#fdf6ee;border-color:var(--ink);}
+
+  .lab{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 20px 20px;margin-top:16px;
+  }
+  .lab h2{font-size:16px;letter-spacing:.1em;margin-bottom:4px;}
+  .lab .tag{font-size:11.5px;color:var(--seal);letter-spacing:.15em;margin-bottom:12px;}
+  .lab p.desc{font-size:13px;line-height:1.9;color:#57503f;margin-bottom:12px;}
+  .chartwrap{border:1px solid var(--line);background:#fffdf6;padding:12px 10px 8px;}
+  #chartCv{display:block;width:100%;height:auto;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .punch{
+    text-align:center;font-size:22px;letter-spacing:.1em;color:var(--seal);
+    padding:18px 10px 6px;line-height:1.7;
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №024</span>
+  </div>
+
+  <header>
+    <h1>谢林的棋盘</h1>
+    <div class="en">Schelling's Segregation Model</div>
+    <p class="sub">每个人只是不想当少数，城市就割裂了</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="440" height="440"></canvas>
+  </div>
+  <div class="hud">
+    <span>容忍线 <b id="hudTol">30%</b></span>
+    <span>不开心住户 <b id="hudUnhappy">0</b></span>
+    <span>隔离度 <b id="hudSeg">50%</b></span>
+  </div>
+  <div class="verdict" id="verdict">拖动容忍线，点「▶ 播放」，看混居的城市自己搬成两半。</div>
+
+  <div class="ctrls">
+    <div class="densrow">
+      我至少要 <input type="range" id="tolSlider" min="10" max="80" value="30"> <b id="tolVal">30%</b> 的邻居和我一样
+    </div>
+    <div class="presets">
+      <button class="btn primary" id="btnPlay">▶ 播放</button>
+      <button class="btn" id="btnReset">🎲 重新混居</button>
+    </div>
+    <div class="presets">
+      <button class="btn" id="btn25">25%</button>
+      <button class="btn" id="btn33">33%</button>
+      <button class="btn" id="btn50">50%</button>
+    </div>
+  </div>
+
+  <div class="lab">
+    <h2>📈 隔离度曲线 · 全城平均同类邻居占比</h2>
+    <div class="tag">起点约 50%，看它怎么爬</div>
+    <p class="desc">每一步统计一次「平均每户身边同类邻居的占比」，画成下面这条时间线。初始混居时这个数接近 50%，如果它一路爬到 75% 以上还不回头，就是这座城市已经把自己搬成两半了。</p>
+    <div class="chartwrap">
+      <canvas id="chartCv" width="780" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 棋盘上没有一个种族主义者</div>
+    <div class="pb">1971 年，经济学家<b>谢林</b>用硬币和棋盘做了这个实验。棋盘上没有一个种族主义者，每户只求「别让我当绝对少数」，最后得到的却是一座泾渭分明的城市。</div>
+    <div class="pb">反直觉的地方在这里：<b>25%</b> 这么低的要求，城市也回不到均匀混居（随机基线是 50%，它会稳稳停在 59% 上下）。而只要涨到 <b>30%</b>，一个听起来仍然很温和的数字，城市就直接割裂到 75%。宏观的割裂不需要宏观的恶意，温和偏好加上自由搬家就够了。个体理性加总，不等于集体想要的结果。</div>
+    <div class="pb">现实同款：学区房、饭桌上的圈子、关注列表的同温层。本馆的<b>算法织布机</b>是它的信息版，<b>剧场效应</b>是它的姿势版。</div>
+    <div class="punch">「没有人想要一座割裂的城市，<br>每个人只是不想当少数。」</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №024 · Max 造<br>
+    <a href="../sixdegrees/">下一个展厅：六度分隔 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- 网格与状态 ---------- */
+  var COLS = 44, ROWS = 44, CELL = 10;
+  var W = COLS * CELL, H = ROWS * CELL;
+  var EMPTY = 0, A = 1, B = 2;
+  var EMPTY_RATIO = 0.10;
+
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  cv.width = W; cv.height = H;
+
+  var grid = new Uint8Array(COLS * ROWS);
+  var unhappy = new Uint8Array(COLS * ROWS); /* 1 = 当前不开心 */
+  var tolerance = 0.30;
+  var playing = false;
+  var stableSteps = 0; /* 连续多少步没人搬家 */
+  var STABLE_NEEDED = 20;
+  var settled = false;
+
+  function idx(x, y){ return y * COLS + x; }
+
+  function reshuffle(){
+    for (var i = 0; i < COLS * ROWS; i++){
+      var r = Math.random();
+      if (r < EMPTY_RATIO) grid[i] = EMPTY;
+      else grid[i] = (r < EMPTY_RATIO + (1 - EMPTY_RATIO) / 2) ? A : B;
+      unhappy[i] = 0;
+    }
+    stableSteps = 0;
+    settled = false;
+    chartPoints = [];
+    tChart = 0;
+    recompute();
+    setVerdict('拖动容忍线，点「▶ 播放」，看混居的城市自己搬成两半。', false);
+  }
+
+  /* 八邻居同类占比；返回 {like, total}，total 不含空格和越界 */
+  function neighborStat(x, y, v){
+    var like = 0, total = 0;
+    for (var dy = -1; dy <= 1; dy++){
+      for (var dx = -1; dx <= 1; dx++){
+        if (dx === 0 && dy === 0) continue;
+        var nx = x + dx, ny = y + dy;
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+        var nv = grid[idx(nx, ny)];
+        if (nv === EMPTY) continue;
+        total++;
+        if (nv === v) like++;
+      }
+    }
+    return { like: like, total: total };
+  }
+
+  function recompute(){
+    var unhappyCount = 0;
+    var sumRatio = 0, sumCount = 0;
+    for (var y = 0; y < ROWS; y++){
+      for (var x = 0; x < COLS; x++){
+        var i = idx(x, y);
+        var v = grid[i];
+        if (v === EMPTY){ unhappy[i] = 0; continue; }
+        var s = neighborStat(x, y, v);
+        if (s.total > 0){
+          sumRatio += s.like / s.total;
+          sumCount++;
+        }
+        var isUnhappy = s.total > 0 && (s.like / s.total) < tolerance;
+        unhappy[i] = isUnhappy ? 1 : 0;
+        if (isUnhappy) unhappyCount++;
+      }
+    }
+    var segPct = sumCount > 0 ? (sumRatio / sumCount * 100) : 50;
+    document.getElementById('hudUnhappy').textContent = unhappyCount;
+    document.getElementById('hudSeg').textContent = segPct.toFixed(0) + '%';
+    return { unhappyCount: unhappyCount, segPct: segPct };
+  }
+
+  /* ---------- 模拟一步：随机取部分不开心住户搬去随机空格 ---------- */
+  var MOVE_FRACTION = 0.5; /* 每步尝试搬走的不开心住户比例 */
+
+  function simStep(){
+    var unhappyList = [];
+    var emptyList = [];
+    for (var i = 0; i < COLS * ROWS; i++){
+      if (grid[i] === EMPTY) emptyList.push(i);
+      else if (unhappy[i]) unhappyList.push(i);
+    }
+    var moved = 0;
+    if (unhappyList.length > 0 && emptyList.length > 0){
+      /* 打乱不开心名单，取一部分搬家 */
+      shuffle(unhappyList);
+      var moveCount = Math.max(1, Math.round(unhappyList.length * MOVE_FRACTION));
+      moveCount = Math.min(moveCount, unhappyList.length, emptyList.length);
+      shuffle(emptyList);
+      for (var k = 0; k < moveCount; k++){
+        var from = unhappyList[k];
+        var to = emptyList[k];
+        grid[to] = grid[from];
+        grid[from] = EMPTY;
+        moved++;
+      }
+    }
+    var stat = recompute();
+    addChartPoint(stat.segPct);
+    if (moved === 0){
+      stableSteps++;
+    } else {
+      stableSteps = 0;
+    }
+    if (stableSteps >= STABLE_NEEDED && !settled){
+      settled = true;
+      playing = false;
+      setVerdict('城市安定了。每个人的要求只有 <b>' + Math.round(tolerance * 100) + '%</b>，城市的隔离度是 <b>' + stat.segPct.toFixed(0) + '%</b>', true);
+    }
+    return moved;
+  }
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+  }
+
+  function setVerdict(html, done){
+    var v = document.getElementById('verdict');
+    v.innerHTML = html;
+    v.classList.toggle('settled', !!done);
+  }
+
+  /* ---------- 画面：暖橙 / 青蓝圆点，色觉友好 ---------- */
+  var colorA = '#d9791f'; /* 暖橙 */
+  var colorB = '#2f7f95'; /* 青蓝 */
+  var emptyColor = '#efe9da';
+  var dotR = CELL * 0.34;
+
+  function draw(){
+    ctx.fillStyle = emptyColor;
+    ctx.fillRect(0, 0, W, H);
+    for (var y = 0; y < ROWS; y++){
+      for (var x = 0; x < COLS; x++){
+        var i = idx(x, y);
+        var v = grid[i];
+        if (v === EMPTY) continue;
+        var cx = x * CELL + CELL / 2, cy = y * CELL + CELL / 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, unhappy[i] ? dotR * 0.62 : dotR, 0, Math.PI * 2);
+        ctx.fillStyle = v === A ? colorA : colorB;
+        ctx.globalAlpha = unhappy[i] ? 0.5 : 1;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  /* ---------- 主循环：12 步/秒，rAF 真实时间补帧 ---------- */
+  var STEP_DT = 1 / 12;
+  var acc = 0;
+  var last = performance.now();
+
+  function loop(now){
+    var dt = Math.min(0.25, (now - last) / 1000);
+    last = now;
+    if (playing){
+      acc += dt;
+      var guard = 0;
+      while (acc >= STEP_DT && guard < 20){
+        simStep();
+        acc -= STEP_DT;
+        guard++;
+        if (!playing) break; /* 中途安定则停 */
+      }
+    } else {
+      acc = 0;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- 隔离度曲线 ---------- */
+  var chartCv = document.getElementById('chartCv');
+  var chartCtx = chartCv.getContext('2d');
+  var CW = 780, CH = 200;
+  var PAD_L = 42, PAD_R = 16, PAD_T = 14, PAD_B = 26;
+  var chartPoints = []; /* {t, seg} */
+  var tChart = 0;
+  var CHART_MAX_T = 400;
+
+  function addChartPoint(segPct){
+    tChart++;
+    chartPoints.push({ t: tChart, seg: segPct });
+    if (chartPoints.length > 2000) chartPoints.shift();
+    drawChart();
+  }
+
+  function drawChart(){
+    chartCtx.clearRect(0, 0, CW, CH);
+    var plotW = CW - PAD_L - PAD_R, plotH = CH - PAD_T - PAD_B;
+    var x0 = PAD_L, y0 = PAD_T;
+    var maxT = Math.max(CHART_MAX_T, tChart);
+
+    function xOf(t){ return x0 + (t / maxT) * plotW; }
+    function yOf(p){ return y0 + plotH - ((p - 50) / 50) * plotH; }
+
+    /* 坐标轴 */
+    chartCtx.strokeStyle = '#c9bc9e';
+    chartCtx.lineWidth = 1;
+    chartCtx.beginPath();
+    chartCtx.moveTo(x0, y0);
+    chartCtx.lineTo(x0, y0 + plotH);
+    chartCtx.lineTo(x0 + plotW, y0 + plotH);
+    chartCtx.stroke();
+
+    chartCtx.fillStyle = '#8a8071';
+    chartCtx.font = '10.5px "Noto Serif SC",serif';
+    chartCtx.textAlign = 'right';
+    [50, 62.5, 75, 87.5, 100].forEach(function(p){
+      var y = yOf(p);
+      chartCtx.fillText(p + '%', x0 - 6, y + 3);
+      chartCtx.strokeStyle = 'rgba(90,80,60,.12)';
+      chartCtx.beginPath();
+      chartCtx.moveTo(x0, y);
+      chartCtx.lineTo(x0 + plotW, y);
+      chartCtx.stroke();
+    });
+
+    /* 75% 参考虚线 */
+    var y75 = yOf(75);
+    chartCtx.save();
+    chartCtx.setLineDash([4, 4]);
+    chartCtx.strokeStyle = '#b5402c';
+    chartCtx.lineWidth = 1.1;
+    chartCtx.beginPath();
+    chartCtx.moveTo(x0, y75);
+    chartCtx.lineTo(x0 + plotW, y75);
+    chartCtx.stroke();
+    chartCtx.restore();
+    chartCtx.fillStyle = '#b5402c';
+    chartCtx.font = '11px "Noto Serif SC",serif';
+    chartCtx.textAlign = 'left';
+    chartCtx.fillText('隔离参考线 75%', x0 + 6, y75 - 5);
+
+    chartCtx.textAlign = 'center';
+    chartCtx.fillStyle = '#8a8071';
+    chartCtx.font = '10.5px "Noto Serif SC",serif';
+    chartCtx.fillText('步数 →', x0 + plotW / 2, CH - 6);
+
+    /* 曲线 */
+    if (chartPoints.length > 1){
+      chartCtx.beginPath();
+      chartCtx.strokeStyle = '#2a2521';
+      chartCtx.lineWidth = 1.6;
+      for (var k = 0; k < chartPoints.length; k++){
+        var pt = chartPoints[k];
+        var x = xOf(pt.t), y = yOf(Math.max(50, Math.min(100, pt.seg)));
+        if (k === 0) chartCtx.moveTo(x, y);
+        else chartCtx.lineTo(x, y);
+      }
+      chartCtx.stroke();
+    }
+  }
+
+  /* ---------- 交互 ---------- */
+  var btnPlay = document.getElementById('btnPlay');
+  function setPlaying(p){
+    playing = p;
+    btnPlay.textContent = playing ? '⏸ 暂停' : '▶ 播放';
+    btnPlay.classList.toggle('on', playing);
+  }
+  btnPlay.addEventListener('click', function(){
+    if (settled && !playing) return; /* 已安定，播放键无意义，需先重新混居 */
+    setPlaying(!playing);
+  });
+  document.getElementById('btnReset').addEventListener('click', function(){
+    setPlaying(false);
+    reshuffle();
+  });
+
+  document.getElementById('tolSlider').addEventListener('input', function(){
+    tolerance = +this.value / 100;
+    document.getElementById('tolVal').textContent = this.value + '%';
+    document.getElementById('hudTol').textContent = this.value + '%';
+    recompute();
+  });
+
+  function setTolUI(pct){
+    document.getElementById('tolSlider').value = pct;
+    document.getElementById('tolVal').textContent = pct + '%';
+    document.getElementById('hudTol').textContent = pct + '%';
+    tolerance = pct / 100;
+  }
+  document.getElementById('btn25').addEventListener('click', function(){
+    setTolUI(25);
+    reshuffle();
+    setPlaying(true);
+  });
+  document.getElementById('btn33').addEventListener('click', function(){
+    setTolUI(33);
+    reshuffle();
+    setPlaying(true);
+  });
+  document.getElementById('btn50').addEventListener('click', function(){
+    setTolUI(50);
+    reshuffle();
+    setPlaying(true);
+  });
+
+  /* ---------- 启动 ---------- */
+  reshuffle();
+  drawChart();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

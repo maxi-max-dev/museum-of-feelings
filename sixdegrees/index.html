@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六度分隔 · 感觉博物馆</title>
+<meta name="description" content="世界不小，捷径很少，但有几条就够了。转动捷径旋钮，看几百个熟人圈子怎样被几根弦缝成一个小世界。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#fffdf6;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;cursor:pointer;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .knobrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:center;margin-bottom:14px;}
+  .knobrow .lbl{font-size:13px;color:#453e30;letter-spacing:.06em;margin-right:2px;}
+  .betabtn{
+    font-family:var(--serif);font-size:13px;letter-spacing:.03em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:8px 12px;cursor:pointer;
+  }
+  .betabtn:hover{border-color:var(--seal);color:var(--seal);}
+  .betabtn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  .actrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.06em;
+    background:var(--seal);color:#fdf6ee;border:none;
+    border-radius:11px;padding:11px 20px;cursor:pointer;
+    box-shadow:0 4px 0 #7e2b1c;transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7e2b1c;}
+  .btn.ghost{
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    box-shadow:none;padding:9.5px 18px;
+  }
+  .btn.ghost:hover{border-color:var(--seal);color:var(--seal);}
+
+  .meters{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;
+  }
+  @media(max-width:640px){.meters{grid-template-columns:1fr;}}
+  .meter{
+    border:1px dashed var(--line);border-radius:8px;padding:12px 14px;
+    background:rgba(255,255,255,.4);text-align:center;
+  }
+  .meter .m-lbl{font-size:12px;color:var(--ink-soft);letter-spacing:.1em;margin-bottom:4px;}
+  .meter .m-val{font-size:26px;color:var(--seal);line-height:1.3;}
+  .meter .m-sub{font-size:11.5px;color:#8a8071;margin-top:2px;}
+
+  .headline{
+    text-align:center;font-size:15px;line-height:1.9;color:#453e30;
+    margin-top:14px;min-height:26px;
+  }
+  .headline b{color:var(--ink);}
+
+  .caption{
+    text-align:center;font-size:14.5px;line-height:1.8;color:var(--seal);
+    margin-top:8px;min-height:24px;letter-spacing:.03em;
+  }
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque .quote{
+    text-align:center;font-size:17px;letter-spacing:.06em;color:var(--ink);
+    padding-top:10px;border-top:1px dashed var(--line);
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №025</span>
+  </div>
+
+  <header>
+    <h1>六度分隔</h1>
+    <div class="en">Six Degrees of Separation</div>
+    <p class="sub">世界不小，捷径很少，但有几条就够了</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="720" height="720"></canvas>
+  </div>
+
+  <div class="ctrls">
+    <div class="knobrow">
+      <span class="lbl">🔀 捷径旋钮 · 重连概率 β</span>
+      <button class="betabtn on" data-b="0">0%</button>
+      <button class="betabtn" data-b="0.005">0.5%</button>
+      <button class="betabtn" data-b="0.01">1%</button>
+      <button class="betabtn" data-b="0.02">2%</button>
+      <button class="betabtn" data-b="0.05">5%</button>
+      <button class="betabtn" data-b="0.10">10%</button>
+      <button class="betabtn" data-b="0.30">30%</button>
+    </div>
+    <div class="actrow">
+      <button class="btn" id="pathBtn">🎲 随机找两个人</button>
+      <button class="btn ghost" id="regenBtn">🔁 重新排列熟人圈</button>
+    </div>
+    <div class="meters">
+      <div class="meter">
+        <div class="m-lbl">平均路径长度 L</div>
+        <div class="m-val" id="mL">……</div>
+        <div class="m-sub">任意两人之间，平均要转几手</div>
+      </div>
+      <div class="meter">
+        <div class="m-lbl">聚类系数 C</div>
+        <div class="m-val" id="mC">……</div>
+        <div class="m-sub">你的朋友们，彼此也是朋友的比例</div>
+      </div>
+    </div>
+    <div class="headline" id="headline">β=0：只有熟人的规则圈子，捷径为零。</div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 六个人之外，就是任何人</div>
+    <div class="pb">① 1967 年，心理学家米尔格拉姆让内布拉斯加的一群陌生人，把一封信转交给远在波士顿的一个股票经纪人，规则是每次只能转给一个认识的熟人。信件辗转送达，平均只走了 <b>5.2 步</b>。这个数字后来被通俗地叫做「六度分隔」。</div>
+    <div class="pb">② 1998 年，瓦茨和斯托加茨给出了数学解释：一个规则的熟人圈子（你只认识身边的人，彼此也大多互相认识）加上极少量的随机捷径，就能同时拥有「小世界」的两条命：路径极短，圈子却依然紧密。捷径不需要多，<b>1%</b> 就足够把平均距离打崩，而你自己的朋友圈看起来毫无变化。</div>
+    <div class="pb">③ 现实里同一套数学天天在演：一趟航班就是一条长程捷径，这是疫情为什么防不住的原因；一条谣言半天传遍全网，靠的也是这几根弦；领英上的「二度人脉」，本质就是别人替你架好的捷径。本馆的<a href="../forest/" style="color:var(--seal)">临界点</a>那一厅讲的是「够不够多」的阈值，这一厅讲的是「够不够近」的距离，是同一种传播现象的两条腿。</div>
+    <div class="quote">「世界不小，捷径很少，但有几条就够了。」</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №025 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 720, H = 720;
+  var N = 400, K = 6; /* K个最近邻，环形晶格 */
+  var CX = W / 2, CY = H / 2, R = 300;
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var beta = 0;
+  var nodes = [];      /* {x,y,angle} */
+  var adj = [];         /* Set[] 邻接表 */
+  var shortcutEdges = []; /* 明显的长程捷径，单独画深色 */
+  var ringEdges = [];     /* 普通近邻边 */
+
+  var stats = {L: null, C: null};
+  var firstPathAtZero = true;   /* β=0 首次寻路 是否已完成 */
+  var firstPathAtShortcut = true; /* β调到有捷径后 首次寻路 是否已完成 */
+
+  /* ---------- 建网 ---------- */
+  function layoutNodes(){
+    nodes = [];
+    for (var i = 0; i < N; i++){
+      var a = (i / N) * Math.PI * 2 - Math.PI / 2;
+      nodes.push({x: CX + Math.cos(a) * R, y: CY + Math.sin(a) * R, angle: a});
+    }
+  }
+
+  function buildGraph(){
+    adj = [];
+    for (var i = 0; i < N; i++) adj.push(new Set());
+    var half = K / 2;
+    var baseEdges = [];
+    for (var i2 = 0; i2 < N; i2++){
+      for (var k = 1; k <= half; k++){
+        baseEdges.push([i2, (i2 + k) % N]);
+      }
+    }
+    for (var e = 0; e < baseEdges.length; e++){
+      adj[baseEdges[e][0]].add(baseEdges[e][1]);
+      adj[baseEdges[e][1]].add(baseEdges[e][0]);
+    }
+    ringEdges = [];
+    shortcutEdges = [];
+    for (var e2 = 0; e2 < baseEdges.length; e2++){
+      var i3 = baseEdges[e2][0], j3 = baseEdges[e2][1];
+      if (Math.random() < beta){
+        var target, attempts = 0;
+        do {
+          target = Math.floor(Math.random() * N);
+          attempts++;
+        } while ((target === i3 || adj[i3].has(target)) && attempts < 60);
+        if (target !== i3 && !adj[i3].has(target)){
+          adj[i3].delete(j3);
+          adj[j3].delete(i3);
+          adj[i3].add(target);
+          adj[target].add(i3);
+          shortcutEdges.push([i3, target]);
+          continue;
+        }
+      }
+      ringEdges.push([i3, j3]);
+    }
+    computeStats();
+  }
+
+  /* ---------- BFS / 统计 ---------- */
+  function bfsDist(start){
+    var dist = new Int32Array(N).fill(-1);
+    dist[start] = 0;
+    var queue = [start], head = 0;
+    while (head < queue.length){
+      var u = queue[head++];
+      adj[u].forEach(function(v){
+        if (dist[v] === -1){ dist[v] = dist[u] + 1; queue.push(v); }
+      });
+    }
+    return dist;
+  }
+
+  function computeStats(){
+    /* L: 抽样200对 */
+    var total = 0, count = 0;
+    var cache = {};
+    for (var p = 0; p < 200; p++){
+      var s = Math.floor(Math.random() * N);
+      var t = Math.floor(Math.random() * N);
+      if (t === s) { t = (t + 1) % N; }
+      var dist = cache[s];
+      if (!dist){ dist = bfsDist(s); cache[s] = dist; }
+      if (dist[t] > 0){ total += dist[t]; count++; }
+    }
+    stats.L = count ? total / count : null;
+
+    /* C: 全量聚类系数 */
+    var sum = 0, counted = 0;
+    for (var i = 0; i < N; i++){
+      var nb = Array.from(adj[i]);
+      var k2 = nb.length;
+      if (k2 < 2) continue;
+      var links = 0;
+      for (var a = 0; a < nb.length; a++){
+        for (var b = a + 1; b < nb.length; b++){
+          if (adj[nb[a]].has(nb[b])) links++;
+        }
+      }
+      sum += links / (k2 * (k2 - 1) / 2);
+      counted++;
+    }
+    stats.C = counted ? sum / counted : null;
+
+    document.getElementById('mL').textContent = stats.L !== null ? stats.L.toFixed(1) : '……';
+    document.getElementById('mC').textContent = stats.C !== null ? stats.C.toFixed(3) : '……';
+  }
+
+  /* ---------- 绘制 ---------- */
+  var ripple = null; /* {start,end,layers:[[nodeIdx,...],...],path:[...],phase:'growing'|'done',t0} */
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+
+    /* 普通近邻边：极淡墨色弧线 */
+    ctx.strokeStyle = 'rgba(90,75,55,.14)';
+    ctx.lineWidth = 1;
+    for (var e = 0; e < ringEdges.length; e++){
+      var a1 = nodes[ringEdges[e][0]], b1 = nodes[ringEdges[e][1]];
+      ctx.beginPath();
+      ctx.moveTo(a1.x, a1.y);
+      ctx.lineTo(b1.x, b1.y);
+      ctx.stroke();
+    }
+
+    /* 长程捷径：穿过圆心附近，深一点的墨色 */
+    ctx.strokeStyle = 'rgba(181,64,44,.4)';
+    ctx.lineWidth = 1.3;
+    for (var s = 0; s < shortcutEdges.length; s++){
+      var a2 = nodes[shortcutEdges[s][0]], b2 = nodes[shortcutEdges[s][1]];
+      ctx.beginPath();
+      ctx.moveTo(a2.x, a2.y);
+      ctx.lineTo(b2.x, b2.y);
+      ctx.stroke();
+    }
+
+    /* 波纹寻路动画 */
+    if (ripple) drawRipple();
+
+    /* 节点 */
+    var highlightSet = ripple && ripple.path ? ripple.pathSet : null;
+    var reachedSet = ripple ? ripple.reachedSet : null;
+    for (var i = 0; i < N; i++){
+      var nd = nodes[i];
+      var isStart = ripple && i === ripple.start;
+      var isEnd = ripple && i === ripple.end;
+      var onPath = highlightSet && highlightSet.has(i);
+      var reached = reachedSet && reachedSet.has(i);
+      var rad = 2.1;
+      var fill = '#8a8071';
+      if (reached && !onPath) { fill = 'rgba(181,64,44,.55)'; rad = 2.4; }
+      if (onPath) { fill = '#b5402c'; rad = 3.2; }
+      if (isStart || isEnd) { rad = 5.5; }
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.arc(nd.x, nd.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    /* 起终点小人头像标记 */
+    if (ripple){
+      drawPersonMark(nodes[ripple.start], '🙂');
+      drawPersonMark(nodes[ripple.end], '🙋');
+    }
+
+    /* 跳数大字 */
+    if (ripple && ripple.phase === 'done' && ripple.showBadge){
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(251,247,236,.92)';
+      var bw = 150, bh = 62;
+      roundRect(CX - bw / 2, CY - bh / 2, bw, bh, 12);
+      ctx.fill();
+      ctx.strokeStyle = '#b5402c';
+      ctx.lineWidth = 1.5;
+      roundRect(CX - bw / 2, CY - bh / 2, bw, bh, 12);
+      ctx.stroke();
+      ctx.fillStyle = '#b5402c';
+      ctx.font = 'bold 34px "Noto Serif SC",serif';
+      ctx.fillText(ripple.hops + ' 跳', CX, CY + 12);
+      ctx.restore();
+    }
+  }
+
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawPersonMark(nd, emoji){
+    ctx.save();
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var dir = Math.atan2(nd.y - CY, nd.x - CX);
+    var lx = nd.x + Math.cos(dir) * 20, ly = nd.y + Math.sin(dir) * 20;
+    ctx.fillStyle = 'rgba(251,247,236,.9)';
+    ctx.beginPath();
+    ctx.arc(lx, ly, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#b5402c';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.fillText(emoji, lx, ly + 1);
+    ctx.restore();
+  }
+
+  function drawRipple(){
+    var layers = ripple.layers;
+    var LAYER_MS = reduceMotion ? 1 : 250;
+    var elapsed = performance.now() - ripple.t0;
+    var visibleLayers = Math.min(layers.length, Math.floor(elapsed / LAYER_MS) + 1);
+
+    ripple.reachedSet = ripple.reachedSet || new Set();
+    for (var l = 0; l < visibleLayers; l++){
+      for (var n = 0; n < layers[l].length; n++) ripple.reachedSet.add(layers[l][n]);
+    }
+
+    if (visibleLayers >= layers.length && ripple.phase === 'growing'){
+      ripple.phase = 'done';
+      ripple.hops = layers.length - 1;
+      ripple.pathSet = new Set(ripple.path);
+      ripple.showBadge = true;
+      onRippleDone();
+    }
+  }
+
+  /* ---------- 寻路 ---------- */
+  function findPath(start, end){
+    var dist = new Int32Array(N).fill(-1);
+    var prev = new Int32Array(N).fill(-1);
+    dist[start] = 0;
+    var queue = [start], head = 0;
+    var layersByDist = [[start]];
+    while (head < queue.length){
+      var u = queue[head++];
+      var arr = Array.from(adj[u]);
+      for (var vi = 0; vi < arr.length; vi++){
+        var v = arr[vi];
+        if (dist[v] === -1){
+          dist[v] = dist[u] + 1;
+          prev[v] = u;
+          queue.push(v);
+          if (!layersByDist[dist[v]]) layersByDist[dist[v]] = [];
+          layersByDist[dist[v]].push(v);
+        }
+      }
+      if (dist[end] !== -1 && u === end) break;
+    }
+    if (dist[end] === -1) return null;
+    /* 截断layers到终点距离 */
+    var layers = layersByDist.slice(0, dist[end] + 1);
+    var path = [];
+    var cur = end;
+    while (cur !== -1){ path.unshift(cur); if (cur === start) break; cur = prev[cur]; }
+    return {layers: layers, path: path, hops: dist[end]};
+  }
+
+  function startRipple(start, end){
+    var res = findPath(start, end);
+    if (!res){ return; }
+    ripple = {
+      start: start, end: end,
+      layers: res.layers, path: res.path, hops: res.hops,
+      phase: 'growing', t0: performance.now(),
+      reachedSet: new Set(), pathSet: null, showBadge: false
+    };
+    if (reduceMotion){
+      ripple.phase = 'done';
+      ripple.pathSet = new Set(ripple.path);
+      ripple.reachedSet = new Set();
+      for (var l = 0; l < ripple.layers.length; l++){
+        for (var n = 0; n < ripple.layers[l].length; n++) ripple.reachedSet.add(ripple.layers[l][n]);
+      }
+      ripple.showBadge = true;
+      onRippleDone();
+    }
+  }
+
+  function onRippleDone(){
+    var hasShortcutInPath = false;
+    var pathArr = ripple.path;
+    for (var i = 0; i < pathArr.length - 1; i++){
+      var u = pathArr[i], v = pathArr[i + 1];
+      var ringDist = Math.min(Math.abs(u - v), N - Math.abs(u - v));
+      if (ringDist > K) { hasShortcutInPath = true; break; }
+    }
+    if (beta === 0 && firstPathAtZero){
+      firstPathAtZero = false;
+      setCaption('在只有熟人的世界里，消息要走很久。');
+    } else if (beta > 0 && firstPathAtShortcut){
+      firstPathAtShortcut = false;
+      setCaption(hasShortcutInPath ? '几根弦改变了一切。' : '这一次没抄到近路，再找两个人试试。');
+    } else {
+      setCaption(hasShortcutInPath ? '又是一条走了捷径的路。' : '这条路老老实实沿着熟人圈子走。');
+    }
+    updateHeadline();
+  }
+
+  var captionTimer = null;
+  function setCaption(text){
+    var el = document.getElementById('caption');
+    el.textContent = text;
+    el.style.opacity = '1';
+    if (captionTimer) clearTimeout(captionTimer);
+    captionTimer = setTimeout(function(){ el.style.opacity = '0'; }, 5200);
+  }
+
+  function updateHeadline(){
+    var el = document.getElementById('headline');
+    if (stats.L === null){ el.innerHTML = ''; return; }
+    var pct = Math.round(beta * 100 * 10) / 10;
+    if (beta === 0){
+      el.innerHTML = 'β=0：只有熟人的规则圈子，平均路径长度 <b>L≈' + stats.L.toFixed(0) + '</b>。';
+    } else {
+      el.innerHTML = 'β=' + pct + '%：捷径只加了几根，平均路径长度就跌到 <b>L≈' + stats.L.toFixed(1) + '</b>，而熟人圈还厚厚地在（<b>C≈' + stats.C.toFixed(2) + '</b>，纯随机网络只有 0.015）。';
+    }
+  }
+
+  /* ---------- 交互 ---------- */
+  document.querySelectorAll('.betabtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.betabtn').forEach(function(x){ x.classList.remove('on'); });
+      this.classList.add('on');
+      beta = parseFloat(this.dataset.b);
+      ripple = null;
+      buildGraph();
+      updateHeadline();
+    });
+  });
+
+  document.getElementById('regenBtn').addEventListener('click', function(){
+    ripple = null;
+    buildGraph();
+    updateHeadline();
+  });
+
+  document.getElementById('pathBtn').addEventListener('click', function(){
+    var s = Math.floor(Math.random() * N);
+    var e = Math.floor(Math.random() * N);
+    var tries = 0;
+    while (e === s && tries < 10){ e = Math.floor(Math.random() * N); tries++; }
+    startRipple(s, e);
+  });
+
+  var pickedStart = null;
+  cv.addEventListener('click', function(ev){
+    var rect = cv.getBoundingClientRect();
+    var mx = (ev.clientX - rect.left) * (W / rect.width);
+    var my = (ev.clientY - rect.top) * (H / rect.height);
+    var best = -1, bestD2 = 18 * 18;
+    for (var i = 0; i < N; i++){
+      var dx = nodes[i].x - mx, dy = nodes[i].y - my;
+      var d2 = dx * dx + dy * dy;
+      if (d2 < bestD2){ bestD2 = d2; best = i; }
+    }
+    if (best === -1) return;
+    if (pickedStart === null){
+      pickedStart = best;
+      setCaption('已选起点，再点一个终点。');
+    } else {
+      startRipple(pickedStart, best);
+      pickedStart = null;
+    }
+  });
+
+  /* ---------- 主循环 ---------- */
+  function loop(){
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  layoutNodes();
+  buildGraph();
+  updateHeadline();
+  requestAnimationFrame(loop);
+
+  /* 首次自动演示一次寻路，呼应"β=0 首次寻路"字幕节拍 */
+  setTimeout(function(){
+    var s = Math.floor(Math.random() * N);
+    var e = (s + Math.floor(N / 2)) % N; /* 挑一对环上相对的点，更能体现距离 */
+    startRipple(s, e);
+  }, reduceMotion ? 50 : 700);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>救护车变调 · 感觉博物馆</title>
+<meta name="description" content="它靠近时是一个音，离开时是另一个音，你的耳朵一直都知道。亲耳听见那声多普勒变调。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#dfe3df;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .hud{
+    position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+    gap:10px;pointer-events:none;flex-wrap:wrap;
+  }
+  .hud .chip{
+    background:rgba(251,247,236,.92);border:1px solid rgba(42,37,33,.3);border-radius:9px;
+    padding:7px 12px;font-size:12.5px;letter-spacing:.05em;color:#453e30;line-height:1.6;
+  }
+  .hud .chip b{font-size:16.5px;color:var(--ink);transition:color .15s;}
+  .hud .chip b.hi{color:var(--seal);}
+  .hud .chip b.lo{color:#9a9284;}
+
+  .cap{
+    position:absolute;left:0;right:0;bottom:10px;text-align:center;pointer-events:none;
+  }
+  .cap span{
+    display:inline-block;background:rgba(30,26,22,.82);color:#f5efe2;font-size:13.5px;
+    letter-spacing:.06em;padding:8px 16px;border-radius:9px;opacity:0;transition:opacity .5s;
+  }
+  .cap span.show{opacity:1;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 20px;margin-top:16px;
+  }
+  .row1{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:16px;}
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:11px;
+    padding:11px 20px;cursor:pointer;box-shadow:0 4px 0 #7e2b1c;
+    transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7e2b1c;}
+  .btn.ghost{
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);box-shadow:none;
+  }
+  .btn.ghost:active{transform:translateY(1px);}
+  .btn.ghost.off{color:var(--ink-soft);border-color:var(--line);}
+
+  .speedwrap{max-width:560px;margin:0 auto;}
+  .speedwrap label{
+    display:flex;justify-content:space-between;font-size:13.5px;color:#453e30;
+    letter-spacing:.05em;margin-bottom:6px;
+  }
+  .speedwrap label b{color:var(--seal);font-size:16px;}
+  .speedwrap input{width:100%;accent-color:var(--seal);}
+  .ticks{
+    display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);
+    margin-top:4px;letter-spacing:.02em;
+  }
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:#453e30;
+    padding-top:8px;border-top:1px dashed var(--line);margin-top:4px;
+  }
+  .quote b{color:var(--seal);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №022</span>
+  </div>
+
+  <header>
+    <h1>救护车变调</h1>
+    <div class="en">THE DOPPLER EFFECT</div>
+    <p class="sub">它靠近时是一个音，离开时是另一个音，你的耳朵一直都知道</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="420"></canvas>
+    <div class="hud">
+      <div class="chip">车速　<b id="hSpeed">90</b> km/h</div>
+      <div class="chip">你听到的频率　<b id="hHeard">650</b> Hz</div>
+      <div class="chip">原始频率　<b id="hSrc">650</b> Hz</div>
+    </div>
+    <div class="cap"><span id="capSpan"></span></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="row1">
+      <button class="btn" id="btnGo">🚑 再开一趟</button>
+      <button class="btn ghost off" id="btnSound">🔈 声音关</button>
+    </div>
+    <div class="speedwrap">
+      <label>车速 <b id="speedVal">90 km/h</b></label>
+      <input type="range" id="speedSlider" min="30" max="1400" value="90" step="1">
+      <div class="ticks">
+        <span>市区 60</span><span>高速 120</span><span>高铁 350</span><span>音速 1224</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pb">① 波被追赶就变密，被抛下就变疏。车向你开来，每一圈声波都比上一圈少跑一点路，挤在一起，音调变高；离开时反过来，音调变低。你的耳朵天生就是频率仪。</div>
+    <div class="pb">② 现实同款：交警的测速枪打的是电磁波的多普勒，B 超看血流、蝙蝠定位飞蛾，同一条公式。</div>
+    <div class="pb">③ 宇宙那头：星系的光谱几乎全体偏红，像全天的救护车都在远去。这就是宇宙在膨胀的第一手证据，哈勃在 1929 年听懂了这声变调。</div>
+    <div class="quote">你听出救护车在靠近还是离开，天文学家听出星星在靠近还是离开。<b>同一只耳朵。</b></div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №022 · Max 造<br>
+    <a href="../life/">下一个展厅：生命游戏 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 780, H = 420;
+
+  /* ---------- 物理常量 ---------- */
+  var VSOUND = 340; // m/s，取教科书常用值，正好等于滑杆刻度上的 1224 km/h
+  var F0 = 650;     // 警笛主音 Hz
+  var F1 = 850;     // 警笛副音 Hz
+
+  /* ---------- 场景几何 ---------- */
+  var ROAD_Y = 300;          // 路面线
+  var LISTENER_X = W / 2;    // 听者固定在路中点
+  var LISTENER_Y = ROAD_Y + 34;
+  var CAR_Y = ROAD_Y - 30;   // 车行驶的中心线（略高于路面，视觉上像车身）
+  var PPM = 3.0;             // 像素/米。只定过场节奏（90km/h 全程约 10 秒），车速与波速之比和它无关，马赫锥不受影响
+
+  /* ---------- 状态 ---------- */
+  var speedKmh = 90;
+  var running = false;
+  var carX = -80;            // 车的画面横坐标（像素）
+  var carStartX = -80;
+  var carEndX = W + 80;
+  var carElapsed = 0;        // 本趟行驶已过时间（秒，performance.now 累计）
+  var soundOn = false;
+  var passed = false; // 本趟是否已驶过听者（守卫音爆/字幕只触发一次）
+
+  /* 波前对象池 */
+  var MAXWAVES = 90;
+  var waves = []; // {x, y, born, r, alive}
+  for (var i = 0; i < MAXWAVES; i++) waves.push({x:0, y:0, born:0, alive:false});
+  var waveTimer = 0;
+  var WAVE_INTERVAL = 0.12; // 每隔多少秒发一圈波前（车静止时用固定周期，视觉示意用）
+
+  function speedMS(){ return speedKmh / 3.6; }
+  function machNumber(){ return speedMS() / VSOUND; }
+
+  /* ---------- 字幕 ---------- */
+  var capEl = document.getElementById('capSpan');
+  var capTimer = null;
+  function caption(text, ms){
+    capEl.textContent = text;
+    capEl.classList.add('show');
+    clearTimeout(capTimer);
+    capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms || 3600);
+  }
+
+  /* ---------- 背景（街景，只画一次到离屏层，随时间轻微视差可选，这里静态即可）---------- */
+  function drawBackground(){
+    // 天空
+    var sky = ctx.createLinearGradient(0, 0, 0, ROAD_Y);
+    sky.addColorStop(0, '#eef0e6');
+    sky.addColorStop(1, '#dfe3df');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, ROAD_Y);
+
+    // 远处楼群剪影（纸色系压暗）
+    ctx.fillStyle = 'rgba(90,84,72,.22)';
+    var bx = [30, 120, 210, 320, 430, 540, 650, 720];
+    var bw = [70, 60, 90, 70, 80, 65, 75, 55];
+    var bh = [90, 130, 70, 150, 100, 120, 80, 105];
+    for (var i = 0; i < bx.length; i++){
+      ctx.fillRect(bx[i], ROAD_Y - bh[i], bw[i], bh[i]);
+    }
+    ctx.fillStyle = 'rgba(90,84,72,.12)';
+    for (var i = 0; i < bx.length; i++){
+      // 窗格点缀
+      var x = bx[i], y = ROAD_Y - bh[i];
+      for (var wy = y + 10; wy < ROAD_Y - 10; wy += 16){
+        for (var wx = x + 8; wx < x + bw[i] - 8; wx += 14){
+          ctx.fillRect(wx, wy, 5, 7);
+        }
+      }
+    }
+
+    // 路面
+    ctx.fillStyle = '#c9c2ac';
+    ctx.fillRect(0, ROAD_Y, W, H - ROAD_Y);
+    ctx.strokeStyle = 'rgba(42,37,33,.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, ROAD_Y + 0.5);
+    ctx.lineTo(W, ROAD_Y + 0.5);
+    ctx.stroke();
+    // 车道虚线
+    ctx.strokeStyle = 'rgba(42,37,33,.28)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([18, 14]);
+    ctx.beginPath();
+    ctx.moveTo(0, ROAD_Y + 40);
+    ctx.lineTo(W, ROAD_Y + 40);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  /* ---------- 听者小人 ---------- */
+  function drawListener(){
+    var x = LISTENER_X, y = LISTENER_Y;
+    ctx.strokeStyle = '#2a2521';
+    ctx.fillStyle = '#2a2521';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    // 头
+    ctx.beginPath();
+    ctx.arc(x, y - 34, 8, 0, Math.PI * 2);
+    ctx.fill();
+    // 身体
+    ctx.beginPath();
+    ctx.moveTo(x, y - 26);
+    ctx.lineTo(x, y - 6);
+    ctx.stroke();
+    // 手（叉腰听声音的姿势）
+    ctx.beginPath();
+    ctx.moveTo(x, y - 20);
+    ctx.lineTo(x - 10, y - 10);
+    ctx.moveTo(x, y - 20);
+    ctx.lineTo(x + 10, y - 10);
+    ctx.stroke();
+    // 腿
+    ctx.beginPath();
+    ctx.moveTo(x, y - 6);
+    ctx.lineTo(x - 7, y + 10);
+    ctx.moveTo(x, y - 6);
+    ctx.lineTo(x + 7, y + 10);
+    ctx.stroke();
+    // 头顶标签
+    ctx.fillStyle = '#b5402c';
+    ctx.font = '12px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('你', x, y - 50);
+    ctx.strokeStyle = 'rgba(90,84,72,.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 44);
+    ctx.lineTo(x, y - 42);
+    ctx.stroke();
+  }
+
+  /* ---------- 救护车 SVG 简笔（直接 canvas 绘制） ---------- */
+  function drawAmbulance(x, y){
+    ctx.save();
+    ctx.translate(x, y);
+    // 车身阴影
+    ctx.fillStyle = 'rgba(42,37,33,.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, 26, 46, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 车身主体
+    ctx.fillStyle = '#f2efe6';
+    ctx.strokeStyle = '#2a2521';
+    ctx.lineWidth = 2;
+    roundRect(-42, -18, 84, 36, 6);
+    ctx.fill(); ctx.stroke();
+    // 驾驶室斜切
+    ctx.beginPath();
+    ctx.moveTo(30, -18);
+    ctx.lineTo(42, -18);
+    ctx.lineTo(42, 4);
+    ctx.lineTo(30, -2);
+    ctx.closePath();
+    ctx.fillStyle = '#f2efe6';
+    ctx.fill();
+    ctx.stroke();
+    // 车窗
+    ctx.fillStyle = '#8ea6ad';
+    roundRect(31, -15, 9, 12, 2);
+    ctx.fill();
+    // 红十字条纹
+    ctx.fillStyle = '#b5402c';
+    ctx.fillRect(-40, -4, 68, 9);
+    ctx.fillStyle = '#fdf6ee';
+    ctx.fillRect(-10, -8, 6, 17);
+    ctx.fillRect(-15, -2.5, 16, 6);
+    // 警灯（闪烁）
+    var blink = (Math.floor(carElapsedGlobal * 6) % 2 === 0);
+    ctx.fillStyle = blink ? '#e2483a' : '#5a2a22';
+    roundRect(-16, -26, 14, 8, 2); ctx.fill();
+    ctx.fillStyle = blink ? '#3a6fe0' : '#20304a';
+    roundRect(0, -26, 14, 8, 2); ctx.fill();
+    if (blink){
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#e2483a';
+      ctx.beginPath(); ctx.arc(-9, -22, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    // 车轮
+    ctx.fillStyle = '#2a2521';
+    ctx.beginPath(); ctx.arc(-24, 18, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(20, 18, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8a8071';
+    ctx.beginPath(); ctx.arc(-24, 18, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(20, 18, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  var carElapsedGlobal = 0; // 供警灯闪烁独立于行驶状态使用
+
+  /* ---------- 波前 ---------- */
+  // 波前扩散速度必须严格等于 VSOUND*PPM：车速像素/秒一旦超过它，车就跑到了自己波前的前面，
+  // 马赫锥才会在物理和画面上同时成立（滑杆过 1234.8km/h 音速那一刻，两者精确交叉）
+  var WAVE_SPEED_PX = VSOUND * PPM;
+  var WAVE_LIFE = 2.6;     // 波前存活秒数
+
+  function spawnWave(x, y, now){
+    for (var i = 0; i < MAXWAVES; i++){
+      if (!waves[i].alive){
+        waves[i].alive = true;
+        waves[i].x = x; waves[i].y = y; waves[i].born = now;
+        return;
+      }
+    }
+  }
+
+  function drawWaves(now){
+    for (var i = 0; i < MAXWAVES; i++){
+      var w = waves[i];
+      if (!w.alive) continue;
+      var age = now - w.born;
+      if (age > WAVE_LIFE){ w.alive = false; continue; }
+      var r = age * WAVE_SPEED_PX;
+      var alpha = Math.max(0, 1 - age / WAVE_LIFE) * 0.55;
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(181,64,44,' + alpha.toFixed(3) + ')';
+      ctx.lineWidth = 1.4;
+      ctx.arc(w.x, w.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  /* ---------- 多普勒计算 ---------- */
+  // theta：车速方向向量与「车→听者」连线的夹角
+  // denom<=0 是真实物理信号：车比声音跑得快，声波在车到达前追不上听者，此时经典公式失效，静音处理
+  var FMAX = F0 * 6; // HUD与听觉都夹在这个上限内，避免逼近奇点时数字/声音失真到没有意义
+  function computeHeardFreq(carPxX, srcFreq){
+    var v = speedMS();
+    // 车的运动方向：从左到右，向量 (1,0)（画面像素坐标系）
+    // 车到听者的方向向量（用画面坐标近似，横向像素按 PPM 换算成米，纵向固定车道偏移当作恒定横向距离）
+    var dxPx = LISTENER_X - carPxX;
+    var dyPx = LISTENER_Y - CAR_Y;
+    var dx = dxPx / PPM;
+    var dy = dyPx / PPM;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 0.01) dist = 0.01;
+    var cosTheta = dx / dist; // 车速方向(1,0)与(dx,dy)的夹角余弦 = dx/|d|
+    var denom = VSOUND - v * cosTheta;
+    var silent = denom <= 0; // 真超音速头部效应：这一刻听者理论上还听不见
+    var f = silent ? FMAX : Math.min(FMAX, srcFreq * VSOUND / denom);
+    return {f: f, dist: dist, cosTheta: cosTheta, silent: silent};
+  }
+
+  /* ---------- 音频 ---------- */
+  var AC = null, master = null, osc1 = null, osc2 = null, gain1 = null, gain2 = null;
+  var lpf = null, sirenGain = null;
+  var toneSwitchTimer = 0, toneHigh = true;
+
+  function initAudio(){
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    master.gain.value = 0.15; // 主增益克制
+    master.connect(AC.destination);
+
+    sirenGain = AC.createGain();
+    sirenGain.gain.value = 0;
+    lpf = AC.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = 4000;
+    sirenGain.connect(lpf);
+    lpf.connect(master);
+
+    osc1 = AC.createOscillator();
+    osc1.type = 'square';
+    osc1.frequency.value = F0;
+    gain1 = AC.createGain();
+    gain1.gain.value = 0.5;
+    osc1.connect(gain1);
+    gain1.connect(sirenGain);
+    osc1.start();
+
+    osc2 = AC.createOscillator();
+    osc2.type = 'square';
+    osc2.frequency.value = F1;
+    gain2 = AC.createGain();
+    gain2.gain.value = 0;
+    osc2.connect(gain2);
+    gain2.connect(sirenGain);
+    osc2.start();
+  }
+
+  function setSirenFreq(f, t){
+    // f 是当前听到的“基准频率”，双音交替各自乘同一比例
+    var ratio = f / F0;
+    var target1 = F0 * ratio;
+    var target2 = F1 * ratio;
+    osc1.frequency.setTargetAtTime(target1, t, 0.03);
+    osc2.frequency.setTargetAtTime(target2, t, 0.03);
+  }
+
+  function updateToneSwitch(dt, t){
+    toneSwitchTimer += dt;
+    if (toneSwitchTimer > 0.42){
+      toneSwitchTimer = 0;
+      toneHigh = !toneHigh;
+      gain1.gain.setTargetAtTime(toneHigh ? 0.5 : 0, t, 0.05);
+      gain2.gain.setTargetAtTime(toneHigh ? 0 : 0.5, t, 0.05);
+    }
+  }
+
+  function setSirenLevel(level, t){
+    sirenGain.gain.setTargetAtTime(level, t, 0.05);
+  }
+
+  function playBoom(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var buf = AC.createBuffer(1, AC.sampleRate * 0.9, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
+    var src = AC.createBufferSource();
+    src.buffer = buf;
+    var blp = AC.createBiquadFilter();
+    blp.type = 'lowpass';
+    blp.frequency.setValueAtTime(220, t);
+    blp.frequency.exponentialRampToValueAtTime(60, t + 0.7);
+    var bg = AC.createGain();
+    bg.gain.setValueAtTime(0.0001, t);
+    bg.gain.exponentialRampToValueAtTime(0.4, t + 0.02);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+    src.connect(blp); blp.connect(bg); bg.connect(master);
+    src.start(t);
+
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(55, t);
+    o.frequency.exponentialRampToValueAtTime(28, t + 0.5);
+    var og = AC.createGain();
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    o.connect(og); og.connect(master);
+    o.start(t); o.stop(t + 0.75);
+  }
+
+  var btnSound = document.getElementById('btnSound');
+  btnSound.addEventListener('click', function(){
+    if (!AC){ initAudio(); }
+    soundOn = !soundOn;
+    if (soundOn){
+      AC.resume();
+      btnSound.textContent = '🔊 声音开';
+      btnSound.classList.remove('off');
+    } else {
+      setSirenLevel(0, AC.currentTime);
+      btnSound.textContent = '🔈 声音关';
+      btnSound.classList.add('off');
+    }
+  });
+
+  /* ---------- 控制区 ---------- */
+  var speedSlider = document.getElementById('speedSlider');
+  var speedVal = document.getElementById('speedVal');
+  function updateSpeedLabel(){
+    speedKmh = +speedSlider.value;
+    speedVal.textContent = speedKmh + ' km/h';
+    document.getElementById('hSpeed').textContent = speedKmh;
+  }
+  speedSlider.addEventListener('input', updateSpeedLabel);
+  updateSpeedLabel();
+
+  var btnGo = document.getElementById('btnGo');
+  function startRun(){
+    running = true;
+    carX = carStartX;
+    carElapsed = 0;
+    passed = false;
+    document.getElementById('hSrc').textContent = F0;
+  }
+  btnGo.addEventListener('click', startRun);
+
+  /* ---------- HUD 更新 ---------- */
+  var hHeard = document.getElementById('hHeard');
+  function updateHUD(heardF){
+    hHeard.textContent = Math.round(heardF);
+    hHeard.classList.remove('hi', 'lo');
+    if (heardF > F0 + 3) hHeard.classList.add('hi');
+    else if (heardF < F0 - 3) hHeard.classList.add('lo');
+  }
+
+  /* ---------- 主循环 ---------- */
+  var last = performance.now();
+
+  function step(dt, now){
+    waveTimer += dt;
+    carElapsedGlobal += dt;
+
+    if (running){
+      carElapsed += dt;
+      var v = speedMS(); // m/s
+      var vPx = v * PPM; // px/s
+      carX += vPx * dt;
+
+      // 波前发射：按固定「秒间隔」在车当前位置生成，车越快，波前在画面上就越稀疏地被甩在后面、越挤地堆在前面
+      if (waveTimer >= WAVE_INTERVAL){
+        waveTimer = 0;
+        /* drawWaves 用的是秒制时钟，这里必须同单位存 born，存毫秒会算出负半径炸掉 arc */
+        spawnWave(carX, CAR_Y, now / 1000);
+      }
+
+      var result = computeHeardFreq(carX, F0);
+      var mach = machNumber();
+
+      if (result.silent && carElapsed < 0.3){
+        caption('它比自己的声音跑得快', 3000);
+      }
+
+      // 驶过听者：音爆判定与字幕（用真实的 denom 符号变化，而不是几何穿越做代理）
+      if (!passed && carX >= LISTENER_X){
+        passed = true;
+        if (mach >= 1){
+          playBoom();
+          caption('声音被它甩在了身后。这声闷雷叫音爆', 4200);
+        } else if (speedKmh >= 340 && speedKmh < 400){
+          caption('高铁站台上的那声，比救护车狠多了。', 3800);
+        } else {
+          caption('听见了吗，就是那一声下坠。', 3400);
+        }
+      }
+
+      updateHUD(result.f);
+
+      if (soundOn && AC){
+        setSirenFreq(result.f, AC.currentTime);
+        updateToneSwitch(dt, AC.currentTime);
+        // 响度：静音段=0；否则随距离 1/r 衰减；远处多加一点低通（听觉上的“闷”）
+        var distClamped = Math.max(result.dist, 6);
+        var atten = Math.min(1, 60 / distClamped);
+        var level = result.silent ? 0 : 0.5 * atten;
+        sirenGain.gain.setTargetAtTime(level, AC.currentTime, 0.05);
+        lpf.frequency.setTargetAtTime(900 + atten * 3400, AC.currentTime, 0.08);
+      }
+
+      if (carX > carEndX){
+        running = false;
+        if (soundOn && AC) setSirenLevel(0, AC.currentTime);
+      }
+    }
+  }
+
+  function draw(now){
+    ctx.clearRect(0, 0, W, H);
+    drawBackground();
+    drawWaves(now / 1000);
+    drawListener();
+    if (running || carX > carStartX){
+      drawAmbulance(carX, CAR_Y);
+    }
+  }
+
+  function loop(now){
+    var dt = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    var remain = dt;
+    while (remain > 0){
+      var h = Math.min(0.02, remain);
+      step(h, now);
+      remain -= h;
+    }
+    draw(now);
+    requestAnimationFrame(loop);
+  }
+
+  requestAnimationFrame(loop);
+
+  // 首次进入时静默待命，不自动发车（首次点「再开一趟」才开始，避免加载即有动作干扰阅读）
+  draw(performance.now());
+})();
+</script>
+</body>
+</html>

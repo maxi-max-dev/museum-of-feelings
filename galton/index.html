@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高尔顿钉板 · 感觉博物馆</title>
+<meta name="description" content="一颗球完全不讲道理，一万颗球说一不二。看正态分布从纯随机里自己长出来。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  /* ---- 舞台 ---- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    overflow:hidden;animation:rise .8s .1s ease both;background:#faf5e8;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  #caption{
+    position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:5;
+    background:rgba(30,26,22,.86);color:#f5efe2;font-size:13px;letter-spacing:.04em;
+    line-height:1.7;padding:8px 15px;border-radius:8px;max-width:88%;text-align:center;
+    opacity:0;transition:opacity .4s;pointer-events:none;
+  }
+  #caption.show{opacity:1;}
+  #milestone{
+    position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:5;
+    background:rgba(181,64,44,.92);color:#fdf6ee;font-size:14px;letter-spacing:.06em;
+    line-height:1.7;padding:8px 18px;border-radius:8px;max-width:88%;text-align:center;
+    opacity:0;transition:opacity .5s;pointer-events:none;
+  }
+  #milestone.show{opacity:1;}
+
+  /* ---- 控制区 ---- */
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hud{
+    display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;
+    font-size:13px;color:#453e30;letter-spacing:.03em;margin-bottom:14px;
+    border-bottom:1px dashed var(--line);padding-bottom:12px;
+  }
+  .hud b{color:var(--seal);}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin-bottom:14px;}
+  .row:last-child{margin-bottom:0;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.06em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 15px;cursor:pointer;touch-action:manipulation;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .tiltbox{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#453e30;justify-content:center;flex-wrap:wrap;}
+  .tiltbox input{width:min(320px,58vw);accent-color:var(--seal);}
+  .tiltbox b{color:var(--seal);font-size:15px;min-width:70px;text-align:center;}
+  .hint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:2px;letter-spacing:.03em;}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque + .plaque{margin-top:14px;}
+
+  .quote{
+    text-align:center;font-size:16px;line-height:2;color:#453e30;
+    padding:18px 10px 4px;letter-spacing:.03em;
+  }
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+  @media(max-width:640px){
+    .row{gap:9px;}
+    .btn{font-size:12.5px;padding:9px 12px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №020</span>
+  </div>
+
+  <header>
+    <h1>高尔顿钉板</h1>
+    <div class="en">THE GALTON BOARD</div>
+    <p class="sub">一颗球完全不讲道理，一万颗球说一不二</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="520"></canvas>
+    <div id="caption"></div>
+    <div id="milestone"></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="hud">
+      <span>总球数 <b id="hudTotal">0</b></span>
+      <span>本次倾斜 <b id="hudP">50 / 50</b></span>
+      <span>排队中 <b id="hudQueue">0</b></span>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnOne">⚪ 放一颗球</button>
+      <button class="btn" id="btnRain">🌧 下雨模式</button>
+      <button class="btn" id="btnFlood">⚡ 直接倒一万颗</button>
+      <button class="btn" id="btnClear">🧹 清空</button>
+    </div>
+    <div class="row">
+      <div class="tiltbox">
+        🎚 倾斜木板（往右偏的运气）
+        <input type="range" id="tiltSlider" min="30" max="70" value="50">
+        <b id="tiltVal">50%</b>
+      </div>
+    </div>
+    <div class="hint">滑杆改变每颗球在每根钉子上「向右」的概率，默认 50%（五五开）。</div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 一 · 干净的五五开</div>
+    <div class="pb">
+      每颗球在每根钉子上都是干净的五五开，谁也不知道它会去哪。但一万颗球堆出来的形状，误差不超过几毫米。这叫<b>中心极限定理</b>：许多独立的小随机加在一起，永远堆成钟形。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 二 · 现实同款</div>
+    <div class="pb">
+      身高、考试分数、测量误差、每天到你手机的通知数。凡是<b>很多小因素加出来</b>的东西，都长这个形状。你从没见过这枚钉板，但你早就活在它的效果里。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 三 · 赌场为什么稳赢</div>
+    <div class="pb">
+      赌场不赌单局，它赌一万局。<b>单颗球无常，一万颗球是铁打的秩序。</b>保险公司、彩票、体检参考区间，全是同一门生意：把单个人的不确定，换成一大群人的确定。
+    </div>
+  </div>
+  <div class="plaque">
+    <div class="pt">说明牌 · 四 · 倾斜的寓意</div>
+    <div class="pb">
+      把 50% 拨到 55%，单颗球看不出区别，一万颗球的山峰整体搬家。<b>小小的系统性偏差，在量大之后就是命运的差距。</b>试试拖动上面的倾斜滑杆。
+    </div>
+  </div>
+
+  <div class="quote">「命运对每一颗球都不讲道理，对一万颗球却说一不二。」</div>
+
+  <footer>
+    感觉博物馆 · 展厅 №020 · Max 造<br>
+    <a href="../dilemma/">下一个展厅：以牙还牙 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 780, H = 520;
+
+  var ROWS = 12;
+  var SLOTS = ROWS + 1; /* 13 */
+
+  /* ==================== 几何布局 ==================== */
+  var FUNNEL_Y = 34;
+  var PEG_TOP = 78;
+  var PEG_BOTTOM = 330;
+  var PEG_ROW_H = (PEG_BOTTOM - PEG_TOP) / (ROWS - 1);
+  var PEG_R = 3.4;
+  var BOARD_CX = W / 2;
+  var PEG_COL_W = 30; /* 每排相邻钉子的水平间距 */
+
+  var SLOT_TOP = PEG_BOTTOM + 26;
+  var SLOT_BOTTOM = H - 20;
+  var SLOT_AREA_W = SLOTS * PEG_COL_W;
+  var SLOT_LEFT = BOARD_CX - SLOT_AREA_W / 2;
+  var SLOT_W = PEG_COL_W;
+
+  /* 每排 i（0..ROWS-1）的钉子数是 i+1 个，中心对齐 BOARD_CX */
+  function pegX(row, k){
+    /* row: 0..ROWS-1，k: 0..row，共 row+1 个钉子 */
+    var n = row + 1;
+    var span = (n - 1) * PEG_COL_W;
+    return BOARD_CX - span / 2 + k * PEG_COL_W;
+  }
+  function pegY(row){
+    return PEG_TOP + row * PEG_ROW_H;
+  }
+  function slotX(idx){
+    return SLOT_LEFT + idx * SLOT_W;
+  }
+
+  /* ==================== 槽计数与理论曲线 ==================== */
+  var slotCounts = new Array(SLOTS).fill(0);
+  var totalBalls = 0;
+  var pRight = 0.5;
+
+  function binomialCoeff(n, k){
+    var res = 1;
+    for (var i = 0; i < k; i++) res = res * (n - i) / (i + 1);
+    return res;
+  }
+  function theoreticalRow(n, p){
+    var row = [];
+    for (var k = 0; k <= n; k++) row.push(binomialCoeff(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k));
+    return row;
+  }
+
+  /* ==================== 音效（WebAudio 合成） ==================== */
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  var tickCountThisFrame = 0;
+  function playTick(){
+    if (!AC || tickCountThisFrame >= 2) return;
+    tickCountThisFrame++;
+    var t = AC.currentTime;
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    var freq = 900 + Math.random() * 260;
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(freq * 0.6, t + 0.035);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.05);
+  }
+  function playThud(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(160, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.11);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.16);
+  }
+
+  /* ==================== 球对象 ====================
+     每颗球是一系列已经决定好的左右抉择（长度 ROWS 的 0/1 数组），
+     动画只是把这串干净的二项过程，播放成一段带弹跳感的下落轨迹。
+  */
+  var activeBalls = [];
+  var queuedBalls = [];
+  var MAX_ACTIVE = 400;
+
+  function rollDecisions(p){
+    var d = [];
+    for (var i = 0; i < ROWS; i++) d.push(Math.random() < p ? 1 : 0);
+    return d;
+  }
+
+  function makeBall(p, tracked){
+    return {
+      decisions: rollDecisions(p),
+      row: 0,           /* 当前所在的排（0 表示还在漏斗口，尚未到第 0 排钉子） */
+      rightSoFar: 0,
+      segT: 0,          /* 当前段插值进度 0..1 */
+      segDur: tracked ? 0.26 : 0.16, /* 追踪球放慢一点，给戏剧感留时间；每颗球独立播放 */
+      tracked: !!tracked
+    };
+  }
+
+  function ballPosClean(b){
+    if (b.row === 0){
+      var x0 = BOARD_CX, y0 = FUNNEL_Y;
+      var x1 = pegX(0, 0), y1 = pegY(0);
+      var t = easeOutCubic(Math.min(1, b.segT));
+      var arc = Math.sin(Math.min(1, b.segT) * Math.PI) * 3;
+      return { x: x0 + (x1 - x0) * t, y: y0 + (y1 - y0) * t - arc };
+    }
+    var row = b.row - 1;
+    var kBefore = b.rightSoFar - (b.decisions[row] ? 1 : 0);
+    var fromX = pegX(row, kBefore);
+    var fromY = pegY(row);
+    var toRow = row + 1;
+    var kAfter = kBefore + (b.decisions[row] ? 1 : 0);
+    var toX, toY;
+    if (toRow < ROWS){
+      toX = pegX(toRow, kAfter);
+      toY = pegY(toRow);
+    } else {
+      toX = slotX(kAfter) + SLOT_W / 2;
+      toY = SLOT_TOP - 4;
+    }
+    var t2 = easeOutCubic(Math.min(1, b.segT));
+    var arc2 = Math.sin(Math.min(1, b.segT) * Math.PI) * 4.5;
+    return { x: fromX + (toX - fromX) * t2, y: fromY + (toY - fromY) * t2 - arc2 };
+  }
+
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  function landBall(b){
+    var slotIdx = b.rightSoFar;
+    slotCounts[slotIdx]++;
+    totalBalls++;
+    playThud();
+    checkMilestone();
+    if (b.tracked){
+      showCaption('它经历了 ' + ROWS + ' 次五五开，落在了第 ' + (slotIdx + 1) + ' 槽');
+    }
+  }
+
+  /* ==================== 里程碑字幕 ==================== */
+  var milestoneShown = { 100: false, 1000: false, 10000: false };
+  var milestoneEl = document.getElementById('milestone');
+  var milestoneTimer = null;
+  function checkMilestone(){
+    var lines = { 100: '一百颗，已经有点样子了', 1000: '一千颗，形状不再变了', 10000: '一万颗，这就是命运的形状' };
+    [100, 1000, 10000].forEach(function(n){
+      if (!milestoneShown[n] && totalBalls >= n){
+        milestoneShown[n] = true;
+        showMilestone(lines[n]);
+      }
+    });
+  }
+  function showMilestone(text){
+    milestoneEl.textContent = text;
+    milestoneEl.classList.add('show');
+    if (milestoneTimer) clearTimeout(milestoneTimer);
+    milestoneTimer = setTimeout(function(){ milestoneEl.classList.remove('show'); }, 3200);
+  }
+
+  /* ==================== 字幕（追踪球） ==================== */
+  var captionEl = document.getElementById('caption');
+  var captionTimer = null;
+  function showCaption(text){
+    captionEl.textContent = text;
+    captionEl.classList.add('show');
+    if (captionTimer) clearTimeout(captionTimer);
+    captionTimer = setTimeout(function(){ captionEl.classList.remove('show'); }, 3600);
+  }
+
+  /* ==================== 下雨模式 ==================== */
+  var raining = false;
+  var rainAccum = 0;
+  var RAIN_RATE = 40; /* 每秒颗数 */
+
+  /* ==================== 添加球（含排队） ==================== */
+  function addBall(tracked){
+    var b = makeBall(pRight, tracked);
+    if (activeBalls.length < MAX_ACTIVE){
+      activeBalls.push(b);
+    } else {
+      queuedBalls.push(b);
+    }
+  }
+
+  function releaseFromQueue(){
+    while (queuedBalls.length > 0 && activeBalls.length < MAX_ACTIVE){
+      activeBalls.push(queuedBalls.shift());
+    }
+  }
+
+  /* ==================== 倒一万颗（瞬时非动画） ==================== */
+  function floodTenThousand(){
+    for (var i = 0; i < 10000; i++){
+      var d = rollDecisions(pRight);
+      var right = 0;
+      for (var j = 0; j < d.length; j++) right += d[j];
+      slotCounts[right]++;
+    }
+    totalBalls += 10000;
+    checkMilestone();
+    showCaption('一万颗球瞬间倒入，直接看结果。');
+  }
+
+  /* ==================== 清空 ==================== */
+  function clearAll(){
+    slotCounts = new Array(SLOTS).fill(0);
+    totalBalls = 0;
+    activeBalls = [];
+    queuedBalls = [];
+    milestoneShown = { 100: false, 1000: false, 10000: false };
+    milestoneEl.classList.remove('show');
+    captionEl.classList.remove('show');
+  }
+
+  /* ==================== 更新（子步推进） ==================== */
+  function stepBalls(dt){
+    for (var i = activeBalls.length - 1; i >= 0; i--){
+      var b = activeBalls[i];
+      b.segT += dt / b.segDur;
+      if (b.segT >= 1){
+        b.segT = 0;
+        if (b.row < ROWS && b.decisions[b.row]) b.rightSoFar++;
+        b.row++;
+        if (b.row > 0 && b.row <= ROWS) playTick();
+        if (b.row > ROWS){
+          landBall(b);
+          activeBalls.splice(i, 1);
+          continue;
+        }
+      }
+    }
+    releaseFromQueue();
+  }
+
+  /* ==================== 绘制 ==================== */
+  function maxSlotCount(){
+    var m = 1;
+    for (var i = 0; i < SLOTS; i++) if (slotCounts[i] > m) m = slotCounts[i];
+    return m;
+  }
+
+  function drawFunnel(){
+    ctx.save();
+    ctx.strokeStyle = '#8a8071';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(BOARD_CX - 26, 6);
+    ctx.lineTo(BOARD_CX - 6, FUNNEL_Y);
+    ctx.lineTo(BOARD_CX + 6, FUNNEL_Y);
+    ctx.lineTo(BOARD_CX + 26, 6);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(138,128,113,.09)';
+    ctx.beginPath();
+    ctx.moveTo(BOARD_CX - 26, 6);
+    ctx.lineTo(BOARD_CX - 6, FUNNEL_Y);
+    ctx.lineTo(BOARD_CX + 6, FUNNEL_Y);
+    ctx.lineTo(BOARD_CX + 26, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPegs(){
+    ctx.fillStyle = 'rgba(42,37,33,.55)';
+    for (var row = 0; row < ROWS; row++){
+      var n = row + 1;
+      for (var k = 0; k < n; k++){
+        ctx.beginPath();
+        ctx.arc(pegX(row, k), pegY(row), PEG_R, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function drawSlots(){
+    /* 隔板 */
+    ctx.strokeStyle = 'rgba(138,128,113,.5)';
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= SLOTS; i++){
+      var x = SLOT_LEFT + i * SLOT_W;
+      ctx.beginPath();
+      ctx.moveTo(x, SLOT_TOP);
+      ctx.lineTo(x, SLOT_BOTTOM);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(SLOT_LEFT, SLOT_BOTTOM);
+    ctx.lineTo(SLOT_LEFT + SLOT_AREA_W, SLOT_BOTTOM);
+    ctx.stroke();
+
+    /* 柱状堆叠：色柱 + 顶部圆点视觉 */
+    var maxC = maxSlotCount();
+    var maxBarH = SLOT_BOTTOM - SLOT_TOP - 6;
+    for (var s = 0; s < SLOTS; s++){
+      var cnt = slotCounts[s];
+      if (cnt <= 0) continue;
+      var h = Math.min(maxBarH, (cnt / maxC) * maxBarH);
+      var bx = slotX(s) + 2;
+      var bw = SLOT_W - 4;
+      var by = SLOT_BOTTOM - h;
+      var grad = ctx.createLinearGradient(0, by, 0, SLOT_BOTTOM);
+      grad.addColorStop(0, 'rgba(181,64,44,.55)');
+      grad.addColorStop(1, 'rgba(181,64,44,.32)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(bx, by, bw, h);
+      /* 顶部圆点堆叠感 */
+      ctx.fillStyle = 'rgba(181,64,44,.75)';
+      var dotR = Math.min(4.4, bw / 2 - 1);
+      var dotsPerRow = Math.max(1, Math.floor(bw / (dotR * 2 + 1)));
+      var rows = Math.min(14, Math.ceil(h / (dotR * 2 + 1)));
+      var idx = 0;
+      for (var rr = 0; rr < rows && idx < 40; rr++){
+        for (var cc = 0; cc < dotsPerRow; cc++){
+          var dx = bx + dotR + 1 + cc * (dotR * 2 + 1);
+          var dy = SLOT_BOTTOM - dotR - 1 - rr * (dotR * 2 + 1);
+          if (dy < by) break;
+          ctx.beginPath();
+          ctx.arc(dx, dy, dotR, 0, Math.PI * 2);
+          ctx.fill();
+          idx++;
+        }
+      }
+      /* 计数标注 */
+      if (cnt > 0){
+        ctx.fillStyle = '#57503f';
+        ctx.font = '10px "Noto Serif SC",serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(cnt), slotX(s) + SLOT_W / 2, Math.max(SLOT_TOP + 10, by - 4));
+      }
+    }
+
+    /* 槽下标注（槽序号） */
+    ctx.fillStyle = '#8a8071';
+    ctx.font = '10px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    for (var si = 0; si < SLOTS; si++){
+      ctx.fillText(String(si), slotX(si) + SLOT_W / 2, SLOT_BOTTOM + 13);
+    }
+  }
+
+  function drawTheoryCurve(){
+    if (totalBalls < 5) return;
+    var theory = theoreticalRow(ROWS, pRight);
+    var maxBarH = SLOT_BOTTOM - SLOT_TOP - 6;
+    /* 理论曲线的高度尺度：按当前总球数换算成"期望计数"再归一化到与实测同一 maxC */
+    var maxC = maxSlotCount();
+    ctx.strokeStyle = 'rgba(181,64,44,.55)';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([1, 3]);
+    ctx.beginPath();
+    for (var s = 0; s < SLOTS; s++){
+      var expected = theory[s] * totalBalls;
+      var h = Math.min(maxBarH, (expected / maxC) * maxBarH);
+      var x = slotX(s) + SLOT_W / 2;
+      var y = SLOT_BOTTOM - h;
+      if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawBalls(){
+    for (var i = 0; i < activeBalls.length; i++){
+      var b = activeBalls[i];
+      var p = ballPosClean(b);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+      if (b.tracked){
+        ctx.fillStyle = '#fdf6ee';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#b5402c';
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(42,37,33,.78)';
+        ctx.fill();
+      }
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    drawFunnel();
+    drawPegs();
+    drawSlots();
+    drawTheoryCurve();
+    drawBalls();
+  }
+
+  /* ==================== 主循环（rAF 真实时间补帧） ==================== */
+  var last = performance.now();
+  var SUBSTEP = 1 / 60;
+  function loop(now){
+    var dt = Math.min(0.25, (now - last) / 1000); /* 后台标签恢复时不暴走 */
+    last = now;
+    tickCountThisFrame = 0;
+    if (raining){
+      rainAccum += dt * RAIN_RATE;
+      while (rainAccum >= 1){
+        addBall(false);
+        rainAccum -= 1;
+      }
+    }
+    var remain = dt;
+    while (remain > 0){
+      var h = Math.min(SUBSTEP, remain);
+      stepBalls(h);
+      remain -= h;
+    }
+    draw();
+    updateHud();
+    requestAnimationFrame(loop);
+  }
+
+  /* ==================== HUD ==================== */
+  var hudTotal = document.getElementById('hudTotal');
+  var hudP = document.getElementById('hudP');
+  var hudQueue = document.getElementById('hudQueue');
+  function updateHud(){
+    hudTotal.textContent = totalBalls;
+    var rightPct = Math.round(pRight * 100);
+    hudP.textContent = (100 - rightPct) + ' / ' + rightPct;
+    hudQueue.textContent = queuedBalls.length;
+  }
+
+  /* ==================== 控件绑定 ==================== */
+  document.getElementById('btnOne').addEventListener('click', function(){
+    ensureAC();
+    addBall(true);
+  });
+
+  var rainBtn = document.getElementById('btnRain');
+  rainBtn.addEventListener('click', function(){
+    ensureAC();
+    raining = !raining;
+    rainBtn.classList.toggle('on', raining);
+    rainBtn.textContent = raining ? '🌧 停止下雨' : '🌧 下雨模式';
+    if (raining) showCaption('雨开始下了，每秒约 40 颗，各走各的五五开。');
+  });
+
+  document.getElementById('btnFlood').addEventListener('click', function(){
+    ensureAC();
+    floodTenThousand();
+  });
+
+  document.getElementById('btnClear').addEventListener('click', function(){
+    raining = false;
+    rainBtn.classList.remove('on');
+    rainBtn.textContent = '🌧 下雨模式';
+    clearAll();
+  });
+
+  var tiltSlider = document.getElementById('tiltSlider');
+  var tiltVal = document.getElementById('tiltVal');
+  tiltSlider.addEventListener('input', function(){
+    var v = +tiltSlider.value;
+    pRight = v / 100;
+    tiltVal.textContent = v + '%';
+  });
+
+  /* ==================== 启动 ====================
+     减弱动效偏好：入场动画交给 CSS 的 prefers-reduced-motion 关闭；
+     钉板本身的下落是展项的主体内容而非装饰，继续正常播放。
+  */
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

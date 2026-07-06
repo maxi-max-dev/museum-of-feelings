@@ -14,274 +14,791 @@
     --seal:#b5402c;
     --line:#d8cdb6;
     --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    --barh:40px;
+    --dockh:64px;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
   body{
     background:var(--paper);
     background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
     background-size:26px 26px;
     color:var(--ink);
     font-family:var(--serif);
-    min-height:100vh;
-    padding:56px 20px 40px;
+    height:100%;
+    overflow:hidden;
   }
-  .wrap{max-width:980px;margin:0 auto;}
+  button{font-family:var(--serif);}
+  a{color:inherit;}
 
-  header{text-align:center;margin-bottom:52px;animation:rise .9s ease both;}
-  .tickets-line{
-    font-size:12.5px;letter-spacing:.35em;color:var(--ink-soft);
-    margin-bottom:22px;
+  /* ---------- 开机动画 ---------- */
+  #boot{
+    position:fixed;inset:0;z-index:9999;
+    background:var(--paper);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;
+    transition:opacity .5s ease;
   }
-  .tickets-line::before,.tickets-line::after{content:"·";margin:0 10px;color:var(--line);}
-  h1{
-    font-size:clamp(40px,8vw,62px);
-    font-weight:700;
-    letter-spacing:.18em;
-    margin-bottom:10px;
-  }
-  .en-title{
-    font-size:12px;letter-spacing:.5em;color:var(--ink-soft);
-    text-transform:uppercase;margin-bottom:26px;
-  }
-  .intro{
-    font-size:15.5px;line-height:2.1;color:#57503f;
-    max-width:520px;margin:0 auto;
-  }
-  .intro b{color:var(--ink);}
+  #boot .bh1{font-size:clamp(34px,7vw,52px);letter-spacing:.2em;margin-bottom:10px;}
+  #boot .ben{font-size:12px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:34px;}
+  #boot .btrack{width:min(260px,60vw);height:1px;background:var(--line);position:relative;overflow:hidden;}
+  #boot .bbar{position:absolute;left:0;top:0;height:100%;width:0;background:var(--seal);}
+  #boot.hide{opacity:0;pointer-events:none;}
+  @keyframes bootbar{from{width:0}to{width:100%}}
 
-  .divider{
-    display:flex;align-items:center;gap:14px;
-    max-width:520px;margin:40px auto 44px;color:var(--ink-soft);font-size:12px;letter-spacing:.3em;
+  /* ---------- 菜单栏 ---------- */
+  #menubar{
+    position:fixed;top:0;left:0;right:0;height:var(--barh);z-index:500;
+    background:var(--card);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;
+    font-size:13px;letter-spacing:.06em;color:var(--ink);
+    padding:0 14px;gap:4px;
   }
-  .divider::before,.divider::after{content:"";flex:1;border-top:1px solid var(--line);}
-
-  .grid{
-    display:grid;grid-template-columns:1fr;gap:22px;
+  #menubar .mb-logo{
+    font-weight:700;letter-spacing:.1em;background:none;border:none;color:var(--ink);
+    cursor:pointer;padding:8px 8px;font-size:13px;
   }
-  @media(min-width:640px){.grid{grid-template-columns:1fr 1fr;}}
-  @media(min-width:960px){.grid{grid-template-columns:1fr 1fr 1fr;}}
+  #menubar .mb-logo:hover{color:var(--seal);}
+  .mb-sep{width:1px;height:18px;background:var(--line);margin:0 6px;}
+  #menubar .mb-halls{position:relative;}
+  #menubar .mb-trigger{
+    background:none;border:none;color:var(--ink);cursor:pointer;
+    padding:8px 8px;font-size:13px;letter-spacing:.06em;
+  }
+  #menubar .mb-trigger:hover{color:var(--seal);}
+  #menubar .mb-dropdown{
+    position:absolute;top:calc(var(--barh) - 2px);left:0;min-width:172px;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 3px var(--card),0 0 0 4px var(--line),0 10px 22px rgba(90,70,40,.16);
+    display:none;flex-direction:column;padding:6px 0;z-index:600;
+  }
+  #menubar .mb-dropdown.open{display:flex;}
+  #menubar .mb-dropdown button{
+    background:none;border:none;text-align:left;color:var(--ink);
+    padding:8px 16px;font-size:12.5px;letter-spacing:.06em;cursor:pointer;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  #menubar .mb-dropdown button:hover{background:rgba(181,64,44,.08);color:var(--seal);}
+  #menubar .mb-dropdown button .ck{opacity:0;color:var(--seal);}
+  #menubar .mb-dropdown button.on .ck{opacity:1;}
+  #menubar .mb-spacer{flex:1;}
+  #menubar .mb-clock{color:var(--ink-soft);font-size:12px;letter-spacing:.08em;padding:8px 4px;white-space:nowrap;}
 
-  .hall{
-    position:relative;display:block;
-    background:var(--card);
+  /* ---------- 桌面 ---------- */
+  #desktop{
+    position:absolute;top:var(--barh);left:0;right:0;bottom:0;
+    overflow:auto;padding:22px 18px calc(var(--dockh) + 30px);
+  }
+  #icons{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px 4px;
+    max-width:1180px;margin:0 auto;
+  }
+  .icon{
+    display:flex;flex-direction:column;align-items:center;text-decoration:none;color:var(--ink);
+    padding:10px 4px 8px;border-radius:10px;position:relative;text-align:center;
+    transition:transform .18s ease, background .18s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .icon:hover, .icon:focus-visible{transform:translateY(-3px);background:rgba(181,64,44,.06);}
+  button.icon{border:0;background:transparent;font-family:var(--serif);cursor:pointer;}
+  button.icon:hover, button.icon:focus-visible{background:rgba(181,64,44,.06);}
+  .icon .tile{
+    width:60px;height:60px;border-radius:14px;background:var(--card);
+    border:1px solid var(--line);
+    box-shadow:0 3px 8px rgba(90,70,40,.10);
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;margin-bottom:7px;
+  }
+  .icon .iname{font-size:12px;line-height:1.35;letter-spacing:.02em;max-width:92px;}
+  .icon .ino{font-size:9.5px;color:var(--ink-soft);letter-spacing:.1em;margin-top:2px;}
+  .icon.hidden-cat{display:none;}
+
+  /* 图标 tooltip（hook 文案） */
+  .icon .tip{
+    position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%) translateY(4px);
+    background:var(--ink);color:var(--paper);font-size:11.5px;letter-spacing:.03em;
+    padding:6px 10px;border-radius:6px;white-space:nowrap;max-width:220px;white-space:normal;text-align:center;
+    opacity:0;pointer-events:none;transition:opacity .16s ease, transform .16s ease;z-index:50;
+    line-height:1.5;
+  }
+  .icon:hover .tip, .icon:focus-visible .tip{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  .icon.special .tile{position:relative;}
+  .icon.special.locked .tile{animation:sealPulse 3.2s ease-in-out infinite;}
+  @keyframes sealPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+  /* ---------- 窗口 ---------- */
+  .win{
+    position:absolute;background:var(--card);
     border:1px solid var(--ink);
-    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line),0 10px 24px rgba(90,70,40,.10);
-    padding:30px 24px 24px;
-    text-decoration:none;color:var(--ink);
-    transition:transform .25s ease, box-shadow .25s ease;
-    animation:rise .9s ease both;
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line),0 16px 40px rgba(60,45,25,.22);
+    border-radius:3px;display:flex;flex-direction:column;overflow:hidden;
+    min-width:260px;min-height:180px;
   }
-  .hall:nth-child(2){animation-delay:.06s}
-  .hall:nth-child(3){animation-delay:.12s}
-  .hall:nth-child(4){animation-delay:.18s}
-  .hall:nth-child(5){animation-delay:.24s}
-  .hall:nth-child(6){animation-delay:.3s}
-  a.hall:hover{
-    transform:translateY(-5px);
-    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line),0 18px 34px rgba(90,70,40,.16);
+  .win .wtitle{
+    height:38px;flex:none;display:flex;align-items:center;gap:8px;
+    padding:0 10px;background:var(--card);border-bottom:1px solid var(--line);
+    cursor:default;user-select:none;font-size:13px;letter-spacing:.04em;
   }
-  .hall .no{
-    font-size:11px;letter-spacing:.25em;color:var(--ink-soft);margin-bottom:16px;
+  .win .wtitle .wicon{font-size:16px;}
+  .win .wtitle .wname{font-weight:700;}
+  .win .wtitle .wno{color:var(--ink-soft);font-size:11px;letter-spacing:.1em;}
+  .win .wtitle .wspacer{flex:1;}
+  .win .wtitle .dot{
+    width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.15);
+    cursor:pointer;flex:none;
   }
-  .hall .icon{font-size:44px;line-height:1;margin-bottom:16px;display:block;}
-  .hall h2{font-size:21px;letter-spacing:.12em;margin-bottom:8px;font-weight:700;}
-  .hall .hook{font-size:13.5px;color:var(--seal);margin-bottom:12px;letter-spacing:.04em;}
-  .hall p{font-size:13px;line-height:1.9;color:#6b6350;}
-  .stamp{
-    position:absolute;top:18px;right:16px;
-    font-size:11px;letter-spacing:.2em;
-    border:1.5px solid var(--seal);color:var(--seal);
-    border-radius:4px;padding:4px 8px 3px;
-    transform:rotate(6deg);opacity:.9;
+  .win .wtitle .dot.dot-max{background:var(--ink);}
+  .win .wtitle .dot.dot-close{background:var(--seal);}
+  .win .wtitle .dot:hover{filter:brightness(1.15);}
+  .win .wbody{flex:1;position:relative;background:#fffdf6;}
+  .win .wbody iframe{width:100%;height:100%;border:none;display:block;}
+  .win .wbody .wload{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    color:var(--ink-soft);font-size:13px;letter-spacing:.15em;background:var(--paper);
   }
-  .hall.locked{filter:grayscale(.55);opacity:.62;cursor:default;}
-  .hall.locked .stamp{border-color:var(--ink-soft);color:var(--ink-soft);}
-  .hall.open .stamp{animation:sealPulse 3.2s ease-in-out infinite;}
+  .win .wbody.loaded .wload{display:none;}
+  .win.dragging{user-select:none;}
+  .win.dragging .wbody iframe{pointer-events:none;}
+  .win .wbody-inner{width:100%;height:100%;padding:22px 26px;overflow:auto;font-size:14px;line-height:2;color:#453e30;}
+  .win .wbody-inner h3{font-size:16px;margin-bottom:12px;letter-spacing:.06em;}
+  .win .wbody-inner ul{padding-left:1.3em;}
+  .win .wbody-inner li{margin-bottom:8px;}
+  .win .wbody-inner a{color:var(--seal);text-decoration:none;border-bottom:1px solid var(--seal);}
+  .win .wbody-inner .fakebar{
+    height:10px;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:14px 0 8px;background:#fff;
+  }
+  .win .wbody-inner .fakebar i{display:block;height:100%;width:87%;background:var(--seal);}
+  .win .wbody-inner .pct{font-size:12px;color:var(--ink-soft);letter-spacing:.08em;margin-bottom:16px;}
 
-  footer{
-    text-align:center;margin-top:64px;color:var(--ink-soft);
-    font-size:12.5px;letter-spacing:.22em;line-height:2.4;
+  /* ---------- Dock ---------- */
+  #dock{
+    position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:700;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 3px var(--card),0 0 0 4px var(--line),0 8px 24px rgba(60,45,25,.18);
+    border-radius:999px;display:none;align-items:center;gap:6px;padding:7px 10px;
+    max-width:88vw;overflow-x:auto;
   }
+  #dock.show{display:flex;}
+  #dock .dbtn{
+    position:relative;width:38px;height:38px;border-radius:10px;background:transparent;
+    border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    flex:none;transition:background .15s ease, transform .15s ease;
+  }
+  #dock .dbtn:hover{background:rgba(181,64,44,.08);transform:translateY(-2px);}
+  #dock .dbtn .ddot{
+    position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+    width:4px;height:4px;border-radius:50%;background:var(--seal);
+  }
+  #dock .dbtn.active{background:rgba(181,64,44,.1);}
 
-  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  @keyframes sealPulse{0%,100%{transform:rotate(6deg) scale(1)}50%{transform:rotate(6deg) scale(1.07)}}
   @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+
+  /* ---------- 移动端：关闭窗口管理器 ---------- */
+  @media (max-width:760px){
+    body{overflow:auto;height:auto;min-height:100%;}
+    #boot{position:fixed;}
+    #menubar{position:sticky;}
+    #menubar .mb-halls{position:static;}
+    #menubar .mb-dropdown{
+      position:static;display:flex !important;flex-direction:row;flex-wrap:nowrap;
+      overflow-x:auto;border:none;box-shadow:none;background:none;padding:0;
+      gap:6px;margin-left:6px;
+    }
+    #menubar .mb-dropdown button{
+      flex:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+      white-space:nowrap;
+    }
+    #menubar .mb-dropdown button.on{background:var(--seal);border-color:var(--seal);color:#fff;}
+    #menubar .mb-dropdown button .ck{display:none;}
+    #menubar .mb-trigger{display:none;}
+    #desktop{position:static;height:auto;overflow:visible;padding:18px 14px 40px;}
+    .icon{padding:12px 4px;}
+    .icon .tip{display:none;}
+    #dock{display:none !important;}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="tickets-line">常年开放&ensp;免票入场</div>
-    <h1>感觉博物馆</h1>
-    <div class="en-title">Museum of Feelings</div>
-    <p class="intro">
-      这里收藏的不是文物，是<b>感觉</b>。<br>
-      每个展厅都是一台可以上手玩的模拟器：<br>
-      换一双眼睛，造一场堵车，回一趟过去。
-    </p>
-  </header>
 
-  <div class="divider">展厅指南</div>
-
-  <main class="grid">
-    <a class="hall open" href="eyes/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №001</div>
-      <span class="icon">👁️</span>
-      <h2>眼睛商店</h2>
-      <div class="hook">换一双眼睛，看同一个世界</div>
-      <p>近视、散光、色盲、猫、狗、蜜蜂、出生七天的婴儿。九副眼睛任你试戴，有几副里藏着人眼看不见的东西。</p>
-    </a>
-
-    <a class="hall open" href="traffic/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №002</div>
-      <span class="icon">🚗</span>
-      <h2>堵车制造机</h2>
-      <div class="hook">亲手制造一场堵车</div>
-      <p>前面明明没有事故，为什么会堵？一条环形公路交给你，你只有一脚刹车。</p>
-    </a>
-
-    <a class="hall open" href="t9/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №003</div>
-      <span class="icon">📟</span>
-      <h2>九键时代</h2>
-      <div class="hook">你还记得怎么打出「我想你」吗</div>
-      <p>一台老手机，一块九键键盘，一场计时挑战。你的拇指还记得那套武功吗。</p>
-    </a>
-
-    <a class="hall open" href="train/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №004</div>
-      <span class="icon">🚂</span>
-      <h2>绿皮火车</h2>
-      <div class="hook">哐当，哐当，窗外是一整个夏天</div>
-      <p>靠窗的位置给你留好了。听着铁轨声看风景倒退，泡面的雾气升起来。</p>
-    </a>
-
-    <a class="hall open" href="loom/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №005</div>
-      <span class="icon">🕸️</span>
-      <h2>算法织布机</h2>
-      <div class="hook">亲手织一个信息茧房</div>
-      <p>这一次你来当推荐算法。三个旋钮交给你，看一个人的世界如何慢慢窄成一条缝。</p>
-    </a>
-
-    <a class="hall open" href="queue/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №006</div>
-      <span class="icon">🏦</span>
-      <h2>排队学</h2>
-      <div class="hook">为什么你排的队永远最慢</div>
-      <p>银行、安检、火锅店通用的玄学，其实是数学。排一次给你看。</p>
-    </a>
-
-    <a class="hall open" href="ears/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №007</div>
-      <span class="icon">👂</span>
-      <h2>耳朵商店</h2>
-      <div class="hook">你的耳朵几岁了</div>
-      <p>眼睛商店的姊妹馆。测测耳龄，借一副 85 岁的耳朵听歌，再忍一分钟别人关不掉的耳鸣。</p>
-    </a>
-
-    <a class="hall open" href="threebody/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №008</div>
-      <span class="icon">🪐</span>
-      <h2>三体问题</h2>
-      <div class="hook">为什么三体人算不出日子</div>
-      <p>三颗星，一套引力定律。看文明一个个毁灭，看奇迹的 8 字舞，看一根头发丝长成两个宇宙。</p>
-    </a>
-
-    <a class="hall open" href="wealth/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №009</div>
-      <span class="icon">🎲</span>
-      <h2>公平赌场</h2>
-      <div class="hook">寡头不需要作弊</div>
-      <p>一百个人抛绝对公正的硬币，也会诞生吃下全场的首富。拉动税率滑杆，看布重新铺开。</p>
-    </a>
-
-    <a class="hall open" href="theater/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №010</div>
-      <span class="icon">🎭</span>
-      <h2>剧场效应</h2>
-      <div class="hook">前排一站，全场都得站</div>
-      <p>没有人想站着看戏，最后所有人都站着看完了。你坐第一排，第一个动作由你决定。</p>
-    </a>
-
-    <a class="hall open" href="dialup/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №011</div>
-      <span class="icon">📠</span>
-      <h2>56K 之夜</h2>
-      <div class="hook">妈，别拿电话，我在下图</div>
-      <p>吱嘎嘎滋滋滋。一张图片加载四分钟，那是互联网最慢也最快乐的年代。小心那通电话。</p>
-    </a>
-
-    <a class="hall open" href="time/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №012</div>
-      <span class="icon">⏳</span>
-      <h2>时间加速器</h2>
-      <div class="hook">为什么长大后一年比一年快</div>
-      <p>把你的人生按体感画成一条带子，8 岁的暑假到底有多长。进来前先做好心理准备。</p>
-    </a>
-
-    <a class="hall open" href="birds/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №013</div>
-      <span class="icon">🐦</span>
-      <h2>鸟群</h2>
-      <div class="hook">没有指挥的舞蹈</div>
-      <p>几百只鸟，三条规则，满天的舞自己长出来。你的鼠标是一只游隼，开进去试试。</p>
-    </a>
-
-    <a class="hall open" href="forest/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №014</div>
-      <span class="icon">🔥</span>
-      <h2>临界点</h2>
-      <div class="hook">59% 与 60% 之间，隔着一场大火</div>
-      <p>一片森林交给你，一道闪电也交给你。树的密度差一个百分点，结局差一整片森林。复杂系统翻脸之前，从不打招呼。</p>
-    </a>
-
-    <a class="hall open" href="gravity/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №015</div>
-      <span class="icon">🌍</span>
-      <h2>重力商店</h2>
-      <div class="hook">同一双腿，六个世界</div>
-      <p>眼睛商店和耳朵商店的第三家分店。去月球扔一颗球，在木星称一次体重，到空间站试试飘着。中子星那件商品，劝你别碰。</p>
-    </a>
-
-    <a class="hall open" href="tv/">
-      <div class="stamp">开放中</div>
-      <div class="no">展厅 №016</div>
-      <span class="icon">📺</span>
-      <h2>拍一下就好了</h2>
-      <div class="hook">祖传维修术，真有科学依据</div>
-      <p>雪花屏的老电视，天线要摆对，人还不能走开。实在不行就拍一下，1998 年以前，这一招是真的管用。</p>
-    </a>
-
-    <div class="hall locked">
-      <div class="stamp">筹备中</div>
-      <div class="no">展厅 №017</div>
-      <span class="icon">🎁</span>
-      <h2>？？？</h2>
-      <div class="hook">下一种感觉，正在路上</div>
-      <p>馆长的图纸上还剩：换不换门的赌局、一屋子人的生日、一滴墨水的命运。</p>
-    </div>
-  </main>
-
-  <footer>
-    感觉博物馆 · 新展厅陆续开放<br>
-    Max 造
-  </footer>
+<!-- 开机动画 -->
+<div id="boot">
+  <div class="bh1">感觉博物馆</div>
+  <div class="ben">Museum OS</div>
+  <div class="btrack"><div class="bbar" id="bootbar"></div></div>
 </div>
+
+<!-- 菜单栏 -->
+<div id="menubar">
+  <button class="mb-logo" id="mbLogo" type="button">🏛 感觉博物馆 OS</button>
+  <div class="mb-sep"></div>
+  <div class="mb-halls">
+    <button class="mb-trigger" id="mbTrigger" type="button">展区 ▾</button>
+    <div class="mb-dropdown" id="mbDropdown">
+      <button data-w="all" class="on" type="button"><span>全部</span><span class="ck">✓</span></button>
+      <button data-w="shop" type="button"><span>🛍 感官商店</span><span class="ck">✓</span></button>
+      <button data-w="math" type="button"><span>🎲 概率与数学</span><span class="ck">✓</span></button>
+      <button data-w="system" type="button"><span>🏙 系统与社会</span><span class="ck">✓</span></button>
+      <button data-w="physics" type="button"><span>⏳ 时间与物理</span><span class="ck">✓</span></button>
+      <button data-w="retro" type="button"><span>📼 年代记忆</span><span class="ck">✓</span></button>
+    </div>
+  </div>
+  <div class="mb-spacer"></div>
+  <div class="mb-clock" id="mbClock">--:-- 周-</div>
+</div>
+
+<!-- 桌面 -->
+<div id="desktop">
+  <div id="icons">
+
+    <a class="icon" data-win="hall" data-cat="shop" data-no="001" data-icon="👁️" data-name="眼睛商店" data-hook="换一双眼睛，看同一个世界" href="eyes/">
+      <span class="tile">👁️</span>
+      <span class="iname">眼睛商店</span>
+      <span class="ino">№001</span>
+      <span class="tip">换一双眼睛，看同一个世界</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="002" data-icon="🚗" data-name="堵车制造机" data-hook="亲手制造一场堵车" href="traffic/">
+      <span class="tile">🚗</span>
+      <span class="iname">堵车制造机</span>
+      <span class="ino">№002</span>
+      <span class="tip">亲手制造一场堵车</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="retro" data-no="003" data-icon="📟" data-name="九键时代" data-hook="你还记得怎么打出「我想你」吗" href="t9/">
+      <span class="tile">📟</span>
+      <span class="iname">九键时代</span>
+      <span class="ino">№003</span>
+      <span class="tip">你还记得怎么打出「我想你」吗</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="retro" data-no="004" data-icon="🚂" data-name="绿皮火车" data-hook="哐当，哐当，窗外是一整个夏天" href="train/">
+      <span class="tile">🚂</span>
+      <span class="iname">绿皮火车</span>
+      <span class="ino">№004</span>
+      <span class="tip">哐当，哐当，窗外是一整个夏天</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="005" data-icon="🕸️" data-name="算法织布机" data-hook="亲手织一个信息茧房" href="loom/">
+      <span class="tile">🕸️</span>
+      <span class="iname">算法织布机</span>
+      <span class="ino">№005</span>
+      <span class="tip">亲手织一个信息茧房</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="math" data-no="006" data-icon="🏦" data-name="排队学" data-hook="为什么你排的队永远最慢" href="queue/">
+      <span class="tile">🏦</span>
+      <span class="iname">排队学</span>
+      <span class="ino">№006</span>
+      <span class="tip">为什么你排的队永远最慢</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="shop" data-no="007" data-icon="👂" data-name="耳朵商店" data-hook="你的耳朵几岁了" href="ears/">
+      <span class="tile">👂</span>
+      <span class="iname">耳朵商店</span>
+      <span class="ino">№007</span>
+      <span class="tip">你的耳朵几岁了</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="physics" data-no="008" data-icon="🪐" data-name="三体问题" data-hook="为什么三体人算不出日子" href="threebody/">
+      <span class="tile">🪐</span>
+      <span class="iname">三体问题</span>
+      <span class="ino">№008</span>
+      <span class="tip">为什么三体人算不出日子</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="math" data-no="009" data-icon="🎲" data-name="公平赌场" data-hook="寡头不需要作弊" href="wealth/">
+      <span class="tile">🎲</span>
+      <span class="iname">公平赌场</span>
+      <span class="ino">№009</span>
+      <span class="tip">寡头不需要作弊</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="010" data-icon="🎭" data-name="剧场效应" data-hook="前排一站，全场都得站" href="theater/">
+      <span class="tile">🎭</span>
+      <span class="iname">剧场效应</span>
+      <span class="ino">№010</span>
+      <span class="tip">前排一站，全场都得站</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="retro" data-no="011" data-icon="📠" data-name="56K 之夜" data-hook="妈，别拿电话，我在下图" href="dialup/">
+      <span class="tile">📠</span>
+      <span class="iname">56K 之夜</span>
+      <span class="ino">№011</span>
+      <span class="tip">妈，别拿电话，我在下图</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="physics" data-no="012" data-icon="⏳" data-name="时间加速器" data-hook="为什么长大后一年比一年快" href="time/">
+      <span class="tile">⏳</span>
+      <span class="iname">时间加速器</span>
+      <span class="ino">№012</span>
+      <span class="tip">为什么长大后一年比一年快</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="013" data-icon="🐦" data-name="鸟群" data-hook="没有指挥的舞蹈" href="birds/">
+      <span class="tile">🐦</span>
+      <span class="iname">鸟群</span>
+      <span class="ino">№013</span>
+      <span class="tip">没有指挥的舞蹈</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="014" data-icon="🔥" data-name="临界点" data-hook="59% 与 60% 之间，隔着一场大火" href="forest/">
+      <span class="tile">🔥</span>
+      <span class="iname">临界点</span>
+      <span class="ino">№014</span>
+      <span class="tip">59% 与 60% 之间，隔着一场大火</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="shop" data-no="015" data-icon="🌍" data-name="重力商店" data-hook="同一双腿，六个世界" href="gravity/">
+      <span class="tile">🌍</span>
+      <span class="iname">重力商店</span>
+      <span class="ino">№015</span>
+      <span class="tip">同一双腿，六个世界</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="retro" data-no="016" data-icon="📺" data-name="拍一下就好了" data-hook="祖传维修术，真有科学依据" href="tv/">
+      <span class="tile">📺</span>
+      <span class="iname">拍一下就好了</span>
+      <span class="ino">№016</span>
+      <span class="tip">祖传维修术，真有科学依据</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="math" data-no="017" data-icon="🚪" data-name="换不换门" data-hook="全世界的直觉在这里集体翻车" href="monty/">
+      <span class="tile">🚪</span>
+      <span class="iname">换不换门</span>
+      <span class="ino">№017</span>
+      <span class="tip">全世界的直觉在这里集体翻车</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="math" data-no="018" data-icon="🎂" data-name="一屋子人的生日" data-hook="23 个人，撞生日的概率就过半" href="birthday/">
+      <span class="tile">🎂</span>
+      <span class="iname">一屋子人的生日</span>
+      <span class="ino">№018</span>
+      <span class="tip">23 个人，撞生日的概率就过半</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="physics" data-no="019" data-icon="💧" data-name="一滴墨水" data-hook="时间为什么只往一边走" href="ink/">
+      <span class="tile">💧</span>
+      <span class="iname">一滴墨水</span>
+      <span class="ino">№019</span>
+      <span class="tip">时间为什么只往一边走</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="math" data-no="020" data-icon="🔔" data-name="高尔顿钉板" data-hook="单颗无常，一万颗说一不二" href="galton/">
+      <span class="tile">🔔</span>
+      <span class="iname">高尔顿钉板</span>
+      <span class="ino">№020</span>
+      <span class="tip">单颗无常，一万颗说一不二</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="math" data-no="021" data-icon="🤝" data-name="以牙还牙" data-hook="善良是算出来的最优解" href="dilemma/">
+      <span class="tile">🤝</span>
+      <span class="iname">以牙还牙</span>
+      <span class="ino">№021</span>
+      <span class="tip">善良是算出来的最优解</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="physics" data-no="022" data-icon="🚑" data-name="救护车变调" data-hook="靠近是一个音，离开是另一个音" href="doppler/">
+      <span class="tile">🚑</span>
+      <span class="iname">救护车变调</span>
+      <span class="ino">№022</span>
+      <span class="tip">靠近是一个音，离开是另一个音</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="023" data-icon="🧫" data-name="生命游戏" data-hook="四行规则，一整个宇宙" href="life/">
+      <span class="tile">🧫</span>
+      <span class="iname">生命游戏</span>
+      <span class="ino">№023</span>
+      <span class="tip">四行规则，一整个宇宙</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="024" data-icon="🏘" data-name="谢林的棋盘" data-hook="没有坏人，城市照样割裂" href="schelling/">
+      <span class="tile">🏘</span>
+      <span class="iname">谢林的棋盘</span>
+      <span class="ino">№024</span>
+      <span class="tip">没有坏人，城市照样割裂</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="system" data-no="025" data-icon="🔗" data-name="六度分隔" data-hook="你和任何人之间，隔六次握手" href="sixdegrees/">
+      <span class="tile">🔗</span>
+      <span class="iname">六度分隔</span>
+      <span class="ino">№025</span>
+      <span class="tip">你和任何人之间，隔六次握手</span>
+    </a>
+
+    <!-- 特殊图标 -->
+    <button class="icon special locked" id="iconMystery" data-win="mystery" type="button">
+      <span class="tile">🎁</span>
+      <span class="iname">№026 安装中…</span>
+      <span class="ino">筹备中</span>
+      <span class="tip">下一批展厅，正在下载</span>
+    </button>
+
+    <button class="icon special" id="iconTrash" data-win="trash" type="button">
+      <span class="tile">🗑</span>
+      <span class="iname">回收站</span>
+      <span class="ino">已毙</span>
+      <span class="tip">被馆长毙掉的展厅点子</span>
+    </button>
+
+    <button class="icon special" id="iconAbout" data-win="about" type="button">
+      <span class="tile">ℹ️</span>
+      <span class="iname">关于本馆</span>
+      <span class="ino">说明牌</span>
+      <span class="tip">感觉博物馆是什么</span>
+    </button>
+
+  </div>
+</div>
+
+<!-- Dock -->
+<div id="dock"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= 开机动画 ================= */
+  var boot = document.getElementById('boot');
+  var bootbar = document.getElementById('bootbar');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function dismissBoot(){
+    if (!boot) return;
+    boot.classList.add('hide');
+    setTimeout(function(){ if (boot && boot.parentNode) boot.parentNode.removeChild(boot); }, 520);
+  }
+
+  if (reduceMotion || sessionStorage.getItem('museumBooted') === '1') {
+    if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+  } else {
+    sessionStorage.setItem('museumBooted', '1');
+    bootbar.style.animation = 'bootbar 1.2s ease forwards';
+    boot.addEventListener('click', dismissBoot);
+    setTimeout(dismissBoot, 1300);
+  }
+
+  /* ================= 菜单栏：时钟 ================= */
+  var clockEl = document.getElementById('mbClock');
+  var weekChar = ['日','一','二','三','四','五','六'];
+  function tickClock(){
+    var d = new Date();
+    var hh = ('0' + d.getHours()).slice(-2);
+    var mm = ('0' + d.getMinutes()).slice(-2);
+    clockEl.textContent = hh + ':' + mm + ' 周' + weekChar[d.getDay()];
+  }
+  tickClock();
+  setInterval(tickClock, 1000 * 20);
+
+  /* ================= 菜单栏：展区下拉 ================= */
+  var mbTrigger = document.getElementById('mbTrigger');
+  var mbDropdown = document.getElementById('mbDropdown');
+  var isMobile = window.matchMedia && window.matchMedia('(max-width:760px)').matches;
+
+  if (mbTrigger) {
+    mbTrigger.addEventListener('click', function(e){
+      e.stopPropagation();
+      mbDropdown.classList.toggle('open');
+    });
+  }
+  document.addEventListener('click', function(e){
+    if (!mbDropdown.contains(e.target) && e.target !== mbTrigger) {
+      mbDropdown.classList.remove('open');
+    }
+  });
+
+  mbDropdown.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    var w = b.getAttribute('data-w');
+    var all = mbDropdown.querySelectorAll('button');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('on');
+    b.classList.add('on');
+    var icons = document.querySelectorAll('#icons .icon[data-cat]');
+    for (var j = 0; j < icons.length; j++) {
+      var c = icons[j].getAttribute('data-cat');
+      icons[j].classList.toggle('hidden-cat', !(w === 'all' || c === w));
+    }
+    if (!isMobile) mbDropdown.classList.remove('open');
+  });
+
+  /* ================= 关于本馆（logo 点击） ================= */
+  var mbLogo = document.getElementById('mbLogo');
+
+  /* ================= 移动端：不装窗口管理器 ================= */
+  if (isMobile) {
+    // 移动端：图标本体就是 <a href>，特殊按钮做最简单的展开
+    var mysteryBtn = document.getElementById('iconMystery');
+    var trashBtn = document.getElementById('iconTrash');
+    var aboutBtn = document.getElementById('iconAbout');
+    [mysteryBtn, trashBtn, aboutBtn].forEach(function(btn){
+      if (!btn) return;
+      btn.addEventListener('click', function(){
+        alert(btn.id === 'iconMystery'
+          ? '新展厅下载中 87%\n馆长的图纸上还剩：水面上的一块石头、盐粒排成的声音、九十分钟一班的夜车。'
+          : btn.id === 'iconTrash'
+          ? '被毙掉的展厅点子：\n· 蚊子视角模拟器：馆长在验收时被咬了\n· 无限会议模拟器：做完发现就是会议本身\n· 排队学姊妹馆·电梯篇：挤不进电梯本身\n· 早高峰呼吸模拟器：模拟到一半馆长先喘不上气'
+          : '感觉博物馆 · Museum of Feelings\n25 个展厅 · 纯前端 · 零依赖\n常年开放 免票入场\nMax 造\ngithub.com/maxi-max-dev/museum-of-feelings');
+      });
+    });
+    if (mbLogo) mbLogo.addEventListener('click', function(){
+      alert('感觉博物馆 · Museum of Feelings\n25 个展厅 · 纯前端 · 零依赖\n常年开放 免票入场\nMax 造');
+    });
+    return; // 移动端到此为止，不装窗口管理器
+  }
+
+  /* ================= 窗口管理器 ================= */
+  var desktop = document.getElementById('desktop');
+  var dock = document.getElementById('dock');
+  var zTop = 100;
+  var winCount = 0;
+  var openWins = {}; // key -> {el, dockBtn}
+  var cascadeOffset = 0;
+
+  function bringToFront(el){
+    zTop += 1;
+    el.style.zIndex = zTop;
+    document.querySelectorAll('#dock .dbtn').forEach(function(b){ b.classList.remove('active'); });
+    var rec = openWins[el.dataset.key];
+    if (rec && rec.dockBtn) rec.dockBtn.classList.add('active');
+  }
+
+  function clampToDesktop(x, y, w, h){
+    var maxX = Math.max(0, desktop.clientWidth - w);
+    var maxY = Math.max(0, desktop.clientHeight - h);
+    return { x: Math.min(Math.max(0, x), maxX), y: Math.min(Math.max(0, y), maxY) };
+  }
+
+  function updateDockVisibility(){
+    var any = Object.keys(openWins).length > 0;
+    dock.classList.toggle('show', any);
+  }
+
+  function closeWindow(key){
+    var rec = openWins[key];
+    if (!rec) return;
+    if (rec.el && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+    if (rec.dockBtn && rec.dockBtn.parentNode) rec.dockBtn.parentNode.removeChild(rec.dockBtn);
+    delete openWins[key];
+    updateDockVisibility();
+  }
+
+  function toggleMax(el){
+    var isMax = el.dataset.max === '1';
+    if (!isMax) {
+      el.dataset.prevRect = JSON.stringify({
+        left: el.style.left, top: el.style.top, width: el.style.width, height: el.style.height
+      });
+      el.style.left = '0px';
+      el.style.top = '0px';
+      el.style.width = desktop.clientWidth + 'px';
+      el.style.height = desktop.clientHeight + 'px';
+      el.dataset.max = '1';
+    } else {
+      var prev = JSON.parse(el.dataset.prevRect || '{}');
+      el.style.left = prev.left || '40px';
+      el.style.top = prev.top || '40px';
+      el.style.width = prev.width || '600px';
+      el.style.height = prev.height || '420px';
+      el.dataset.max = '0';
+    }
+  }
+
+  function makeDraggable(win, handle){
+    var dragging = false, startX, startY, origX, origY;
+    handle.addEventListener('pointerdown', function(e){
+      if (e.target.closest('.dot')) return;
+      dragging = true;
+      win.classList.add('dragging');
+      startX = e.clientX; startY = e.clientY;
+      origX = parseFloat(win.style.left) || 0;
+      origY = parseFloat(win.style.top) || 0;
+      handle.setPointerCapture(e.pointerId);
+      bringToFront(win);
+    });
+    handle.addEventListener('pointermove', function(e){
+      if (!dragging) return;
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      var w = win.offsetWidth, h = win.offsetHeight;
+      var pos = clampToDesktop(origX + dx, origY + dy, w, h);
+      win.style.left = pos.x + 'px';
+      win.style.top = pos.y + 'px';
+    });
+    function endDrag(e){
+      if (!dragging) return;
+      dragging = false;
+      win.classList.remove('dragging');
+      try{ handle.releasePointerCapture(e.pointerId); }catch(err){}
+    }
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+  }
+
+  function addDockButton(key, emoji, title){
+    var b = document.createElement('button');
+    b.className = 'dbtn';
+    b.type = 'button';
+    b.title = title;
+    b.innerHTML = emoji + '<span class="ddot"></span>';
+    b.addEventListener('click', function(){
+      var rec = openWins[key];
+      if (!rec) return;
+      bringToFront(rec.el);
+      rec.el.focus && rec.el.focus();
+    });
+    dock.appendChild(b);
+    return b;
+  }
+
+  function buildWindowShell(key, emoji, name, no){
+    winCount += 1;
+    cascadeOffset = (winCount - 1) % 12;
+    var baseX = 46 + cascadeOffset * 28;
+    var baseY = 20 + cascadeOffset * 28;
+
+    var el = document.createElement('div');
+    el.className = 'win';
+    el.dataset.key = key;
+    var w = Math.min(1020, window.innerWidth * 0.92);
+    var h = Math.min(700, (desktop.clientHeight) * 0.84);
+    var pos = clampToDesktop(baseX, baseY, w, h);
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    el.style.width = w + 'px';
+    el.style.height = h + 'px';
+
+    el.innerHTML =
+      '<div class="wtitle">' +
+        '<span class="wicon">' + emoji + '</span>' +
+        '<span class="wname">' + name + '</span>' +
+        (no ? '<span class="wno">№' + no + '</span>' : '') +
+        '<span class="wspacer"></span>' +
+        '<span class="dot dot-max" title="最大化 / 还原"></span>' +
+        '<span class="dot dot-close" title="关闭"></span>' +
+      '</div>' +
+      '<div class="wbody"></div>';
+
+    desktop.appendChild(el);
+
+    var titleBar = el.querySelector('.wtitle');
+    makeDraggable(el, titleBar);
+
+    el.addEventListener('pointerdown', function(){ bringToFront(el); }, true);
+
+    titleBar.querySelector('.dot-max').addEventListener('click', function(e){
+      e.stopPropagation();
+      toggleMax(el);
+    });
+    titleBar.querySelector('.dot-close').addEventListener('click', function(e){
+      e.stopPropagation();
+      closeWindow(key);
+    });
+
+    bringToFront(el);
+    return el;
+  }
+
+  function openHallWindow(iconEl){
+    var key = 'hall:' + iconEl.getAttribute('href');
+    if (openWins[key]) {
+      bringToFront(openWins[key].el);
+      return;
+    }
+    var emoji = iconEl.getAttribute('data-icon');
+    var name = iconEl.getAttribute('data-name');
+    var no = iconEl.getAttribute('data-no');
+    var href = iconEl.getAttribute('href');
+
+    var el = buildWindowShell(key, emoji, name, no);
+    var body = el.querySelector('.wbody');
+    body.innerHTML = '<div class="wload">布展中……</div><iframe src="' + href + '" loading="lazy"></iframe>';
+    var iframe = body.querySelector('iframe');
+    iframe.addEventListener('load', function(){ body.classList.add('loaded'); });
+
+    var dockBtn = addDockButton(key, emoji, name);
+    openWins[key] = { el: el, dockBtn: dockBtn };
+    updateDockVisibility();
+  }
+
+  function openUtilityWindow(key, emoji, name, contentHtml){
+    if (openWins[key]) {
+      bringToFront(openWins[key].el);
+      return;
+    }
+    var el = buildWindowShell(key, emoji, name, '');
+    var body = el.querySelector('.wbody');
+    body.classList.add('loaded');
+    var inner = document.createElement('div');
+    inner.className = 'wbody-inner';
+    inner.innerHTML = contentHtml;
+    body.appendChild(inner);
+
+    // 工具窗口给个更紧凑的默认尺寸
+    el.style.width = Math.min(460, window.innerWidth * 0.9) + 'px';
+    el.style.height = Math.min(360, desktop.clientHeight * 0.7) + 'px';
+
+    var dockBtn = addDockButton(key, emoji, name);
+    openWins[key] = { el: el, dockBtn: dockBtn };
+    updateDockVisibility();
+  }
+
+  /* ---- 展厅图标点击：拦截为窗口 ---- */
+  document.getElementById('icons').addEventListener('click', function(e){
+    var a = e.target.closest('a.icon[data-win="hall"]');
+    if (!a) return;
+    e.preventDefault();
+    openHallWindow(a);
+  });
+
+  /* ---- 特殊图标 ---- */
+  document.getElementById('iconMystery').addEventListener('click', function(){
+    openUtilityWindow('mystery', '🎁', '№026 安装中…',
+      '<h3>新展厅下载中</h3>' +
+      '<div class="fakebar"><i></i></div>' +
+      '<div class="pct">87%（卡在这里很久了，馆长说快了）</div>' +
+      '<p>馆长的图纸上还剩：水面上的一块石头、盐粒排成的声音、九十分钟一班的夜车。</p>'
+    );
+  });
+
+  document.getElementById('iconTrash').addEventListener('click', function(){
+    openUtilityWindow('trash', '🗑', '回收站',
+      '<h3>被毙掉的展厅点子</h3>' +
+      '<ul>' +
+        '<li>蚊子视角模拟器：馆长在验收时被咬了。</li>' +
+        '<li>无限会议模拟器：做完发现，它就是会议本身。</li>' +
+        '<li>排队学姊妹馆·电梯篇：挤不进电梯本身。</li>' +
+        '<li>早高峰呼吸模拟器：模拟到一半，馆长先喘不上气。</li>' +
+      '</ul>'
+    );
+  });
+
+  document.getElementById('iconAbout').addEventListener('click', function(){
+    openUtilityWindow('about', 'ℹ️', '关于本馆',
+      '<h3>感觉博物馆 · Museum of Feelings</h3>' +
+      '<p>25 个展厅 · 纯前端 · 零依赖<br>常年开放 免票入场<br>Max 造</p>' +
+      '<p><a href="https://github.com/maxi-max-dev/museum-of-feelings" target="_blank" rel="noopener">github.com/maxi-max-dev/museum-of-feelings</a></p>'
+    );
+  });
+  if (mbLogo) mbLogo.addEventListener('click', function(){
+    document.getElementById('iconAbout').click();
+  });
+
+  /* ---- 窗口内拖拽时限制在桌面范围（resize 时重夹一次） ---- */
+  window.addEventListener('resize', function(){
+    Object.keys(openWins).forEach(function(key){
+      var el = openWins[key].el;
+      if (el.dataset.max === '1') {
+        el.style.width = desktop.clientWidth + 'px';
+        el.style.height = desktop.clientHeight + 'px';
+        return;
+      }
+      var pos = clampToDesktop(parseFloat(el.style.left) || 0, parseFloat(el.style.top) || 0, el.offsetWidth, el.offsetHeight);
+      el.style.left = pos.x + 'px';
+      el.style.top = pos.y + 'px';
+    });
+  });
+
+})();
+</script>
 </body>
 </html>
