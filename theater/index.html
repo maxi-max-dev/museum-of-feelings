@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>剧场效应 · 感觉博物馆</title>
+<meta name="description" content="没有人想站着看戏，最后所有人都站着看完了。你坐第一排，第一个动作由你决定。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#241d2b;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .ctrls{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .btn{
+    font-family:var(--serif);font-size:14.5px;letter-spacing:.1em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:11px 17px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);box-shadow:0 4px 0 #7e2b1c;}
+  .btn.primary:active{transform:translateY(3px);box-shadow:0 1px 0 #7e2b1c;}
+  .btn:disabled{opacity:.45;cursor:default;}
+  .slider-box{display:flex;align-items:center;gap:8px;font-size:13px;color:#57503f;}
+  input[type=range]{accent-color:var(--seal);width:130px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №010</span>
+  </div>
+
+  <header>
+    <h1>剧场效应</h1>
+    <div class="en">The Theater Effect</div>
+    <p class="sub">没有人想站着看戏，最后所有人都站着看完了</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv" width="800" height="470"></canvas>
+  </div>
+
+  <div class="ctrls">
+    <button class="btn primary" id="btnUp">🧍 你（第一排）站起来</button>
+    <button class="btn" id="btnAdmin">📢 管理员：全体坐下！</button>
+    <div class="slider-box">
+      大家的忍耐力
+      <input type="range" id="sPat" min="10" max="60" value="28">
+      <span id="vPat">一般</span>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 谁的错？</div>
+    <div class="pb">
+      <b>第一排站起来的人多看到了什么吗？没有，他本来就看得见。</b>但他身后的人从这一刻起只能站起来，再后面的人跟着站，直到全场站立。数一数最后一幕：能看到舞台的排数和全场坐着时一模一样，只有腿知道发生了什么。这叫剧场效应，经济学里的另一个名字是「军备竞赛」：每个人的选择都无比理性，加起来是所有人一起白白付出。它解不开的原因也在台上：谁先坐下，谁先吃亏，所以没人敢先坐下。这时候「管理员」的哨声不是多管闲事，是全场唯一的出口。下次看到孩子们的补习班时刻表，可以想想这个剧场。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №010 · Max 造<br>
+    <a href="../dialup/">下一个展厅：56K 之夜 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 800, H = 470;
+  var N = 12;
+  var GROUND = 388;
+  var people = [];
+  var patience = 2.8;
+  var flash = null;
+  var perfT = 0;
+
+  function reset(){
+    people = [];
+    for (var i = 0; i < N; i++){
+      people.push({ posture: 0, blockT: 0, delay: 0.4 + Math.random() * 1.2 });
+    }
+  }
+
+  function maxFront(i){
+    var m = 0;
+    for (var j = 0; j < i; j++) if (people[j].posture > m) m = people[j].posture;
+    return m;
+  }
+
+  function blocked(i){
+    return maxFront(i) > people[i].posture;
+  }
+
+  function step(dt){
+    for (var i = 1; i < N; i++){
+      var p = people[i];
+      if (blocked(i)){
+        p.blockT += dt;
+        if (p.blockT > patience * p.delay){
+          p.posture = maxFront(i);
+          p.blockT = 0;
+          if (i === N - 1){
+            var post = p.posture;
+            setTimeout(function(){
+              var all = people.every(function(q){ return q.posture >= post; });
+              if (all){
+                flash = {text: post === 1 ?
+                  '全场都站起来了。能看见的人数和全坐着时一样，只有腿在受苦。' :
+                  '全场都站上椅子了。视野还是没变，危险和腿酸各加一倍。', t: 0};
+              }
+            }, 100);
+          }
+        }
+      } else {
+        p.blockT = 0;
+      }
+    }
+  }
+
+  /* ---------- 画 ---------- */
+  function drawPerson(x, i){
+    var p = people[i];
+    var isBlocked = blocked(i);
+    var lift = p.posture === 2 ? 26 : 0;
+    var bodyH = p.posture === 0 ? 26 : 52;
+    var baseY = GROUND - lift;
+    var headR = 9;
+    var col = i === 0 ? '#b5402c' : (isBlocked ? '#6b6577' : '#d9a53c');
+
+    if (p.posture === 2){
+      ctx.fillStyle = '#7d5433';
+      ctx.fillRect(x - 15, GROUND - 26, 30, 8);
+      ctx.fillRect(x - 12, GROUND - 18, 5, 18);
+      ctx.fillRect(x + 7, GROUND - 18, 5, 18);
+    }
+    if (p.posture === 0){
+      ctx.fillStyle = '#4a3f56';
+      ctx.fillRect(x - 14, baseY - 22, 28, 6);
+      ctx.fillRect(x - 14, baseY - 22, 6, 22);
+    }
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, baseY - (p.posture === 0 ? 8 : 4));
+    ctx.lineTo(x, baseY - bodyH);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x, baseY - bodyH - headR - 2, headR, 0, 7);
+    ctx.fillStyle = col;
+    ctx.fill();
+
+    if (i === 0){
+      ctx.font = '12px "Noto Serif SC",serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#f0e4c8';
+      ctx.fillText('你', x, GROUND + 20);
+    }
+    if (isBlocked){
+      ctx.font = '15px serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('💢', x + 13, baseY - bodyH - 16);
+    }
+  }
+
+  function draw(){
+    ctx.fillStyle = '#241d2b';
+    ctx.fillRect(0, 0, W, H);
+
+    /* 舞台 */
+    ctx.fillStyle = '#3a2f45';
+    ctx.fillRect(0, 120, 120, GROUND - 120);
+    ctx.fillStyle = '#5a4a6e';
+    ctx.fillRect(0, GROUND - 10, 120, 10);
+    var g = ctx.createRadialGradient(62, 230, 10, 62, 230, 130);
+    g.addColorStop(0, 'rgba(255,224,150,.5)');
+    g.addColorStop(1, 'rgba(255,224,150,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 100, 190, 300);
+
+    /* 演员（扭一扭） */
+    var sway = Math.sin(perfT * 2.4) * 8;
+    ctx.strokeStyle = '#f0c96e';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(62, GROUND - 14);
+    ctx.lineTo(62 + sway * 0.4, GROUND - 60);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(62 + sway * 0.4, GROUND - 52);
+    ctx.lineTo(62 + sway, GROUND - 76);
+    ctx.moveTo(62 + sway * 0.4, GROUND - 52);
+    ctx.lineTo(62 - sway, GROUND - 74);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(62 + sway * 0.5, GROUND - 72 - 9, 9, 0, 7);
+    ctx.fillStyle = '#f0c96e';
+    ctx.fill();
+    ctx.font = '12px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(240,228,200,.65)';
+    ctx.fillText('舞 台', 62, 140);
+
+    /* 地板 */
+    ctx.fillStyle = '#1a1522';
+    ctx.fillRect(0, GROUND, W, H - GROUND);
+
+    /* 观众（每个小人 = 一排） */
+    for (var i = 0; i < N; i++){
+      drawPerson(168 + i * 52, i);
+    }
+
+    /* 指标 */
+    var see = 0, fatigue = 0;
+    for (var k = 0; k < N; k++){
+      if (!blocked(k)) see++;
+      fatigue += people[k].posture;
+    }
+    ctx.textAlign = 'left';
+    ctx.font = '15px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#f0e4c8';
+    var mood = fatigue === 0 ? '😌 全场安坐' : fatigue < N ? '😠 有人被挡住了' : fatigue < N * 2 ? '😫 全场站立' : '🥵 全场站上了椅子';
+    ctx.fillText('👀 能看到舞台：' + see + ' / ' + N + ' 排 · ' + mood, 150, 34);
+    ctx.font = '12.5px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = 'rgba(240,228,200,.55)';
+    ctx.fillText('每个小人代表一排观众 · 💢 = 被前面挡住，忍不了多久的', 150, 58);
+
+    if (flash){
+      flash.t += 0.016;
+      if (flash.t > 6) flash = null;
+      else {
+        ctx.fillStyle = 'rgba(26,21,34,.92)';
+        ctx.fillRect(0, 86, W, 34);
+        ctx.textAlign = 'center';
+        ctx.font = '15.5px "Noto Serif SC","Songti SC",serif';
+        ctx.fillStyle = 'rgba(240,228,200,' + Math.min(1, 6 - flash.t) + ')';
+        ctx.fillText(flash.text, W / 2, 108);
+      }
+    }
+  }
+
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(8, (now - last) / 1000);
+    last = now;
+    perfT += Math.min(0.05, dt);
+    while (dt > 0){
+      var h = Math.min(0.05, dt);
+      step(h);
+      dt -= h;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  var btnUp = document.getElementById('btnUp');
+  btnUp.addEventListener('click', function(){
+    var me = people[0];
+    if (me.posture === 0){
+      me.posture = 1;
+      this.textContent = '🪑 你踩上椅子';
+      flash = {text: '你站起来了。你的视野没变好，但你身后 11 排的命运已经写好了。', t: 0};
+    } else if (me.posture === 1){
+      me.posture = 2;
+      this.textContent = '🧍 你已经无处可站';
+      this.disabled = true;
+      flash = {text: '你踩上了椅子。听，后面传来一片挪椅子的声音。', t: 0};
+    }
+  });
+  document.getElementById('btnAdmin').addEventListener('click', function(){
+    reset();
+    btnUp.textContent = '🧍 你（第一排）站起来';
+    btnUp.disabled = false;
+    flash = {text: '📢「全体坐下！」视野一秒回到从前，腿也是。这就是规则存在的意义。', t: 0};
+  });
+  var sPat = document.getElementById('sPat');
+  sPat.addEventListener('input', function(){
+    patience = +this.value / 10;
+    document.getElementById('vPat').textContent = patience < 2 ? '一点就炸' : patience < 4 ? '一般' : '很能忍';
+  });
+
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

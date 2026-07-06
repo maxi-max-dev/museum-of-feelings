@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>56K 之夜 · 感觉博物馆</title>
+<meta name="description" content="吱嘎嘎滋滋滋。一张图片加载四分钟，那是互联网最慢也最快乐的年代。小心你妈拿起电话。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    --w95:#c0c0c0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#0e7f7b;overflow:hidden;animation:rise .8s .1s ease both;
+    min-height:540px;
+  }
+  .icons{position:absolute;top:14px;left:14px;color:#fff;font-size:12px;text-align:center;text-shadow:1px 1px 0 rgba(0,0,0,.5);}
+  .icons .ic{margin-bottom:16px;width:64px;}
+  .icons .ic span{font-size:30px;display:block;}
+
+  .win{
+    position:absolute;background:var(--w95);
+    border:2px solid;border-color:#ffffff #404040 #404040 #ffffff;
+    box-shadow:3px 3px 0 rgba(0,0,0,.35);
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:12.5px;color:#111;
+  }
+  .tbar{
+    background:linear-gradient(90deg,#000080,#1084d0);color:#fff;
+    padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;align-items:center;
+    letter-spacing:.05em;
+  }
+  .tbar .x{
+    background:var(--w95);color:#000;border:1.5px solid;border-color:#fff #404040 #404040 #fff;
+    width:18px;height:16px;line-height:12px;text-align:center;font-size:11px;cursor:default;
+  }
+  .wbody{padding:12px;}
+  .btn95{
+    font-family:inherit;font-size:12.5px;background:var(--w95);
+    border:2px solid;border-color:#ffffff #404040 #404040 #ffffff;
+    padding:5px 16px;cursor:pointer;
+  }
+  .btn95:active{border-color:#404040 #ffffff #ffffff #404040;}
+  .btn95:disabled{color:#808080;text-shadow:1px 1px 0 #fff;cursor:default;}
+
+  #dialWin{width:330px;left:calc(50% - 165px);top:110px;}
+  #dialWin .row{display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;}
+  #dialWin input{
+    font-family:inherit;font-size:12.5px;width:180px;padding:3px 6px;
+    border:2px solid;border-color:#404040 #ffffff #ffffff #404040;background:#fff;
+  }
+  #dialLog{
+    background:#000;color:#00d200;font-family:"Courier New",monospace;font-size:11.5px;
+    height:88px;overflow:hidden;padding:6px 8px;line-height:1.6;margin:10px 0;
+    border:2px solid;border-color:#404040 #ffffff #ffffff #404040;
+  }
+
+  #picWin{width:600px;left:calc(50% - 300px);top:34px;display:none;}
+  #picCv{display:block;width:100%;height:auto;background:#777;}
+  .statusbar{
+    display:flex;gap:8px;align-items:center;padding:5px 8px;font-size:11.5px;
+    border-top:2px solid;border-color:#ffffff transparent transparent transparent;
+  }
+  .pbar{
+    flex:1;height:14px;border:2px solid;border-color:#404040 #ffffff #ffffff #404040;background:#fff;
+    position:relative;overflow:hidden;
+  }
+  .pbar .fill{
+    position:absolute;left:0;top:0;bottom:0;width:0%;
+    background:repeating-linear-gradient(90deg,#000080 0 9px,transparent 9px 12px);
+  }
+
+  #momWin{width:360px;left:calc(50% - 180px);top:150px;display:none;z-index:5;}
+  #momWin .wbody{display:flex;gap:12px;align-items:flex-start;line-height:1.8;}
+  #momWin .warn{font-size:34px;}
+  #momWin .btnrow{text-align:center;padding:0 0 12px;}
+
+  #chatToast{width:250px;right:14px;bottom:14px;left:auto;display:none;}
+  #chatToast .wbody{line-height:1.7;}
+
+  #doneStamp{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(0,0,0,.25);z-index:4;
+  }
+  #doneStamp .card{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 28px;text-align:center;font-family:var(--serif);color:#453e30;
+    font-size:14.5px;line-height:2.1;max-width:420px;
+  }
+  #doneStamp .big{font-size:20px;letter-spacing:.2em;color:var(--seal);margin-bottom:6px;}
+  #doneStamp button{
+    font-family:var(--serif);font-size:14px;background:var(--seal);color:#fdf6ee;
+    border:none;border-radius:9px;padding:10px 20px;cursor:pointer;margin-top:8px;letter-spacing:.1em;
+  }
+
+  .ctrls{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:14px 18px;margin-top:16px;
+  }
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №011</span>
+  </div>
+
+  <header>
+    <h1>56K 之夜</h1>
+    <div class="en">The 56K Night</div>
+    <p class="sub">妈，别拿电话，我在下图</p>
+  </header>
+
+  <div class="stage" id="desk">
+    <div class="icons">
+      <div class="ic"><span>🖥️</span>我的电脑</div>
+      <div class="ic"><span>🗑️</span>回收站</div>
+      <div class="ic"><span>🌐</span>浏览器</div>
+    </div>
+
+    <!-- 拨号窗口 -->
+    <div class="win" id="dialWin">
+      <div class="tbar"><span>📞 拨号网络连接</span><span class="x">✕</span></div>
+      <div class="wbody">
+        <div class="row"><span>电话号码：</span><input value="96169" readonly></div>
+        <div class="row"><span>用户名：</span><input value="上网卡 168 小时" readonly></div>
+        <div id="dialLog">调制解调器就绪。<br>提示：确认家里没人要打电话。</div>
+        <div style="text-align:center">
+          <button class="btn95" id="btnDial">连 接</button>
+          <button class="btn95" disabled style="margin-left:10px">取 消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 图片浏览器 -->
+    <div class="win" id="picWin">
+      <div class="tbar"><span>🖼️ 图片浏览器 - 草原.jpg (148 KB)</span><span class="x">✕</span></div>
+      <canvas id="picCv" width="592" height="370"></canvas>
+      <div class="statusbar">
+        <div class="pbar"><div class="fill" id="pFill"></div></div>
+        <span id="pText" style="min-width:210px">0 KB / 148 KB · 0.0 KB/s</span>
+      </div>
+    </div>
+
+    <!-- 妈妈事件 -->
+    <div class="win" id="momWin">
+      <div class="tbar"><span>⚠️ 连接已断开</span><span class="x">✕</span></div>
+      <div class="wbody">
+        <div class="warn">📞</div>
+        <div>妈妈在客厅拿起了电话。<br>调制解调器发出一声惨叫，连接中断。<br><b id="momLost"></b></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn95" id="btnYell">冲客厅喊：我在下东西啊！！</button>
+      </div>
+    </div>
+
+    <!-- 聊天弹窗 -->
+    <div class="win" id="chatToast">
+      <div class="tbar"><span>💬 聊天室</span><span class="x">✕</span></div>
+      <div class="wbody" id="chatText"></div>
+    </div>
+
+    <!-- 完成 -->
+    <div id="doneStamp">
+      <div class="card">
+        <div class="big">下载完成 ✓</div>
+        <div id="doneText"></div>
+        <button id="btnAgain">🔁 再下一张</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ctrls">
+    <button class="btn" id="btnTurbo">⏩ 借你一点 2026 年的网速</button>
+    <button class="btn" id="btnMute">🔊 猫叫声</button>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 为什么妈妈拿电话会断网</div>
+    <div class="pb">
+      <b>拨号上网是真的在「打电话」：调制解调器拨给电信的接入号，把数据唱成声音传过去。</b>所以全家只有一条电话线时，上网就是占线，任何人拿起分机，你的连接就当场断掉，一张图白下，一盘棋掉线。56K 指每秒最多 7 KB，一张照片四分钟，一首 MP3 一个多小时，还要按小时付上网费。那声「吱——嘎嘎——滋滋滋」是两台调制解调器在协商语速，是一代人心中「即将连上世界」的前奏。现在你一秒钟刷掉的视频，那时够下整整一个暑假。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №011 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- 生成「草原.jpg」 ---------- */
+  var PW = 592, PH = 370;
+  var off = document.createElement('canvas');
+  off.width = PW; off.height = PH;
+  var oc = off.getContext('2d');
+  (function paint(){
+    var sky = oc.createLinearGradient(0, 0, 0, PH * 0.6);
+    sky.addColorStop(0, '#2f6fd0');
+    sky.addColorStop(1, '#a8d4f0');
+    oc.fillStyle = sky;
+    oc.fillRect(0, 0, PW, PH);
+    oc.fillStyle = '#ffe9a8';
+    oc.beginPath(); oc.arc(500, 70, 34, 0, 7); oc.fill();
+    oc.fillStyle = 'rgba(255,255,255,.92)';
+    [[120,70],[300,110],[430,50]].forEach(function(c){
+      oc.beginPath();
+      oc.ellipse(c[0], c[1], 52, 16, 0, 0, 7);
+      oc.ellipse(c[0] + 38, c[1] - 10, 34, 13, 0, 0, 7);
+      oc.fill();
+    });
+    var hill = oc.createLinearGradient(0, PH * 0.45, 0, PH);
+    hill.addColorStop(0, '#7ec850');
+    hill.addColorStop(1, '#3f8f2f');
+    oc.fillStyle = hill;
+    oc.beginPath();
+    oc.moveTo(0, PH * 0.62);
+    oc.quadraticCurveTo(PW * 0.35, PH * 0.38, PW * 0.72, PH * 0.58);
+    oc.quadraticCurveTo(PW * 0.88, PH * 0.66, PW, PH * 0.6);
+    oc.lineTo(PW, PH); oc.lineTo(0, PH);
+    oc.closePath(); oc.fill();
+    oc.strokeStyle = '#8a5a3b';
+    oc.lineWidth = 4;
+    oc.beginPath(); oc.moveTo(430, PH * 0.5); oc.lineTo(430, PH * 0.5 - 46); oc.stroke();
+    oc.fillStyle = '#b5402c';
+    oc.beginPath();
+    oc.moveTo(430, PH * 0.5 - 46);
+    oc.lineTo(474, PH * 0.5 - 38);
+    oc.lineTo(430, PH * 0.5 - 29);
+    oc.closePath(); oc.fill();
+    oc.fillStyle = 'rgba(255,255,255,.85)';
+    oc.font = '11px sans-serif';
+    oc.fillText('感觉博物馆 到此一游', 340, PH * 0.5 + 20);
+  })();
+
+  var cv = document.getElementById('picCv');
+  var ctx = cv.getContext('2d');
+
+  /* ---------- 声音 ---------- */
+  var AC = null, master = null, muted = false;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+  }
+  function tone(f, t0, dur, vol, type){
+    var o = AC.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.value = f;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.02);
+    g.gain.setValueAtTime(vol, t0 + dur - 0.03);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function noise(t0, dur, vol, hp){
+    var nb = AC.createBuffer(1, AC.sampleRate * dur, AC.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    var ns = AC.createBufferSource();
+    ns.buffer = nb;
+    var f = AC.createBiquadFilter();
+    f.type = hp ? 'highpass' : 'lowpass';
+    f.frequency.value = hp ? 1200 : 2400;
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.05);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    ns.connect(f); f.connect(g); g.connect(master);
+    ns.start(t0);
+  }
+  function handshakeSound(){
+    ensureAC();
+    var t = AC.currentTime + 0.05;
+    tone(350, t, 0.7, 0.12); tone(440, t, 0.7, 0.12);
+    var digits = [[697,1209],[770,1336],[852,1477],[697,1336],[941,1336]];
+    for (var i = 0; i < digits.length; i++){
+      var dt0 = t + 0.85 + i * 0.16;
+      tone(digits[i][0], dt0, 0.11, 0.11);
+      tone(digits[i][1], dt0, 0.11, 0.11);
+    }
+    tone(2100, t + 1.9, 0.55, 0.1);
+    var w = t + 2.5;
+    for (var k = 0; k < 10; k++){
+      tone(900 + Math.random() * 1200, w + k * 0.14, 0.13, 0.09, 'square');
+    }
+    noise(t + 3.9, 1.2, 0.07);
+  }
+  function slamSound(){
+    ensureAC();
+    var t = AC.currentTime;
+    tone(1800, t, 0.12, 0.14, 'square');
+    noise(t + 0.1, 0.5, 0.12, true);
+  }
+
+  /* ---------- 状态机 ---------- */
+  var TOTAL = 148;
+  var state = 'idle';
+  var bytes = 0, elapsed = 0, turbo = false;
+  var momPending = true, momAt = 0.58 + Math.random() * 0.22;
+  var chats = [
+    {at: 0.22, text: '网友「轻舞飞扬」上线了。'},
+    {at: 0.42, text: '同学：在吗？明天借我抄下作业。'}
+  ];
+  var log = document.getElementById('dialLog');
+
+  function addLog(t){
+    log.innerHTML += '<br>' + t;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  document.getElementById('btnDial').addEventListener('click', function(){
+    if (state !== 'idle') return;
+    state = 'dialing';
+    this.disabled = true;
+    if (!muted) handshakeSound();
+    addLog('正在拨打 96169 …');
+    setTimeout(function(){ addLog('听到拨号音，开始握手'); }, 900);
+    setTimeout(function(){ addLog('吱——嘎嘎嘎——滋滋滋——'); }, 2000);
+    setTimeout(function(){ addLog('已连接：52,000 bps'); }, 4200);
+    setTimeout(function(){
+      state = 'online';
+      document.getElementById('dialWin').style.display = 'none';
+      document.getElementById('picWin').style.display = 'block';
+    }, 5000);
+  });
+
+  function disconnectByMom(){
+    state = 'mom';
+    if (!muted) slamSound();
+    document.getElementById('momLost').textContent = '刚才下的 ' + Math.floor(bytes) + ' KB，白下了。';
+    document.getElementById('momWin').style.display = 'block';
+  }
+
+  document.getElementById('btnYell').addEventListener('click', function(){
+    document.getElementById('momWin').style.display = 'none';
+    momPending = false;
+    bytes = 0;
+    state = 'redial';
+    if (!muted) handshakeSound();
+    setTimeout(function(){ state = 'online'; }, 3000);
+  });
+
+  var shownChats = {};
+  function maybeChat(frac){
+    for (var i = 0; i < chats.length; i++){
+      if (!shownChats[i] && frac > chats[i].at){
+        shownChats[i] = true;
+        var tEl = document.getElementById('chatToast');
+        document.getElementById('chatText').textContent = chats[i].text;
+        tEl.style.display = 'block';
+        if (AC && !muted){ tone(880, AC.currentTime, 0.12, 0.1); tone(1320, AC.currentTime + 0.15, 0.12, 0.1); }
+        setTimeout(function(){ tEl.style.display = 'none'; }, 4200);
+      }
+    }
+  }
+
+  function finish(){
+    state = 'done';
+    var sec = Math.round(elapsed);
+    document.getElementById('doneText').innerHTML =
+      '草原.jpg · 148 KB<br>你等了 <b>' + sec + ' 秒</b>（已经给你开了人道主义加速）。<br>' +
+      '2003 年的原版是四分半钟，还要全程祈祷没人碰电话。<br>在 2026 年，这张图需要 0.02 秒。';
+    document.getElementById('doneStamp').style.display = 'flex';
+  }
+
+  function resetAll(){
+    state = 'idle';
+    bytes = 0; elapsed = 0;
+    momPending = true; momAt = 0.58 + Math.random() * 0.22;
+    shownChats = {};
+    document.getElementById('doneStamp').style.display = 'none';
+    document.getElementById('picWin').style.display = 'none';
+    document.getElementById('dialWin').style.display = 'block';
+    document.getElementById('btnDial').disabled = false;
+    log.innerHTML = '调制解调器就绪。<br>提示：确认家里没人要打电话。';
+  }
+  document.getElementById('btnAgain').addEventListener('click', resetAll);
+
+  document.getElementById('btnTurbo').addEventListener('click', function(){
+    turbo = !turbo;
+    this.classList.toggle('on', turbo);
+  });
+  document.getElementById('btnMute').addEventListener('click', function(){
+    muted = !muted;
+    this.textContent = muted ? '🔇 猫叫声' : '🔊 猫叫声';
+    if (master) master.gain.value = muted ? 0 : 0.5;
+  });
+
+  /* ---------- 下载循环 ---------- */
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(8, (now - last) / 1000);
+    last = now;
+    if (state === 'online'){
+      elapsed += dt;
+      var rate = (5.2 + Math.sin(elapsed * 1.7) * 1.4 + Math.random() * 0.6) * (turbo ? 8 : 1);
+      bytes += rate * dt;
+      if (bytes > TOTAL) bytes = TOTAL;
+      var frac = bytes / TOTAL;
+      if (momPending && frac >= momAt){
+        disconnectByMom();
+      } else if (bytes >= TOTAL){
+        bytes = TOTAL;
+        drawPic(1);
+        updateBar(1, 0);
+        finish();
+      } else {
+        drawPic(frac);
+        updateBar(frac, rate);
+        maybeChat(frac);
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function drawPic(frac){
+    var rows = Math.floor(PH * frac);
+    ctx.fillStyle = '#9a9a9a';
+    ctx.fillRect(0, 0, PW, PH);
+    /* 底层：马赛克预览 */
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, PW / 16, PH / 16, 0, 0, PW, PH);
+    ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#888';
+    ctx.fillRect(0, 0, PW, PH);
+    ctx.globalAlpha = 1;
+    /* 已下载的部分：清晰 */
+    if (rows > 0) ctx.drawImage(off, 0, 0, PW, rows, 0, 0, PW, rows);
+    if (frac < 1){
+      ctx.fillStyle = 'rgba(0,0,0,.55)';
+      ctx.fillRect(0, rows, PW, 3);
+    }
+  }
+
+  function updateBar(frac, rate){
+    document.getElementById('pFill').style.width = (frac * 100) + '%';
+    var remain = rate > 0 ? Math.ceil((TOTAL - bytes) / rate) : 0;
+    var lie = remain > 0 ? '剩余 ' + Math.max(1, Math.round(remain / 60 * (0.7 + Math.random() * 1.4))) + ' 分钟' : '';
+    document.getElementById('pText').textContent =
+      Math.floor(bytes) + ' KB / 148 KB · ' + rate.toFixed(1) + ' KB/s · ' + lie;
+  }
+
+  drawPic(0);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
