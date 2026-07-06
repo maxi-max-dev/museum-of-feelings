@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算法织布机 · 感觉博物馆</title>
+<meta name="description" content="这一次你来当推荐算法。三个旋钮交给你，看一个人的世界如何慢慢窄成一条缝。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    display:grid;grid-template-columns:minmax(0,400px) 1fr;gap:22px;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    padding:20px;animation:rise .8s .1s ease both;
+  }
+  @media(max-width:720px){.stage{grid-template-columns:1fr;}}
+
+  .loom-side{position:relative;}
+  .loom-frame{
+    border:6px solid #7d5433;border-radius:4px;background:#efe9da;
+    box-shadow:inset 0 0 14px rgba(90,70,40,.25);position:relative;
+  }
+  .loom-frame canvas{display:block;width:100%;height:auto;}
+  .ticker{
+    margin-top:10px;font-size:13px;color:#57503f;letter-spacing:.03em;
+    min-height:38px;line-height:1.5;
+    border:1px dashed var(--line);border-radius:8px;padding:6px 10px;
+    background:rgba(255,255,255,.4);
+  }
+  .ticker b{color:var(--ink);}
+
+  .report{
+    position:absolute;inset:0;background:rgba(42,37,33,.86);color:#f5efe2;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:10px;padding:18px;z-index:3;
+  }
+  .report.show{display:flex;}
+  .report .big{font-size:21px;letter-spacing:.2em;}
+  .report .row{font-size:13.5px;line-height:1.9;color:#e4dbc8;}
+  .report button{
+    font-family:var(--serif);font-size:14px;background:var(--seal);color:#fdf6ee;
+    border:none;border-radius:9px;padding:10px 20px;cursor:pointer;letter-spacing:.1em;margin-top:6px;
+  }
+
+  .panel h3{font-size:13px;letter-spacing:.25em;color:var(--seal);margin:2px 0 12px;font-weight:400;}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12.5px;}
+  .bar-row .lbl{width:86px;color:#453e30;flex:0 0 auto;}
+  .bar-row .track{flex:1;height:13px;background:#eee5d0;border-radius:7px;overflow:hidden;}
+  .bar-row .fill{height:100%;border-radius:7px;transition:width .3s;}
+  .bar-row .pct{width:40px;text-align:right;color:var(--ink-soft);font-size:11.5px;flex:0 0 auto;}
+  .metrics{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px;font-size:13.5px;line-height:2.1;color:#453e30;}
+  .metrics b{font-size:17px;color:var(--ink);}
+  .cocoon{font-size:15px;}
+  .cocoon b{font-size:26px;color:var(--seal);}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 20px;margin-top:16px;
+  }
+  .sliders{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:720px){.sliders{grid-template-columns:1fr;}}
+  .sl label{font-size:13px;color:#453e30;display:flex;justify-content:space-between;margin-bottom:4px;letter-spacing:.05em;}
+  .sl input{width:100%;accent-color:var(--seal);}
+  .sl .hint{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .btn-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;justify-content:center;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 15px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №005</span>
+  </div>
+
+  <header>
+    <h1>算法织布机</h1>
+    <div class="en">The Algorithm Loom</div>
+    <p class="sub">这一次，你来当推荐算法</p>
+  </header>
+
+  <div class="stage">
+    <div class="loom-side">
+      <div class="loom-frame">
+        <canvas id="cloth" width="380" height="400"></canvas>
+        <div class="report" id="report">
+          <div class="big">这块布织完了</div>
+          <div class="row" id="repRows"></div>
+          <button id="repAgain">重织一块</button>
+        </div>
+      </div>
+      <div class="ticker" id="ticker">正在把一个人刷到的每一条内容，织成一根根纬线…</div>
+    </div>
+
+    <div class="panel">
+      <h3>这个用户的兴趣分布</h3>
+      <div id="bars"></div>
+      <div class="metrics">
+        📱 已推送 <b id="mCount">0</b> 条 · 折合刷了 <b id="mTime">0</b> 分钟<br>
+        🌍 视野宽度 <b id="mWide">100%</b><span id="mWideNote" style="font-size:11.5px;color:var(--ink-soft)"></span><br>
+        <span class="cocoon">🕸️ 茧房指数 <b id="mCocoon">0</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ctrls">
+    <div class="sliders">
+      <div class="sl">
+        <label>投其所好 <span id="vCtr">70</span></label>
+        <input type="range" id="sCtr" min="0" max="100" value="70">
+        <div class="hint">他爱看什么，就喂什么</div>
+      </div>
+      <div class="sl">
+        <label>猎奇探索 <span id="vDiv">15</span></label>
+        <input type="range" id="sDiv" min="0" max="100" value="15">
+        <div class="hint">推一些他没看过的世界</div>
+      </div>
+      <div class="sl">
+        <label>上头优先 <span id="vAdd">50</span></label>
+        <input type="range" id="sAdd" min="0" max="100" value="50">
+        <div class="hint">越让人停不下来的越先推</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="btnPlay">⏸ 暂停织布</button>
+      <button class="btn" id="pKpi">😈 全力冲 KPI</button>
+      <button class="btn" id="pMid">😐 均衡一点</button>
+      <button class="btn" id="pZen">😇 佛系算法</button>
+      <button class="btn" id="btnReset">🧶 重织</button>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 茧是怎么织成的</div>
+    <div class="pb">
+      <b>没有人给算法下过「把他关进茧房」的指令。</b>指令只有一条：让他多停留一会儿。你越喂他爱吃的，他就越爱吃，你就更有理由继续喂，这根线就这样越缠越紧。把「投其所好」拉满，看布变成一种颜色，那就是 KPI 最好看的时刻。而「猎奇探索」每转动一格，时长数字就难看一分，这就是为什么平台都知道茧房存在，解开它却这么难。你自己的信息流，就是一块织了好几年的布。今晚可以翻翻看，它还剩几种颜色。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №005 · Max 造<br>
+    <a href="../queue/">下一个展厅：排队学 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var TOPICS = [
+    {name:'明星八卦', emoji:'🎤', color:'#e0679c', add:0.85,
+     titles:['顶流塌房实录第{n}弹','某女星深夜发文又秒删','狗仔蹲了三个月的大瓜']},
+    {name:'短剧', emoji:'📺', color:'#d84437', add:0.9,
+     titles:['赘婿觉醒·第{n}集','闪婚老公是隐藏首富','重生之我在八零当厂长']},
+    {name:'游戏', emoji:'🎮', color:'#7d5fd0', add:0.7,
+     titles:['新赛季上分英雄推荐','这个隐藏成就 99% 的人没解锁','主播一穿五名场面']},
+    {name:'萌宠', emoji:'🐱', color:'#e8973f', add:0.62,
+     titles:['猫主子的第 {n} 次拆家','小狗第一次见到雪','橘猫又双叒胖了']},
+    {name:'美食', emoji:'🍜', color:'#d9a53c', add:0.55,
+     titles:['深夜食堂：一个人的火锅','这家苍蝇馆子开了三十年','空气炸锅万物皆可炸']},
+    {name:'健身', emoji:'💪', color:'#3f9d8a', add:0.4,
+     titles:['三个动作练出直角肩','跑步一个月身体的变化','别再做无效卷腹了']},
+    {name:'学习干货', emoji:'📚', color:'#4a7dc9', add:0.25,
+     titles:['费曼学习法五分钟入门','我如何一年读完 50 本书','这个记忆方法相见恨晚']},
+    {name:'时事', emoji:'📰', color:'#7a8699', add:0.35,
+     titles:['今日要闻速览','这项新规下月起实施','记者实地探访']}
+  ];
+  var N = TOPICS.length;
+  var ROW = 4, MAX_POSTS = 150;
+
+  var cv = document.getElementById('cloth');
+  var ctx = cv.getContext('2d');
+  var interests, history, count, totalSec, playing, timer, titleN;
+
+  var barsEl = document.getElementById('bars');
+  TOPICS.forEach(function(t, i){
+    var d = document.createElement('div');
+    d.className = 'bar-row';
+    d.innerHTML = '<span class="lbl">' + t.emoji + ' ' + t.name + '</span>' +
+      '<span class="track"><span class="fill" id="fill' + i + '" style="background:' + t.color + ';width:12%"></span></span>' +
+      '<span class="pct" id="pct' + i + '">12%</span>';
+    barsEl.appendChild(d);
+  });
+
+  function reset(){
+    interests = [];
+    var sum = 0;
+    for (var i = 0; i < N; i++){ var v = 0.8 + Math.random() * 0.5; interests.push(v); sum += v; }
+    for (var j = 0; j < N; j++) interests[j] /= sum;
+    history = [];
+    count = 0; totalSec = 0; titleN = 1;
+    ctx.fillStyle = '#efe9da';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+    document.getElementById('report').classList.remove('show');
+    updatePanel();
+  }
+
+  function weights(){
+    return {
+      a: +document.getElementById('sCtr').value / 100,
+      c: +document.getElementById('sDiv').value / 100,
+      b: +document.getElementById('sAdd').value / 100
+    };
+  }
+
+  function share(k, win){
+    var n = Math.min(history.length, win), c = 0;
+    for (var i = history.length - n; i < history.length; i++) if (history[i] === k) c++;
+    return n ? c / n : 1 / N;
+  }
+
+  function tick(){
+    var w = weights();
+    var scores = [], m = -1e9;
+    for (var k = 0; k < N; k++){
+      var s = 2.2 * w.a * interests[k] + 1.1 * w.b * TOPICS[k].add + 1.6 * w.c * (1 / N - share(k, 30));
+      scores.push(s); if (s > m) m = s;
+    }
+    var ps = [], sum = 0;
+    for (var k2 = 0; k2 < N; k2++){ var p = Math.exp((scores[k2] - m) / 0.22); ps.push(p); sum += p; }
+    var r = Math.random() * sum, pick = 0;
+    for (var k3 = 0; k3 < N; k3++){ r -= ps[k3]; if (r <= 0){ pick = k3; break; } }
+
+    var e = Math.min(1, Math.max(0.05, interests[pick] * 2.2 * 0.8 + TOPICS[pick].add * 0.3 + (Math.random() - 0.5) * 0.15));
+    interests[pick] += 0.055 * e;
+    var s2 = 0;
+    for (var k4 = 0; k4 < N; k4++) s2 += interests[k4];
+    for (var k5 = 0; k5 < N; k5++) interests[k5] /= s2;
+
+    history.push(pick);
+    count++;
+    totalSec += 4 + e * 28;
+    weaveRow(pick, e);
+    tickerShow(pick, e);
+    updatePanel();
+    if (count >= MAX_POSTS) finish();
+  }
+
+  function weaveRow(k, e){
+    var y = count * ROW;
+    if (y > cv.height){
+      ctx.drawImage(cv, 0, -ROW);
+      y = cv.height;
+      ctx.fillStyle = '#efe9da';
+      ctx.fillRect(0, y - ROW, cv.width, ROW);
+    }
+    var base = TOPICS[k].color;
+    for (var x = 0; x < cv.width; x += 10){
+      var alt = ((x / 10) + count) % 2 === 0;
+      ctx.fillStyle = base;
+      ctx.globalAlpha = alt ? (0.65 + e * 0.3) : (0.45 + e * 0.3);
+      ctx.fillRect(x, y - ROW, 9, ROW - 0.6);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function tickerShow(k, e){
+    var t = TOPICS[k];
+    var title = t.titles[Math.floor(Math.random() * t.titles.length)].replace('{n}', titleN++);
+    var stay = e > 0.7 ? '停留了很久，还点了赞' : e > 0.4 ? '看完了' : '划走了';
+    document.getElementById('ticker').innerHTML = '正在推送 ' + t.emoji + ' <b>' + t.name + '</b>「' + title + '」，他' + stay + '。';
+  }
+
+  function entropy(){
+    var win = Math.min(history.length, 50);
+    if (!win) return 1;
+    var cnt = {};
+    for (var i = history.length - win; i < history.length; i++) cnt[history[i]] = (cnt[history[i]] || 0) + 1;
+    var H = 0;
+    for (var k in cnt){ var p = cnt[k] / win; H -= p * Math.log(p); }
+    return H / Math.log(N);
+  }
+
+  function updatePanel(){
+    for (var i = 0; i < N; i++){
+      var pc = Math.round(interests[i] * 100);
+      document.getElementById('fill' + i).style.width = Math.min(100, pc * 2.4) + '%';
+      document.getElementById('pct' + i).textContent = pc + '%';
+    }
+    var wide = Math.round(entropy() * 100);
+    document.getElementById('mCount').textContent = count;
+    document.getElementById('mTime').textContent = Math.round(totalSec / 60);
+    var wEl = document.getElementById('mWide');
+    wEl.textContent = wide + '%';
+    wEl.style.color = wide > 60 ? '#3f7d3a' : wide > 35 ? '#c07b2c' : '#b5402c';
+    document.getElementById('mWideNote').textContent = wide > 60 ? ' 世界还很大' : wide > 35 ? ' 开始变窄了' : ' 只剩一条缝';
+    document.getElementById('mCocoon').textContent = 100 - wide;
+  }
+
+  function finish(){
+    stop();
+    var wide = Math.round(entropy() * 100);
+    var kinds = {};
+    for (var i = history.length - 50; i < history.length; i++){
+      if (share(history[i], 50) > 0.05) kinds[history[i]] = 1;
+    }
+    var kn = Object.keys(kinds).length;
+    document.getElementById('repRows').innerHTML =
+      '一共推送 ' + count + ' 条，他刷掉了 ' + Math.round(totalSec / 60) + ' 分钟<br>' +
+      '布的末端还剩 <b>' + kn + ' / 8</b> 种颜色<br>' +
+      '最终茧房指数 <b>' + (100 - wide) + '</b>' +
+      (wide < 35 ? '<br><br>KPI 很好看。他的世界很难看。' : wide > 60 ? '<br><br>时长没冲上去。但他还活在一个完整的世界里。' : '');
+    document.getElementById('report').classList.add('show');
+  }
+
+  function start(){
+    playing = true;
+    document.getElementById('btnPlay').textContent = '⏸ 暂停织布';
+  }
+  function stop(){
+    playing = false;
+    document.getElementById('btnPlay').textContent = '▶ 继续织布';
+  }
+
+  /* rAF 驱动 + 真实时间补帧：每秒约织 7 条 */
+  var acc = 0, lastT = performance.now();
+  function drive(now){
+    var dt = Math.min(8, (now - lastT) / 1000);
+    lastT = now;
+    if (playing){
+      acc += dt * 7;
+      var guard = 0;
+      while (acc >= 1 && guard < 60 && playing){
+        acc -= 1; guard++;
+        tick();
+      }
+    }
+    requestAnimationFrame(drive);
+  }
+  requestAnimationFrame(drive);
+
+  ['sCtr', 'sDiv', 'sAdd'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      document.getElementById('v' + id.slice(1)).textContent = this.value;
+    });
+  });
+  function preset(a, c, b){
+    document.getElementById('sCtr').value = a; document.getElementById('vCtr').textContent = a;
+    document.getElementById('sDiv').value = c; document.getElementById('vDiv').textContent = c;
+    document.getElementById('sAdd').value = b; document.getElementById('vAdd').textContent = b;
+  }
+  document.getElementById('pKpi').addEventListener('click', function(){ preset(95, 0, 85); });
+  document.getElementById('pMid').addEventListener('click', function(){ preset(65, 25, 45); });
+  document.getElementById('pZen').addEventListener('click', function(){ preset(25, 85, 10); });
+  document.getElementById('btnPlay').addEventListener('click', function(){ playing ? stop() : start(); });
+  document.getElementById('btnReset').addEventListener('click', function(){ stop(); reset(); start(); });
+  document.getElementById('repAgain').addEventListener('click', function(){ reset(); start(); });
+
+  reset();
+  start();
+})();
+</script>
+</body>
+</html>

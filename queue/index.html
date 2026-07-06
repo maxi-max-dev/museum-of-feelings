@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排队学 · 感觉博物馆</title>
+<meta name="description" content="为什么你排的队永远最慢？同一批客人，同样的窗口，两种排法，排一次给你看。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:var(--card);overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+  @media(max-width:640px){.stats{grid-template-columns:1fr;}}
+  .scard{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:14px 18px;font-size:13.5px;line-height:2;color:#453e30;
+  }
+  .scard h3{font-size:13px;letter-spacing:.2em;color:var(--seal);margin-bottom:6px;font-weight:400;}
+  .scard b{color:var(--ink);}
+  .verdict{
+    display:none;background:#2a2521;color:#f5efe2;
+    padding:16px 20px;margin-top:14px;font-size:14.5px;line-height:2;text-align:center;
+    border-radius:4px;letter-spacing:.04em;
+  }
+  .verdict.show{display:block;}
+  .verdict b{color:#ffd76e;}
+
+  .ctrls{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:14px 18px;margin-top:14px;
+  }
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .slider-box{display:flex;align-items:center;gap:8px;font-size:13px;color:#57503f;}
+  input[type=range]{accent-color:var(--seal);width:130px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №006</span>
+  </div>
+
+  <header>
+    <h1>排队学</h1>
+    <div class="en">The Science of Queues</div>
+    <p class="sub">为什么你排的队永远最慢</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv" width="800" height="440"></canvas>
+  </div>
+
+  <div class="stats">
+    <div class="scard">
+      <h3>🛒 超市式 · 各排各的</h3>
+      已办完 <b id="lServed">0</b> 人 · 平均等 <b id="lAvg">0</b> 秒<br>
+      最惨的人等了 <b id="lMax">0</b> 秒<br>
+      ⭐ 你：<span id="lYou">还没进场</span>
+    </div>
+    <div class="scard">
+      <h3>🏦 银行式 · 一条队叫号</h3>
+      已办完 <b id="rServed">0</b> 人 · 平均等 <b id="rAvg">0</b> 秒<br>
+      最惨的人等了 <b id="rMax">0</b> 秒<br>
+      ⭐ 你：<span id="rYou">还没进场</span>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict"></div>
+
+  <div class="ctrls">
+    <button class="btn primary" id="btnPlay">⏸ 暂停</button>
+    <button class="btn" id="btnSpeed">⏩ 速度 ×4</button>
+    <div class="slider-box">
+      办事效率差异
+      <input type="range" id="sVar" min="0" max="120" value="75">
+      <span id="vVar">中等</span>
+    </div>
+    <button class="btn" id="btnReset">🔁 重新排一次</button>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 你没有被针对</div>
+    <div class="pb">
+      <b>三条队里随便站一条，你最快的概率只有三分之一。</b>也就是说三分之二的时候，你都在看着别人的队先动，这不是玄学，是数学没站在你这边。真正的元凶是「办事效率差异」：只要前面有一个人磨蹭，整条队就跟着陪葬，而你换队永远慢半拍。上面这场实验里，两边是同一批人、同样的三个窗口，唯一的区别是排法。银行、机场和海底捞早就想明白了，叫号机的本质就是把所有人合成一条队：平均等待差不多，但没有人再被随机抽中去当最惨的那个。所以下次排队慢了别怀疑人生，要怪就怪你前面那位，和方差。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №006 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var N_CUST = 90, YOU = 34, SERVERS = 3;
+  var speed = 4, playing = true, sigma = 0.75;
+  var customers, L, R, simT, verdictShown;
+
+  function randn(){
+    var u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  function genCustomers(){
+    customers = [];
+    var t = 2;
+    for (var i = 0; i < N_CUST; i++){
+      t += -Math.log(Math.random()) / 0.4;
+      var st = 7 * Math.exp(sigma * randn() - sigma * sigma / 2);
+      st = Math.max(1.5, Math.min(45, st));
+      customers.push({ arr: t, st: st });
+    }
+  }
+
+  function newSystem(kind){
+    return {
+      kind: kind,
+      queues: kind === 'multi' ? [[], [], []] : [[]],
+      counters: [null, null, null],
+      nextIdx: 0,
+      done: [],
+      waits: {}
+    };
+  }
+
+  function stepSystem(S, dt){
+    while (S.nextIdx < N_CUST && customers[S.nextIdx].arr <= simT){
+      var id = S.nextIdx++;
+      if (S.kind === 'multi'){
+        var best = 0, bl = 1e9;
+        for (var q = 0; q < 3; q++){
+          var len = S.queues[q].length + (S.counters[q] ? 1 : 0);
+          if (len < bl){ bl = len; best = q; }
+        }
+        S.queues[best].push(id);
+      } else {
+        S.queues[0].push(id);
+      }
+    }
+    for (var c = 0; c < SERVERS; c++){
+      var cur = S.counters[c];
+      if (cur){
+        cur.rem -= dt;
+        if (cur.rem <= 0){
+          S.done.push(cur.id);
+          S.counters[c] = null;
+          cur = null;
+        }
+      }
+      if (!cur){
+        var src = S.kind === 'multi' ? S.queues[c] : S.queues[0];
+        if (src.length){
+          var id2 = src.shift();
+          S.counters[c] = { id: id2, rem: customers[id2].st, total: customers[id2].st };
+          S.waits[id2] = simT - customers[id2].arr;
+        }
+      }
+    }
+  }
+
+  function stats(S){
+    var ids = Object.keys(S.waits);
+    var served = S.done.length, sum = 0, mx = 0, n = 0;
+    for (var i = 0; i < ids.length; i++){
+      var w = S.waits[ids[i]];
+      sum += w; n++;
+      if (w > mx) mx = w;
+    }
+    return { served: served, avg: n ? sum / n : 0, max: mx };
+  }
+
+  /* ---------- 画 ---------- */
+  function drawBooth(x, y, busy, frac){
+    ctx.fillStyle = '#8a6a45';
+    ctx.fillRect(x - 34, y, 68, 40);
+    ctx.fillStyle = '#f0e8d5';
+    ctx.fillRect(x - 27, y + 6, 54, 22);
+    ctx.beginPath();
+    ctx.arc(x, y + 15, 7, 0, 7);
+    ctx.fillStyle = '#c9a06a';
+    ctx.fill();
+    if (busy){
+      ctx.fillStyle = '#d8cdb6';
+      ctx.fillRect(x - 27, y + 44, 54, 5);
+      ctx.fillStyle = '#b5402c';
+      ctx.fillRect(x - 27, y + 44, 54 * frac, 5);
+    }
+  }
+
+  function waitColor(id, S){
+    var w;
+    if (S.waits[id] !== undefined) w = S.waits[id];
+    else w = simT - customers[id].arr;
+    var h = Math.max(0, 120 - w * 2.4);
+    return 'hsl(' + h + ',62%,46%)';
+  }
+
+  function drawPerson(x, y, id, S){
+    ctx.beginPath();
+    ctx.arc(x, y, 6.5, 0, 7);
+    ctx.fillStyle = waitColor(id, S);
+    ctx.fill();
+    if (id === YOU){
+      ctx.beginPath();
+      ctx.arc(x, y, 9.5, 0, 7);
+      ctx.strokeStyle = '#c8971f';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.fillStyle = '#2a2521';
+      ctx.font = '10px "Noto Serif SC",serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('你', x, y - 13);
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, 800, 440);
+    ctx.fillStyle = '#f5efe2';
+    ctx.fillRect(0, 0, 800, 440);
+    ctx.strokeStyle = '#d8cdb6';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath(); ctx.moveTo(400, 14); ctx.lineTo(400, 426); ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.textAlign = 'center';
+    ctx.font = '15px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#453e30';
+    ctx.fillText('🛒 超市式 · 各排各的', 200, 30);
+    ctx.fillText('🏦 银行式 · 一条队叫号', 600, 30);
+
+    var bxL = [96, 200, 304];
+    for (var i = 0; i < 3; i++){
+      var cur = L.counters[i];
+      drawBooth(bxL[i], 46, !!cur, cur ? 1 - cur.rem / cur.total : 0);
+      if (cur) drawPerson(bxL[i], 102, cur.id, L);
+      var q = L.queues[i];
+      for (var j = 0; j < q.length && j < 16; j++){
+        drawPerson(bxL[i], 124 + j * 18, q[j], L);
+      }
+      if (q.length > 16){
+        ctx.fillStyle = '#8a8071';
+        ctx.font = '11px "Noto Serif SC",serif';
+        ctx.fillText('+' + (q.length - 16), bxL[i], 124 + 16 * 18);
+      }
+    }
+
+    var bxR = [496, 600, 704];
+    for (var k = 0; k < 3; k++){
+      var curR = R.counters[k];
+      drawBooth(bxR[k], 46, !!curR, curR ? 1 - curR.rem / curR.total : 0);
+      if (curR) drawPerson(bxR[k], 102, curR.id, R);
+    }
+    var sq = R.queues[0];
+    for (var m = 0; m < sq.length && m < 48; m++){
+      var row = Math.floor(m / 12), col = m % 12;
+      var x = row % 2 === 0 ? 470 + col * 24 : 734 - col * 24;
+      var y = 136 + row * 26;
+      drawPerson(x, y, sq[m], R);
+      if (col === 11 && m < sq.length - 1){
+        ctx.strokeStyle = 'rgba(138,128,113,.35)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        var ex = row % 2 === 0 ? 748 : 456;
+        ctx.moveTo(ex, y); ctx.lineTo(ex, y + 26);
+        ctx.stroke();
+      }
+    }
+    if (sq.length > 48){
+      ctx.fillStyle = '#8a8071';
+      ctx.font = '11px "Noto Serif SC",serif';
+      ctx.fillText('+' + (sq.length - 48) + ' 人在后面', 600, 262);
+    }
+
+    ctx.fillStyle = '#8a8071';
+    ctx.font = '12px "Noto Serif SC",serif';
+    ctx.fillText('⏱ ' + Math.floor(simT) + ' 秒 · 到场 ' + Math.min(L.nextIdx, N_CUST) + ' / ' + N_CUST + ' 人', 400, 428);
+  }
+
+  function fmt(x){ return Math.round(x); }
+
+  function youStatus(S){
+    if (S.nextIdx <= YOU) return '还没进场';
+    for (var c = 0; c < 3; c++){ if (S.counters[c] && S.counters[c].id === YOU) return '正在办理，等了 ' + fmt(S.waits[YOU]) + ' 秒'; }
+    if (S.waits[YOU] !== undefined && S.done.indexOf(YOU) >= 0) return '办完了，一共等了 <b>' + fmt(S.waits[YOU]) + ' 秒</b>';
+    if (S.waits[YOU] !== undefined) return '正在办理';
+    var pos = 0, found = false;
+    for (var q = 0; q < S.queues.length; q++){
+      var idx = S.queues[q].indexOf(YOU);
+      if (idx >= 0){ pos = idx + 1; found = true; break; }
+    }
+    return found ? '排在第 ' + pos + ' 位，已等 ' + fmt(simT - customers[YOU].arr) + ' 秒' : '…';
+  }
+
+  function updateStats(){
+    var ls = stats(L), rs = stats(R);
+    document.getElementById('lServed').textContent = ls.served;
+    document.getElementById('lAvg').textContent = fmt(ls.avg);
+    document.getElementById('lMax').textContent = fmt(ls.max);
+    document.getElementById('rServed').textContent = rs.served;
+    document.getElementById('rAvg').textContent = fmt(rs.avg);
+    document.getElementById('rMax').textContent = fmt(rs.max);
+    document.getElementById('lYou').innerHTML = youStatus(L);
+    document.getElementById('rYou').innerHTML = youStatus(R);
+
+    if (!verdictShown && L.done.length >= 60 && R.done.length >= 60){
+      verdictShown = true;
+      var cut = ls.max > 0 ? Math.round((1 - rs.max / ls.max) * 100) : 0;
+      var youL = L.waits[YOU], youR = R.waits[YOU];
+      var youLine = (youL !== undefined && youR !== undefined) ?
+        '你本人：超市式等了 <b>' + fmt(youL) + ' 秒</b>，银行式等了 <b>' + fmt(youR) + ' 秒</b>。<br>' : '';
+      document.getElementById('verdict').innerHTML =
+        '📊 同一批人办完 60 号：两边平均等待差不多，' +
+        '但「最惨等待」超市式 <b>' + fmt(ls.max) + ' 秒</b> vs 银行式 <b>' + fmt(rs.max) + ' 秒</b>' +
+        (cut > 0 ? '，叫号机把最惨情况砍掉了 <b>' + cut + '%</b>。<br>' : '。<br>') +
+        youLine +
+        '排队的痛苦不在平均数里，在方差里。';
+      document.getElementById('verdict').classList.add('show');
+    }
+  }
+
+  var last = performance.now();
+  function loop(now){
+    /* 真实时间补帧：后台标签回来也能追上时钟 */
+    var dt = Math.min(8, (now - last) / 1000);
+    last = now;
+    if (playing){
+      var remaining = dt * speed;
+      while (remaining > 0){
+        var h = Math.min(0.1, remaining);
+        simT += h;
+        stepSystem(L, h);
+        stepSystem(R, h);
+        remaining -= h;
+      }
+      updateStats();
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    genCustomers();
+    L = newSystem('multi');
+    R = newSystem('single');
+    simT = 0;
+    verdictShown = false;
+    document.getElementById('verdict').classList.remove('show');
+    updateStats();
+  }
+
+  document.getElementById('btnPlay').addEventListener('click', function(){
+    playing = !playing;
+    this.textContent = playing ? '⏸ 暂停' : '▶ 继续';
+  });
+  var speeds = [1, 4, 8];
+  var si = 1;
+  document.getElementById('btnSpeed').addEventListener('click', function(){
+    si = (si + 1) % 3;
+    speed = speeds[si];
+    this.textContent = '⏩ 速度 ×' + speed;
+  });
+  var sv = document.getElementById('sVar');
+  sv.addEventListener('input', function(){
+    sigma = +sv.value / 100;
+    document.getElementById('vVar').textContent = sigma < 0.35 ? '人人一样快' : sigma < 0.8 ? '中等' : '总有人特别磨蹭';
+  });
+  sv.addEventListener('change', reset);
+  document.getElementById('btnReset').addEventListener('click', reset);
+
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

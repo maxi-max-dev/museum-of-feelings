@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>绿皮火车 · 感觉博物馆</title>
+<meta name="description" content="靠窗的位置给你留好了。听着铁轨声看风景倒退，泡面的雾气升起来。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#20301f;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage svg{display:block;width:100%;height:auto;}
+  .stage-btns{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:5;}
+  .stage-btns button{
+    font-family:var(--serif);border:1px solid rgba(42,37,33,.55);border-radius:8px;
+    background:rgba(251,247,236,.9);color:var(--ink);font-size:13px;letter-spacing:.08em;
+    padding:8px 12px;cursor:pointer;transition:transform .15s;
+  }
+  .stage-btns button:hover{transform:translateY(-1px);}
+  .stage-btns button:disabled{opacity:.5;cursor:default;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  /* ---- 场景状态 ---- */
+  #sc .sky-dusk,#sc .sky-night{opacity:0;transition:opacity 1.2s;}
+  #sc.dusk .sky-dusk{opacity:1;}
+  #sc.night .sky-night{opacity:1;}
+  #sc .day-el{opacity:1;transition:opacity 1.2s;}
+  #sc.dusk .day-el,#sc.night .day-el{opacity:0;}
+  #sc .dusk-el{opacity:0;transition:opacity 1.2s;}
+  #sc.dusk .dusk-el{opacity:1;}
+  #sc .night-el{opacity:0;transition:opacity 1.2s;}
+  #sc.night .night-el{opacity:1;}
+  #sc .shade{opacity:0;transition:opacity 1.2s;}
+  #sc.dusk .shade{opacity:.16;}
+  #sc.night .shade{opacity:.46;}
+
+  /* ---- 小动画 ---- */
+  #rock{animation:rock 1.15s ease-in-out infinite alternate;}
+  .wob1{transform-box:fill-box;transform-origin:center bottom;animation:wob 1.15s .12s ease-in-out infinite alternate;}
+  .wob2{transform-box:fill-box;transform-origin:center bottom;animation:wob 1.15s .3s ease-in-out infinite alternate;}
+  .steam{transform-box:fill-box;transform-origin:center bottom;opacity:0;}
+  .steam.s1{animation:steam 2.6s ease-out infinite;}
+  .steam.s2{animation:steam 2.6s .9s ease-out infinite;}
+  .steam.s3{animation:steam 2.6s 1.7s ease-out infinite;}
+  @keyframes rock{from{transform:translateY(0)}to{transform:translateY(2.2px)}}
+  @keyframes wob{from{transform:rotate(-.7deg)}to{transform:rotate(.8deg)}}
+  @keyframes steam{
+    0%{opacity:0;transform:translateY(6px) scaleX(1)}
+    25%{opacity:.55}
+    100%{opacity:0;transform:translateY(-30px) scaleX(1.5)}
+  }
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №004</span>
+  </div>
+
+  <header>
+    <h1>绿皮火车</h1>
+    <div class="en">The Green Train</div>
+    <p class="sub">哐当，哐当，窗外是一整个夏天</p>
+  </header>
+
+  <div class="stage">
+    <svg id="sc" viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="绿皮火车靠窗座位：车窗外风景倒退，小桌板上有茶缸、泡面和车票">
+      <defs>
+        <linearGradient id="skyD" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#9fd0ec"/><stop offset="1" stop-color="#eef2d8"/>
+        </linearGradient>
+        <linearGradient id="skyS" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7c6da8"/><stop offset=".55" stop-color="#e08a5a"/><stop offset="1" stop-color="#f6c66f"/>
+        </linearGradient>
+        <linearGradient id="skyN" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0e1434"/><stop offset="1" stop-color="#2c3562"/>
+        </linearGradient>
+        <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#a5754c"/><stop offset="1" stop-color="#7e5433"/>
+        </linearGradient>
+        <clipPath id="win"><rect x="44" y="48" width="712" height="292"/></clipPath>
+      </defs>
+
+      <g id="rock">
+        <!-- 车厢壁 -->
+        <rect x="0" y="0" width="800" height="560" fill="#3f6d4c"/>
+        <rect x="0" y="0" width="800" height="560" fill="none"/>
+        <path d="M0,14 L800,14 M0,352 L800,352" stroke="#2f5439" stroke-width="3"/>
+
+        <!-- 窗外 -->
+        <g clip-path="url(#win)">
+          <rect x="44" y="48" width="712" height="292" fill="url(#skyD)"/>
+          <rect class="sky-dusk" x="44" y="48" width="712" height="292" fill="url(#skyS)"/>
+          <rect class="sky-night" x="44" y="48" width="712" height="292" fill="url(#skyN)"/>
+
+          <g class="day-el">
+            <circle cx="640" cy="105" r="26" fill="#ffd76e"/>
+            <circle cx="640" cy="105" r="40" fill="#ffd76e" opacity=".25"/>
+          </g>
+          <g class="dusk-el">
+            <circle cx="600" cy="182" r="30" fill="#f6934e"/>
+            <circle cx="600" cy="182" r="46" fill="#f6934e" opacity=".3"/>
+          </g>
+          <g class="night-el">
+            <circle cx="628" cy="100" r="22" fill="#f2ebc8"/>
+            <circle cx="620" cy="94" r="5" fill="#ddd4ac"/>
+            <circle cx="120" cy="80" r="2" fill="#fdf8e0"/><circle cx="220" cy="110" r="1.6" fill="#fdf8e0"/>
+            <circle cx="330" cy="70" r="2" fill="#fdf8e0"/><circle cx="450" cy="96" r="1.5" fill="#fdf8e0"/>
+            <circle cx="540" cy="66" r="1.8" fill="#fdf8e0"/><circle cx="710" cy="130" r="1.7" fill="#fdf8e0"/>
+            <circle cx="90" cy="140" r="1.5" fill="#fdf8e0"/><circle cx="390" cy="128" r="1.4" fill="#fdf8e0"/>
+          </g>
+
+          <!-- 远山 -->
+          <g id="far"><g id="farT"></g></g>
+          <!-- 田野村庄 -->
+          <g id="mid"><g id="midT"></g></g>
+          <!-- 电线杆灌木 -->
+          <g id="near"><g id="nearT"></g></g>
+          <!-- 对向列车 -->
+          <g id="oncoming" opacity="0">
+            <rect x="0" y="196" width="900" height="86" fill="#28402e"/>
+            <rect x="0" y="200" width="900" height="10" fill="#c8a23c"/>
+            <g id="onWins"></g>
+          </g>
+
+          <rect class="shade" x="44" y="48" width="712" height="292" fill="#0d1233"/>
+          <path d="M120,48 L250,340 M180,48 L310,340" stroke="#ffffff" stroke-width="18" opacity=".05"/>
+        </g>
+
+        <!-- 窗框 -->
+        <rect x="36" y="40" width="728" height="308" fill="none" stroke="#b9bfae" stroke-width="9"/>
+        <rect x="30" y="34" width="740" height="320" fill="none" stroke="#2f5439" stroke-width="12"/>
+        <rect x="42" y="46" width="716" height="296" fill="none" stroke="#8f958a" stroke-width="2.5"/>
+        <rect x="374" y="336" width="52" height="13" rx="4" fill="#b9bfae" stroke="#71766a" stroke-width="1.5"/>
+
+        <!-- 小桌板 -->
+        <rect x="0" y="368" width="800" height="192" fill="url(#wood)"/>
+        <path d="M0,368 L800,368" stroke="#c99e6e" stroke-width="3"/>
+        <path d="M0,412 Q400,406 800,414 M0,472 Q420,466 800,474 M0,520 Q380,516 800,522" stroke="#6f4a2c" stroke-width="1.6" opacity=".5" fill="none"/>
+
+        <!-- 车票 -->
+        <g transform="rotate(-5 165 448)">
+          <rect x="88" y="402" width="154" height="92" rx="5" fill="#e7f0da" stroke="#9fae8c" stroke-width="1.5"/>
+          <rect x="88" y="402" width="154" height="20" rx="5" fill="#c95840"/>
+          <text x="97" y="416" font-size="11" fill="#fdf6ee" letter-spacing="1">K1997 次</text>
+          <text x="196" y="416" font-size="10" fill="#fdf6ee">硬座</text>
+          <text x="165" y="450" text-anchor="middle" font-size="19" fill="#2a2521" font-family="'Noto Serif SC','Songti SC',serif" letter-spacing="2">泉州 → 童年</text>
+          <text x="165" y="472" text-anchor="middle" font-size="10" fill="#57503f">2026年07月06日 07车06号</text>
+          <text x="165" y="487" text-anchor="middle" font-size="10" fill="#57503f">¥12.5 元 &#160;限乘当日当次车</text>
+        </g>
+
+        <!-- 茶缸 -->
+        <g class="wob1">
+          <path class="steam s1" d="M352,384 q6,-10 -2,-20 q-6,-9 2,-16" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path class="steam s2" d="M372,382 q-6,-11 2,-21 q6,-9 -2,-15" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="322" y="390" width="80" height="98" rx="10" fill="#f4f1e6" stroke="#c9c4b2" stroke-width="2"/>
+          <ellipse cx="362" cy="392" rx="40" ry="9" fill="#f4f1e6" stroke="#b5402c" stroke-width="3.5"/>
+          <ellipse cx="362" cy="392" rx="31" ry="6" fill="#7a5b3a"/>
+          <path d="M402,412 q26,4 24,30 q-2,24 -26,22" fill="none" stroke="#c9c4b2" stroke-width="7"/>
+          <text x="362" y="428" text-anchor="middle" font-size="13" fill="#b5402c" font-family="'Noto Serif SC','Songti SC',serif" letter-spacing="2">先进工作者</text>
+          <text x="362" y="448" text-anchor="middle" font-size="9" fill="#b5402c" letter-spacing="1">1 9 9 7</text>
+          <circle cx="336" cy="470" r="4" fill="#68809a"/>
+        </g>
+
+        <!-- 泡面 -->
+        <g class="wob2">
+          <path class="steam s1" d="M496,376 q7,-12 -2,-24 q-7,-10 2,-18" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path class="steam s2" d="M520,372 q-7,-12 2,-24 q7,-10 -2,-18" stroke="#ffffff" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <path class="steam s3" d="M544,378 q6,-11 -2,-22 q-6,-9 2,-15" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M470,392 L568,392 L560,494 L478,494 Z" fill="#f2e7d2" stroke="#d8cdb6" stroke-width="2"/>
+          <path d="M472,414 L566,414 L563,448 L475,448 Z" fill="#c95840" opacity=".92"/>
+          <text x="519" y="438" text-anchor="middle" font-size="17" fill="#fdf6ee" font-family="'Noto Serif SC','Songti SC',serif" letter-spacing="3">牛肉面</text>
+          <text x="519" y="470" text-anchor="middle" font-size="10" fill="#8a8071" letter-spacing="2">加量不加价</text>
+          <ellipse cx="540" cy="388" rx="52" ry="10" fill="#e8dcc4" stroke="#c9bfa4" stroke-width="2" transform="rotate(-7 540 388)"/>
+          <line x1="500" y1="330" x2="528" y2="392" stroke="#a5703f" stroke-width="4.5" stroke-linecap="round"/>
+          <line x1="514" y1="328" x2="534" y2="392" stroke="#b98953" stroke-width="4.5" stroke-linecap="round"/>
+        </g>
+      </g>
+    </svg>
+
+    <div class="stage-btns">
+      <button id="btnTime">🌆 黄昏</button>
+      <button id="btnSound">🔇 声音</button>
+      <button id="btnHorn" disabled>📣 汽笛</button>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 哐当声去哪了</div>
+    <div class="pb">
+      <b>「哐当，哐当」，是车轮压过钢轨接缝的声音。</b>过去的钢轨 25 米一根，接缝处留着热胀冷缩的伸缩缝，每压过一道，全车厢跟着点一下头。后来中国铁路换上了几公里长的无缝钢轨，接缝被焊死磨平，那个哄睡了几代人的声音就退休了。所以高铁再快，也快不出这个节奏。泡面要在别人拆开之前拆，靠窗的下铺永远是社交中心，你的站到了会有人叫你。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №004 · Max 造<br>
+    <a href="../loom/">下一个展厅：算法织布机 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var NS = 'http://www.w3.org/2000/svg';
+  var sc = document.getElementById('sc');
+
+  /* ---------- 拼风景瓦片（每层 800 宽，铺两份无缝滚动） ---------- */
+  function el(tag, attrs, parent){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e);
+    return e;
+  }
+
+  function buildFar(g, ox){
+    el('path', {d:'M'+ox+',210 L'+(ox+90)+',150 L'+(ox+190)+',200 L'+(ox+300)+',142 L'+(ox+430)+',206 L'+(ox+560)+',158 L'+(ox+700)+',204 L'+(ox+800)+',172 L'+(ox+800)+',232 L'+ox+',232 Z', fill:'#7f96a8', opacity:'.75'}, g);
+    el('path', {d:'M'+ox+',224 L'+(ox+140)+',176 L'+(ox+280)+',220 L'+(ox+420)+',170 L'+(ox+580)+',224 L'+(ox+720)+',186 L'+(ox+800)+',218 L'+(ox+800)+',240 L'+ox+',240 Z', fill:'#5f7d8c'}, g);
+  }
+
+  function buildMid(g, ox){
+    el('rect', {x:ox, y:228, width:800, height:60, fill:'#a8c87c'}, g);
+    el('rect', {x:ox, y:252, width:800, height:16, fill:'#c9d879', opacity:'.8'}, g);
+    el('rect', {x:ox, y:276, width:800, height:14, fill:'#8fb968'}, g);
+    /* 村庄 */
+    var hs = [[150,232],[196,238],[242,230]];
+    for (var i=0;i<hs.length;i++){
+      var x=ox+hs[i][0], y=hs[i][1];
+      el('rect',{x:x, y:y, width:34, height:22, fill:'#efe6d2', stroke:'#b7ab8e','stroke-width':'1'},g);
+      el('path',{d:'M'+(x-4)+','+y+' L'+(x+17)+','+(y-14)+' L'+(x+38)+','+y+' Z', fill:'#8a5b47'},g);
+      el('rect',{'class':'night-el', x:x+12, y:y+8, width:9, height:9, fill:'#ffd76e'},g);
+    }
+    /* 树 */
+    var ts=[60,320,420,540,700,760];
+    for (var t=0;t<ts.length;t++){
+      el('rect',{x:ox+ts[t], y:236, width:5, height:16, fill:'#6b4a2e'},g);
+      el('circle',{cx:ox+ts[t]+2.5, cy:230, r:12, fill:'#4f8f4f'},g);
+    }
+    /* 池塘 */
+    el('ellipse',{cx:ox+600, cy:262, rx:52, ry:11, fill:'#9fc3d8', opacity:'.9'},g);
+    el('ellipse',{'class':'night-el', cx:ox+600, cy:262, rx:52, ry:11, fill:'#38406e'},g);
+    /* 水塔 */
+    el('rect',{x:ox+488, y:206, width:8, height:34, fill:'#8a8071'},g);
+    el('ellipse',{cx:ox+492, cy:204, rx:14, ry:9, fill:'#a89a80'},g);
+  }
+
+  function buildNear(g, ox){
+    el('rect', {x:ox, y:288, width:800, height:52, fill:'#7bab58'}, g);
+    var px = [70, 336, 602];
+    for (var i=0;i<px.length;i++){
+      var x = ox+px[i];
+      el('line',{x1:x, y1:330, x2:x, y2:86, stroke:'#4a3b2c','stroke-width':'9','stroke-linecap':'round'},g);
+      el('line',{x1:x-26, y1:104, x2:x+26, y2:104, stroke:'#4a3b2c','stroke-width':'6','stroke-linecap':'round'},g);
+      el('line',{x1:x-20, y1:124, x2:x+20, y2:124, stroke:'#4a3b2c','stroke-width':'5','stroke-linecap':'round'},g);
+      el('path',{d:'M'+(x+26)+',104 Q'+(x+133)+',126 '+(x+240)+',104', fill:'none', stroke:'#3a2f24','stroke-width':'2.2'},g);
+      el('path',{d:'M'+(x+20)+',124 Q'+(x+133)+',144 '+(x+246)+',124', fill:'none', stroke:'#3a2f24','stroke-width':'2'},g);
+    }
+    var bs = [[30,318,26],[180,326,20],[430,320,30],[520,328,18],[736,322,24]];
+    for (var b=0;b<bs.length;b++){
+      el('ellipse',{cx:ox+bs[b][0], cy:bs[b][1], rx:bs[b][2], ry:14, fill:'#3f6d3d'},g);
+    }
+  }
+
+  var farT = document.getElementById('farT');
+  var midT = document.getElementById('midT');
+  var nearT = document.getElementById('nearT');
+  buildFar(farT,0); buildFar(farT,800);
+  buildMid(midT,0); buildMid(midT,800);
+  buildNear(nearT,0); buildNear(nearT,800);
+
+  var onWins = document.getElementById('onWins');
+  for (var w=0;w<15;w++){
+    el('rect',{x:20+w*60, y:216, width:34, height:26, rx:4, fill:'#cfe0e8'},onWins);
+    el('rect',{'class':'night-el', x:20+w*60, y:216, width:34, height:26, rx:4, fill:'#ffd76e'},onWins);
+  }
+
+  /* ---------- 视差滚动 ---------- */
+  var far = document.getElementById('far');
+  var mid = document.getElementById('mid');
+  var near = document.getElementById('near');
+  var t0 = performance.now();
+  var lastNow = t0;
+  var oncoming = document.getElementById('oncoming');
+  var onX = null;
+
+  function loop(now){
+    var t = (now - t0) / 1000;
+    var dtf = Math.min(0.1, (now - lastNow) / 1000);
+    lastNow = now;
+    far.setAttribute('transform', 'translate(' + (-(t * 11 % 800)) + ',0)');
+    mid.setAttribute('transform', 'translate(' + (-(t * 46 % 800)) + ',0)');
+    near.setAttribute('transform', 'translate(' + (-(t * 158 % 800)) + ',0)');
+    if (onX !== null){
+      onX -= 1560 * dtf;
+      oncoming.setAttribute('transform', 'translate(' + onX + ',0)');
+      if (onX < -960){ onX = null; oncoming.setAttribute('opacity', '0'); }
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function triggerOncoming(){
+    if (onX !== null) return;
+    onX = 820;
+    oncoming.setAttribute('opacity', '1');
+    whoosh();
+  }
+  setInterval(function(){ if (Math.random() < 0.5) triggerOncoming(); }, 16000);
+  setTimeout(triggerOncoming, 7000);
+
+  /* ---------- 时段 ---------- */
+  var times = ['day', 'dusk', 'night'];
+  var labels = ['☀️ 白天', '🌆 黄昏', '🌙 夜晚'];
+  var ti = 0;
+  document.getElementById('btnTime').addEventListener('click', function(){
+    ti = (ti + 1) % 3;
+    sc.classList.remove('dusk', 'night');
+    if (times[ti] !== 'day') sc.classList.add(times[ti]);
+    this.textContent = labels[(ti + 1) % 3];
+  });
+
+  /* ---------- 声音 ---------- */
+  var AC = null, master = null, soundOn = false, nextBeat = 0, schedId = null;
+
+  function initAudio(){
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    master.gain.value = 0.9;
+    master.connect(AC.destination);
+    var buf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    var src = AC.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    var lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
+    var g = AC.createGain(); g.gain.value = 0.05;
+    src.connect(lp); lp.connect(g); g.connect(master);
+    src.start();
+  }
+
+  function thud(t, soft){
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(72, t);
+    o.frequency.exponentialRampToValueAtTime(44, t + 0.11);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(soft ? 0.3 : 0.45, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.17);
+    var nb = AC.createBuffer(1, AC.sampleRate * 0.05, AC.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    var ns = AC.createBufferSource(); ns.buffer = nb;
+    var bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 850;
+    var ng = AC.createGain();
+    ng.gain.setValueAtTime(soft ? 0.1 : 0.16, t);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    ns.connect(bp); bp.connect(ng); ng.connect(master);
+    ns.start(t);
+  }
+
+  function scheduler(){
+    while (nextBeat < AC.currentTime + 0.4){
+      thud(nextBeat, false);
+      thud(nextBeat + 0.19, true);
+      nextBeat += 1.55;
+    }
+  }
+
+  function whoosh(){
+    if (!soundOn || !AC) return;
+    var t = AC.currentTime;
+    var nb = AC.createBuffer(1, AC.sampleRate * 2.2, AC.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    var ns = AC.createBufferSource(); ns.buffer = nb;
+    var lp = AC.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(400, t);
+    lp.frequency.linearRampToValueAtTime(1600, t + 0.9);
+    lp.frequency.linearRampToValueAtTime(300, t + 2);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.34, t + 0.8);
+    g.gain.linearRampToValueAtTime(0.0001, t + 2.1);
+    ns.connect(lp); lp.connect(g); g.connect(master);
+    ns.start(t);
+  }
+
+  function horn(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    [233, 296].forEach(function(f){
+      var o = AC.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = f;
+      var lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900;
+      var g = AC.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.16, t + 0.09);
+      g.gain.setValueAtTime(0.16, t + 1.25);
+      g.gain.linearRampToValueAtTime(0.0001, t + 1.85);
+      o.connect(lp); lp.connect(g); g.connect(master);
+      o.start(t); o.stop(t + 1.9);
+    });
+  }
+
+  var btnSound = document.getElementById('btnSound');
+  var btnHorn = document.getElementById('btnHorn');
+  btnSound.addEventListener('click', function(){
+    if (!AC){ initAudio(); }
+    soundOn = !soundOn;
+    if (soundOn){
+      AC.resume();
+      nextBeat = AC.currentTime + 0.1;
+      schedId = setInterval(scheduler, 120);
+      btnSound.textContent = '🔊 声音';
+      btnHorn.disabled = false;
+      horn();
+    } else {
+      clearInterval(schedId);
+      AC.suspend();
+      btnSound.textContent = '🔇 声音';
+      btnHorn.disabled = true;
+    }
+  });
+  btnHorn.addEventListener('click', horn);
+})();
+</script>
+</body>
+</html>

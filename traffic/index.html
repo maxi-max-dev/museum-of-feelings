@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>堵车制造机 · 感觉博物馆</title>
+<meta name="description" content="前面明明没有事故，为什么会堵？一条环形公路交给你，你只有一脚刹车。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:var(--card);overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .ctrls{
+    display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .brake{
+    font-family:var(--serif);font-size:19px;letter-spacing:.15em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:12px;
+    padding:16px 30px;cursor:pointer;
+    box-shadow:0 5px 0 #7e2b1c;transition:transform .08s, box-shadow .08s;
+  }
+  .brake:active{transform:translateY(4px);box-shadow:0 1px 0 #7e2b1c;}
+  .brake:disabled{opacity:.55;cursor:default;}
+  .btn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.1em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .slider-box{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#57503f;letter-spacing:.05em;}
+  input[type=range]{accent-color:var(--seal);width:150px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque .pb .exp{display:block;margin-top:8px;}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №002</span>
+  </div>
+
+  <header>
+    <h1>堵车制造机</h1>
+    <div class="en">The Jam Maker</div>
+    <p class="sub">前面明明没有事故，为什么会堵？</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv" width="800" height="500"></canvas>
+  </div>
+
+  <div class="ctrls">
+    <button class="brake" id="btnBrake">🦶 点一脚刹车</button>
+    <div class="slider-box">
+      车流密度
+      <input type="range" id="density" min="16" max="40" value="28">
+      <span id="densityVal">28 辆</span>
+    </div>
+    <button class="btn" id="btnClear">🚿 疏通道路</button>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 幽灵堵车</div>
+    <div class="pb">
+      <b>这条路上没有事故，没有红灯，没有收费站。</b>你按下刹车，被选中的那辆车只是轻轻减速了一下。但它身后的车会刹得更狠一点，再后面的更狠。一脚刹车就这样变成一道往后传的波，以每小时十几公里的速度逆着车流走，这就是「幽灵堵车」。你在高速上莫名其妙堵住的那一场，源头可能是几公里外、几分钟前，某个人的一脚刹车。
+      <span class="exp">🧪 三个实验：①密度拉低，刹一脚，看波浪自己愈合。②密度拉高，刹一脚，看它变成一场灾难。③密度拉满，什么都别按，堵车会自己诞生。</span>
+      <span class="exp">💡 唯一的解药是车距：跟得越近，波越难消化。自动驾驶车队治堵，靠的就是不乱刹车。</span>
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №002 · Max 造<br>
+    <a href="../t9/">下一个展厅：九键时代 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var CX = 400, CY = 252, R = 187, ROAD_W = 40;
+  var L = 2 * Math.PI * R;
+  var CAR_LEN = 20, V0 = 55;
+  var cars = [];
+  var brakeFlash = 0, brakeAngle = 0;
+
+  function build(n){
+    cars = [];
+    for (var i = 0; i < n; i++){
+      cars.push({
+        s: L * i / n,
+        v: V0 * 0.55,
+        v0: V0 * (0.92 + Math.random() * 0.16),
+        brakeT: 0
+      });
+    }
+  }
+
+  function step(dt){
+    var n = cars.length;
+    for (var i = 0; i < n; i++){
+      var c = cars[i], nx = cars[(i + 1) % n];
+      var gap = (nx.s - c.s + L) % L - CAR_LEN;
+      var vDes;
+      if (c.brakeT > 0){ vDes = 0; c.brakeT -= dt; }
+      else if (gap <= 8){ vDes = 0; }
+      else if (gap >= 30){ vDes = c.v0; }
+      else { vDes = c.v0 * (gap - 8) / 22; }
+      /* 远处不减速、近了猛刹、起步磨蹭：幽灵堵车三件套 */
+      var rate = vDes < c.v ? 5 : 0.85;
+      c.v += (vDes - c.v) * Math.min(1, dt * rate);
+      if (c.v < 0) c.v = 0;
+    }
+    for (var j = 0; j < n; j++){
+      cars[j].s = (cars[j].s + cars[j].v * dt + L) % L;
+    }
+  }
+
+  function brake(){
+    var target = null, best = 1e9;
+    for (var i = 0; i < cars.length; i++){
+      var a = cars[i].s / L * Math.PI * 2 - Math.PI / 2;
+      var d = Math.abs(Math.atan2(Math.sin(a + Math.PI / 2), Math.cos(a + Math.PI / 2)));
+      if (d < best){ best = d; target = cars[i]; }
+    }
+    if (target){
+      target.brakeT = 2.0;
+      brakeFlash = 1;
+      brakeAngle = target.s / L * Math.PI * 2 - Math.PI / 2;
+    }
+    var b = document.getElementById('btnBrake');
+    b.disabled = true;
+    setTimeout(function(){ b.disabled = false; }, 900);
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, 800, 500);
+    ctx.fillStyle = '#f5efe2';
+    ctx.fillRect(0, 0, 800, 500);
+
+    ctx.beginPath();
+    ctx.arc(CX, CY, R + 92, 0, 7);
+    ctx.fillStyle = '#a8cc7f';
+    ctx.fill();
+
+    var deco = [[-0.6, 1.28], [0.5, 1.3], [1.7, 1.27], [2.9, 1.31], [4.1, 1.26], [5.2, 1.3]];
+    for (var d = 0; d < deco.length; d++){
+      var dx = CX + Math.cos(deco[d][0]) * R * deco[d][1];
+      var dy = CY + Math.sin(deco[d][0]) * R * deco[d][1];
+      ctx.beginPath(); ctx.arc(dx, dy + 2, 9, 0, 7); ctx.fillStyle = '#54823f'; ctx.fill();
+      ctx.beginPath(); ctx.arc(dx, dy - 4, 7, 0, 7); ctx.fillStyle = '#659a4c'; ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, 7);
+    ctx.strokeStyle = '#5a564e';
+    ctx.lineWidth = ROAD_W;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, 7);
+    ctx.strokeStyle = 'rgba(253,246,238,.75)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([14, 12]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.arc(CX, CY, R - ROAD_W / 2 - 10, 0, 7);
+    ctx.fillStyle = '#b9d489';
+    ctx.fill();
+
+    var jam = 0, sum = 0;
+    for (var i = 0; i < cars.length; i++){
+      var c = cars[i];
+      sum += c.v;
+      if (c.v < V0 * 0.16) jam++;
+      var a = c.s / L * Math.PI * 2 - Math.PI / 2;
+      var x = CX + Math.cos(a) * R, y = CY + Math.sin(a) * R;
+      var hue = 118 * Math.min(1, c.v / c.v0);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(a + Math.PI / 2);
+      ctx.fillStyle = 'hsl(' + hue + ',68%,44%)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(-10, -6.5, 20, 13, 4); else ctx.rect(-10, -6.5, 20, 13);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(253,246,238,.5)';
+      ctx.fillRect(3, -5, 4, 10);
+      ctx.restore();
+    }
+
+    if (brakeFlash > 0){
+      var bx = CX + Math.cos(brakeAngle) * R, by = CY + Math.sin(brakeAngle) * R;
+      ctx.beginPath();
+      ctx.arc(bx, by, 16 + (1 - brakeFlash) * 30, 0, 7);
+      ctx.strokeStyle = 'rgba(181,64,44,' + (brakeFlash * 0.9) + ')';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+      brakeFlash -= 0.02;
+    }
+
+    var avg = Math.round(sum / cars.length / (V0 * 0.98) * 100);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#2a2521';
+    ctx.font = '600 40px "Noto Serif SC","Songti SC",serif';
+    ctx.fillText(avg + '%', CX, CY - 18);
+    ctx.font = '13px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#8a8071';
+    ctx.fillText('平 均 车 速', CX, CY + 8);
+    var mood = jam === 0 ? '🟢 一路畅通' : (jam < 6 ? '🟡 有点堵了' : '🔴 堵成一锅粥');
+    ctx.font = '17px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = '#453e30';
+    ctx.fillText(mood, CX, CY + 42);
+    if (jam > 0){
+      ctx.font = '12.5px "Noto Serif SC","Songti SC",serif';
+      ctx.fillStyle = '#8a8071';
+      ctx.fillText(jam + ' 辆车动弹不得', CX, CY + 64);
+    }
+  }
+
+  var last = performance.now();
+  function loop(now){
+    /* 真实时间补帧：后台标签回来也能追上时钟 */
+    var dt = Math.min(8, (now - last) / 1000);
+    last = now;
+    while (dt > 0){
+      var h = Math.min(0.016, dt);
+      step(h);
+      dt -= h;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('btnBrake').addEventListener('click', brake);
+  document.getElementById('btnClear').addEventListener('click', function(){
+    build(cars.length);
+  });
+  var den = document.getElementById('density');
+  den.addEventListener('input', function(){
+    document.getElementById('densityVal').textContent = den.value + ' 辆';
+    build(+den.value);
+  });
+
+  build(28);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

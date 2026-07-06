@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九键时代 · 感觉博物馆</title>
+<meta name="description" content="一台老手机，一块九键键盘，一条限时短信。你还记得怎么打出「我想你」吗。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --lcd:#9db863; --lcd-dark:#26301c; --lcd-dim:#57683a;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:24px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .mode-tabs{display:flex;justify-content:center;gap:10px;margin-bottom:18px;}
+  .mode-tabs button{
+    font-family:var(--serif);font-size:14px;letter-spacing:.1em;
+    background:var(--card);border:1.5px solid var(--line);border-radius:9px;
+    padding:9px 18px;cursor:pointer;color:var(--ink-soft);
+  }
+  .mode-tabs button.on{border-color:var(--seal);color:var(--seal);box-shadow:0 0 0 1px var(--seal);}
+
+  /* ============ 手机 ============ */
+  .phone{
+    width:330px;margin:0 auto;
+    background:linear-gradient(160deg,#33415e,#222d45 60%,#1b2438);
+    border-radius:38px 38px 30px 30px;
+    padding:20px 18px 22px;
+    box-shadow:0 18px 40px rgba(40,32,20,.35), inset 0 1px 2px rgba(255,255,255,.25);
+    animation:rise .8s .1s ease both;
+  }
+  .earpiece{width:64px;height:7px;border-radius:4px;background:#141b2c;margin:0 auto 10px;box-shadow:inset 0 1px 2px #000;}
+  .brand{text-align:center;color:#9fb0d0;font-size:11px;letter-spacing:.35em;margin-bottom:9px;}
+
+  .lcd{
+    position:relative;
+    background:var(--lcd);
+    border:4px solid #141b2c;border-radius:10px;
+    padding:8px 9px 9px;
+    height:308px;display:flex;flex-direction:column;
+    color:var(--lcd-dark);
+    box-shadow:inset 0 0 18px rgba(30,40,15,.35);
+    overflow:hidden;
+  }
+  .lcd::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 3px);
+  }
+  .statusbar{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.08em;color:var(--lcd-dark);margin-bottom:4px;}
+  .goalbar{
+    font-size:12px;border-bottom:1px dashed var(--lcd-dim);
+    padding-bottom:4px;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px;
+  }
+  .chatlog{flex:1;overflow-y:auto;font-size:13.5px;line-height:1.55;padding:2px 1px;scrollbar-width:none;}
+  .chatlog::-webkit-scrollbar{display:none;}
+  .bub{max-width:82%;margin:3px 0;padding:4px 8px;border-radius:8px;border:1px solid var(--lcd-dim);width:fit-content;}
+  .bub.me{margin-left:auto;background:rgba(38,48,28,.14);}
+  .bub.ta{margin-right:auto;}
+  .composer{border-top:1.5px solid var(--lcd-dark);padding-top:4px;}
+  .msgline{font-size:15px;min-height:22px;word-break:break-all;line-height:1.4;}
+  .cursor{display:inline-block;width:8px;height:15px;background:var(--lcd-dark);vertical-align:-2px;animation:blink 1s steps(1) infinite;}
+  .digitline{font-size:12px;color:var(--lcd-dim);min-height:16px;letter-spacing:.15em;}
+  .cands{display:flex;gap:5px;overflow-x:auto;min-height:26px;align-items:center;scrollbar-width:none;}
+  .cands::-webkit-scrollbar{display:none;}
+  .cand{
+    flex:0 0 auto;font-size:15px;padding:1px 7px;border:1px solid var(--lcd-dim);
+    border-radius:6px;cursor:pointer;background:rgba(255,255,255,.14);
+  }
+  .cand:active{background:var(--lcd-dark);color:var(--lcd);}
+  .cand.lbl{font-size:10px;border:none;background:none;color:var(--lcd-dim);padding:0 1px;cursor:default;}
+
+  .result{
+    position:absolute;inset:0;background:var(--lcd);z-index:3;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:14px;gap:8px;
+  }
+  .result.show{display:flex;}
+  .result .big{font-size:19px;letter-spacing:.1em;}
+  .result .stat{font-size:13px;color:var(--lcd-dim);}
+  .result .verdict{font-size:13.5px;border:1px dashed var(--lcd-dim);border-radius:8px;padding:5px 10px;}
+  .result button{
+    font-family:var(--serif);font-size:13px;background:var(--lcd-dark);color:var(--lcd);
+    border:none;border-radius:7px;padding:7px 14px;cursor:pointer;margin-top:4px;
+  }
+
+  .softrow{display:flex;justify-content:space-between;align-items:center;margin:12px 2px 8px;}
+  .softkey{
+    font-family:var(--serif);width:86px;padding:9px 0;font-size:12.5px;letter-spacing:.1em;
+    background:linear-gradient(180deg,#8d9ab5,#5f6c8a);color:#101728;
+    border:none;border-radius:10px;cursor:pointer;
+  }
+  .softkey, .dpad{box-shadow:0 3px 0 #202a42;}
+  .softkey:active, .dpad:active{transform:translateY(2px);box-shadow:0 1px 0 #202a42;}
+  .dpad{
+    width:74px;height:74px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#94a1bd,#5f6c8a 70%);
+    border:none;cursor:pointer;color:#101728;
+    font-family:var(--serif);font-size:13px;letter-spacing:.05em;
+  }
+  .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .key{
+    font-family:var(--serif);
+    background:linear-gradient(180deg,#a8b3cc,#6c7a99);
+    border:none;border-radius:12px;padding:9px 0 7px;cursor:pointer;
+    color:#101728;box-shadow:0 3px 0 #232e4a;text-align:center;
+  }
+  .key:active{transform:translateY(2px);box-shadow:0 1px 0 #232e4a;}
+  .key .d{font-size:16px;font-weight:700;}
+  .key .l{display:block;font-size:9px;letter-spacing:.12em;color:#2c3a57;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:24px;max-width:640px;margin-left:auto;margin-right:auto;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  .shake{animation:shake .3s ease 2;}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №003</span>
+  </div>
+
+  <header>
+    <h1>九键时代</h1>
+    <div class="en">The T9 Era</div>
+    <p class="sub">你还记得怎么打出「我想你」吗</p>
+  </header>
+
+  <div class="mode-tabs">
+    <button id="tabChallenge" class="on">⏱️ 挑战「我想你」</button>
+    <button id="tabFree">💬 自由短信</button>
+  </div>
+
+  <div class="phone">
+    <div class="earpiece"></div>
+    <div class="brand">MOF-3310</div>
+    <div class="lcd">
+      <div class="statusbar"><span>▂▄▆█ 中国移动</span><span id="clock">21:07</span><span>▮▮▮▯</span></div>
+      <div class="goalbar" id="goalbar"><span>🎯 目标：我想你</span><span id="timer">0.0 s</span><span id="presses">按键 0</span></div>
+      <div class="chatlog" id="chatlog"></div>
+      <div class="composer">
+        <div class="msgline"><span id="msg"></span><span class="cursor"></span></div>
+        <div class="digitline" id="digits">&nbsp;</div>
+        <div class="cands" id="cands"></div>
+      </div>
+      <div class="result" id="result">
+        <div class="big" id="resTitle">发送成功 ✉</div>
+        <div class="stat" id="resStat"></div>
+        <div class="verdict" id="resVerdict"></div>
+        <button id="resAgain">再来一次</button>
+      </div>
+    </div>
+    <div class="softrow">
+      <button class="softkey" id="skClear">清空</button>
+      <button class="dpad" id="btnSend">发送</button>
+      <button class="softkey" id="skDel">删除</button>
+    </div>
+    <div class="keys" id="keys"></div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 九个键写完的青春</div>
+    <div class="pb">
+      <b>1995 年 Tegic 公司发明 T9，全称 Text on 9 keys。</b>拼音的每个字母藏在一个数字后面，「想」要按 94264，「张」也是 94264，猜你要哪个是手机的事，按得飞快是你的事。那时候一条短信一毛钱，七十个字要字字精打细算，多少心事就这样被拇指一格一格按了出来。词库是精简复刻版，打不出的字，就当是当年信号不好。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №003 · Max 造<br>
+    <a href="../train/">下一个展厅：绿皮火车 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* 精简九键拼音词库：音节 → 常用字（按大致词频排序） */
+  var DICT = {
+    de:'的地得德', shi:'是时事十使世市式识试史石食始士师诗失', yi:'一以已意义医易衣依亿艺宜移遗',
+    wo:'我握窝卧', ni:'你呢泥拟逆匿', ta:'他她它塔踏', le:'了乐勒', men:'们门闷',
+    zai:'在再载栽', you:'有又右由游油友邮优尤犹', he:'和何河合盒贺喝核荷',
+    jiu:'就九酒久旧救究舅', bu:'不部布步补捕', ren:'人任认忍仁', dou:'都斗豆逗抖陡',
+    hao:'好号毫豪浩耗', xiang:'想向相香象像项响箱乡详祥翔巷', zhang:'张章长掌涨帐账障',
+    ai:'爱哎唉挨矮癌', xin:'心新信辛欣芯薪馨', ma:'吗妈马嘛码麻骂',
+    me:'么', shen:'什身深神甚肾伸申', sheng:'生声升胜圣剩省绳',
+    ri:'日', yue:'月越约阅跃粤', tian:'天田甜添填', wan:'晚万完玩碗弯湾挽',
+    an:'安暗按岸案', chi:'吃迟持池尺齿翅痴', fan:'饭反犯范烦返番翻',
+    kuai:'快块筷', dian:'点电店典垫掂', nao:'脑闹恼', shou:'手收受首售瘦守',
+    ji:'机记几及级即急集己寄计既济激鸡吉极纪季技际',
+    hui:'会回汇灰挥辉毁悔慧', jia:'家加价假架甲嘉佳夹',
+    xiao:'小笑校消效晓销孝宵', xue:'学雪血穴靴', lai:'来赖莱',
+    qu:'去取区曲趣娶', kan:'看刊砍侃', zhe:'这着者折哲遮',
+    na:'那拿哪呐纳', ge:'个各歌哥格隔革阁', zhong:'中种重众终钟忠',
+    guo:'国过果锅裹', jin:'今进金近仅紧尽劲斤', ming:'明名命鸣铭',
+    bai:'白百拜败摆柏', wang:'王网往忘望汪旺', dui:'对队堆兑',
+    qi:'起气七期其奇齐骑器企汽妻棋旗', zao:'早造遭糟灶澡枣',
+    shang:'上商伤尚赏', xia:'下夏吓虾峡侠', chu:'出处初除橱厨触楚',
+    hou:'后候厚吼猴', qian:'前钱千签牵浅欠铅', mei:'没每美妹眉媒煤梅魅',
+    feng:'风封丰峰疯枫蜂缝逢', chun:'春纯唇蠢', hua:'话花化画华划滑',
+    shuo:'说', xie:'写谢些鞋协斜携泄卸屑', du:'读度独毒堵肚渡杜',
+    deng:'等灯登邓凳瞪', hen:'很恨狠痕', gao:'高告搞稿膏糕',
+    kai:'开凯慨', xi:'西喜洗系细戏吸希息稀溪嘻习席',
+    huan:'换欢环缓幻唤患', yang:'样阳养羊洋扬仰痒',
+    yao:'要药腰摇邀妖咬耀钥', zhi:'只知之直至指纸值制智质止治址执支枝',
+    dao:'到道倒刀岛导盗稻', shui:'水谁睡税', jiao:'叫交教脚角焦骄胶郊',
+    zi:'自字子紫资姿滋仔', zui:'最嘴罪醉', hai:'还海孩害嗨',
+    zou:'走奏揍', lu:'路陆录鹿露炉卢', che:'车彻撤扯澈',
+    piao:'票漂飘瓢', zuo:'做作坐左座昨', chang:'常长唱场厂尝肠敞',
+    ban:'半班办板版般搬伴拌扮', gong:'工公共功攻宫供恭',
+    si:'四死思斯司私丝寺撕', wu:'无五物午屋误舞悟雾勿吴武',
+    liu:'六流留刘柳溜', ba:'八吧把爸罢拔靶', jiang:'讲将江奖降酱姜',
+    nian:'年念碾捻', sui:'岁随虽碎遂', dong:'动东懂冬洞冻栋董',
+    xing:'行性型星形醒姓幸兴刑', ku:'哭苦库裤酷枯', lei:'累类泪雷擂蕾',
+    gan:'感干敢赶甘肝杆', qing:'情请清轻青晴庆倾蜻',
+    ting:'听停挺厅庭亭艇婷', jian:'见间件建简坚检减渐肩剑箭健键',
+    mian:'面棉眠免勉缅', bao:'报保包宝抱爆薄堡胞',
+    dai:'带待代戴袋呆贷逮', biao:'表标彪镖', ke:'可课克客刻科颗壳咳',
+    neng:'能', li:'里李理力立利离例礼历丽厉励梨璃',
+    liang:'两量亮凉粮良辆梁俩', zen:'怎', yong:'用永勇涌泳庸拥',
+    zhu:'住主猪竹祝助注著筑铸驻珠朱煮', chuan:'穿传船川串喘',
+    chuang:'床窗创闯疮', meng:'梦蒙猛盟萌孟檬', zhen:'真阵镇针震振珍枕诊',
+    teng:'疼腾藤', a:'啊阿', o:'哦噢喔', e:'饿额俄恶鹅蛾',
+    en:'嗯恩', wa:'哇挖娃蛙瓦袜', ya:'呀牙压芽鸭雅哑亚',
+    la:'啦拉辣蜡腊喇', ha:'哈蛤', hei:'嘿黑', yo:'哟呦',
+    ye:'也夜叶爷业页液野咧?', bei:'被北倍背杯悲备贝辈',
+    bie:'别憋瘪', hu:'湖户护呼虎胡壶忽糊', fei:'飞非费肥废菲肺',
+    pao:'跑炮泡抛袍刨', pa:'怕爬帕啪趴', gei:'给',
+    zhao:'找照招着罩爪召兆朝?', cai:'才菜猜采彩财裁踩',
+    song:'送松宋诵颂耸', shu:'书树数属输束术叔舒鼠殊蔬',
+    chan:'产缠禅铲颤', pian:'片篇偏骗', pang:'旁胖庞乓',
+    tang:'糖堂唐汤躺趟塘倘', mang:'忙盲茫芒莽', wei:'为位未味微围伟卫委喂尾胃维违唯',
+    yu:'与于鱼语雨玉遇余欲愈宇羽渔娱狱裕愚', yuan:'远员元原院愿园圆源缘怨援',
+    yun:'云运晕韵孕匀允', tu:'图土突途徒涂吐兔屠', ci:'次词此刺瓷慈磁辞',
+    cong:'从丛聪葱匆', cun:'村存寸', da:'大打达答搭瘩',
+    dan:'但单蛋担弹淡旦胆蛋?', duan:'段短断端锻', fang:'方放房防访仿纺芳',
+    fen:'分份芬粉奋愤纷坟', fu:'父付副福富负复服夫妇附府符幅腐扶浮',
+    gai:'该改盖概钙丐', gen:'跟根', gou:'够狗购构沟勾钩',
+    gu:'古故顾骨股鼓姑孤菇估谷', gua:'挂瓜刮寡呱', guai:'怪乖拐',
+    guan:'关管官观馆惯冠灌罐', guang:'光广逛', gui:'贵鬼归轨柜桂规龟',
+    gun:'滚棍', han:'汉喊含寒汗韩憨罕', hang:'行航杭巷?',
+    he2:'', hong:'红洪轰哄虹宏', huo:'火活或货获伙祸豁',
+    jie:'接街节结解姐借介届皆阶截洁', jing:'经京精静境净警竟惊镜睛景井敬',
+    jun:'军均君俊菌骏', kong:'空孔恐控', kou:'口扣抠寇',
+    kun:'困昆捆', kuo:'扩阔括', lang:'狼浪郎朗廊',
+    lao:'老劳牢捞唠涝佬', leng:'冷愣', lian:'连脸恋联练炼莲帘链',
+    liao:'聊料疗辽廖撩', lin:'林临邻淋琳磷鳞', ling:'另令零领灵铃玲龄凌',
+    long:'龙隆笼聋垄', lou:'楼漏搂陋露?', luo:'落罗络洛骆裸螺',
+    lv:'绿旅律率虑滤驴屡', man:'满慢漫瞒蛮馒', mao:'毛猫冒帽貌矛茅锚',
+    miao:'秒苗庙妙描瞄喵', min:'民敏悯闽', mo:'摸模末磨魔莫默漠墨抹沫',
+    mu:'目母木幕慕牧墓募亩', nan:'难南男', ne:'呢讷',
+    nei:'内馁', neng2:'', nin:'您', niu:'牛扭纽妞',
+    nong:'弄浓农脓', nv:'女', pai:'派拍排牌徘',
+    pan:'盘判盼攀畔叛', pei:'陪配赔培佩沛', pen:'喷盆',
+    peng:'朋碰棚捧蓬鹏彭膨', pi:'皮批披疲脾匹辟劈屁',
+    pin:'品拼贫频聘', ping:'平评瓶凭萍屏乒', po:'破坡婆迫泼颇魄',
+    pu:'普铺扑朴谱瀑仆', qia:'恰卡掐洽', qiang:'强枪墙抢腔',
+    qiao:'桥巧敲悄瞧翘侨窍', qie:'切且窃怯茄', qin:'亲勤琴侵秦禽芹',
+    qiong:'穷琼', qiu:'求球秋丘邱囚泅', quan:'全权劝圈拳犬泉券',
+    que:'却确缺雀瘸', qun:'群裙', rang:'让嚷壤',
+    rao:'绕饶扰娆', re:'热惹', rong:'容荣融溶绒熔蓉',
+    rou:'肉柔揉', ru:'如入乳儒辱汝', ruan:'软阮',
+    rui:'瑞锐睿', run:'润闰', ruo:'若弱',
+    sai:'赛塞腮', san:'三散伞叁', sao:'扫嫂骚缫',
+    se:'色涩瑟塞?', sen:'森', sha:'杀沙傻纱啥厦砂鲨',
+    shai:'晒筛', shan:'山闪衫善扇删煽珊杉膳', shao:'少烧稍勺绍哨捎邵',
+    she:'设社射蛇舍摄舌涉赦', shei:'谁?', shun:'顺瞬吮',
+    suan:'算酸蒜', sun:'孙损笋', suo:'所锁缩索梭唆',
+    tai:'太台抬态胎泰苔', tan:'谈弹叹坦摊贪探滩瘫毯炭碳',
+    tao:'套逃桃讨涛淘掏陶萄', te:'特忑', ti:'提题体替踢梯蹄剃惕屉',
+    tiao:'条跳挑调?', tie:'铁贴帖', tong:'同通痛童桶铜筒统捅',
+    tou:'头投偷透钭', tuan:'团湍', tui:'退推腿褪',
+    tun:'吞屯臀', tuo:'脱拖托妥驼椭拓', wai:'外歪',
+    wen:'问文闻温稳吻纹蚊瘟', weng:'翁嗡瓮', wong:'',
+    xian:'先现线县鲜显险限闲献贤咸嫌弦掀', xiong:'胸雄兄熊凶汹',
+    xiu:'修秀休袖绣锈羞嗅', xu:'许需须续序徐虚绪叙旭嘘蓄',
+    xuan:'选悬旋玄宣喧轩绚炫', xun:'寻训讯迅巡询熏循逊驯',
+    yan:'眼烟言严演岩研盐延颜验淹掩厌宴艳焰雁', yin:'因音引银印阴饮隐姻瘾吟',
+    ying:'应英影营迎硬赢盈莹樱鹰颖映', za:'杂砸咋咂',
+    zan:'咱赞暂攒簪', zang:'脏葬藏?', zei:'贼',
+    zeng:'增赠憎', zha:'炸扎眨渣闸榨诈乍', zhai:'摘宅窄债寨斋',
+    zhan:'站占战展沾粘斩盏崭绽', zhei:'', zheng:'正整争政证挣睁征怔郑蒸',
+    zhou:'周州洲粥皱轴宙昼骤', zhua:'抓爪?', zhuan:'转专赚砖传?',
+    zhuang:'装撞壮状庄妆桩', zhui:'追坠缀锥', zhun:'准',
+    zhuo:'桌捉卓浊灼茁琢', chai:'拆柴差?', chao:'超吵抄朝潮炒巢',
+    chen:'陈沉晨尘趁衬臣辰', cheng:'成城程称承诚乘橙撑呈惩澄',
+    chong:'冲重?虫充崇宠', chou:'抽愁丑臭仇筹绸酬稠',
+    chua:'', chuai:'揣', chui:'吹垂锤炊捶', chuo:'戳绰',
+    cang:'藏?仓苍舱沧', cao:'草操曹槽糙', ce:'测册侧厕策',
+    cen:'', ceng:'层曾蹭', cha:'查茶差插叉察岔诧',
+    ku2:'', kua:'夸跨垮挎胯', kuan:'宽款', kuang:'况狂矿框筐旷眶',
+    kui:'亏愧奎馈窥盔葵魁', kun2:'', lan:'蓝烂懒拦栏兰篮览滥缆揽',
+    lang2:'', li2:'', lia:'俩?', lie:'列烈裂猎劣咧',
+    lun:'论轮伦沦抡', ma2:'', mai:'买卖麦埋迈脉',
+    man2:'', mao2:'', mi:'米密迷谜蜜秘眯觅弥',
+    mie:'灭蔑咩', ming2:'', miu:'谬', mou:'某谋眸',
+    nai:'奶耐奈乃', nang:'囊', nao2:'', nen:'嫩',
+    ng:'', ni2:'', niang:'娘酿', niao:'鸟尿',
+    nie:'捏聂孽镍', ning:'宁凝拧柠狞', nu:'努怒奴',
+    nuan:'暖', nuo:'诺挪懦糯', ou:'哦?偶欧呕殴鸥藕',
+    pang2:'', pao2:'', pen2:'', pi2:'', pie:'瞥撇',
+    pou:'剖', qi2:'', qia2:'', quan2:'', ran:'然染燃冉',
+    reng:'仍扔', ri2:'', sang:'桑嗓丧', seng:'僧',
+    shang2:'', shua:'刷耍', shuai:'帅摔甩衰', shuan:'栓拴涮',
+    shuang:'双爽霜', shui2:'', sou:'搜艘嗽馊', su:'素速诉宿俗塑苏肃粟',
+    ti2:'', tian2:'', wu2:'', xi2:'', ai2:'', an2:'',
+    ang:'昂盎肮', ao:'奥澳傲熬凹袄懊', bang:'帮棒邦榜绑膀磅蚌镑',
+    bao2:'', ben:'本奔笨苯', beng:'蹦崩绷泵蚌?迸',
+    bi:'比笔必币避闭鼻碧壁毕彼逼鄙臂', bian:'边变便遍编辨辩鞭扁贬辫',
+    biao2:'', bin:'宾滨彬斌鬓', bing:'并病兵冰饼丙柄秉',
+    bo:'播波博伯脖泊拨剥薄?驳菠礴', can:'参?残餐惨灿蚕惭',
+    dang:'当党挡档荡宕', di:'第地?低底弟敌帝滴迪抵递嘀笛缔',
+    diao:'掉调?钓吊雕叼碉', die:'跌爹叠碟蝶谍',
+    ding:'定顶订盯钉锭叮鼎', diu:'丢', dun:'顿吨蹲盾钝炖敦',
+    duo:'多朵夺躲舵堕跺惰', er:'二而儿耳尔饵贰',
+    fa:'发法罚伐乏筏阀', fo:'佛', fou:'否',
+    ken:'肯恳啃垦', keng:'坑吭', gua2:'', hun:'混婚魂昏浑荤',
+    ji2:'', jiong:'窘炯迥', ju:'句据居局举巨具距俱剧惧聚拒菊鞠桔沮',
+    juan:'卷捐圈?倦娟眷绢隽', jue:'觉?决绝角?爵掘诀倔崛',
+    kao:'考靠烤拷铐', ken2:'', ke2:'', ka:'卡咖喀咔',
+    kang:'康抗扛炕慷糠', kei:'', ken3:'', kua2:''
+  };
+
+  var K2L = {a:2,b:2,c:2,d:3,e:3,f:3,g:4,h:4,i:4,j:5,k:5,l:5,m:6,n:6,o:6,p:7,q:7,r:7,s:7,t:8,u:8,v:8,w:9,x:9,y:9,z:9};
+  var BY_DIGIT = {};
+  var SYL_ORDER = [];
+  Object.keys(DICT).forEach(function(syl){
+    var chars = DICT[syl].replace(/[?？]/g,'');
+    var base = syl.replace(/\d+$/,'');
+    if (!chars || !base) return;
+    var d = '';
+    for (var i = 0; i < base.length; i++){ d += K2L[base[i]]; }
+    if (!BY_DIGIT[d]) BY_DIGIT[d] = [];
+    BY_DIGIT[d].push({syl: base, chars: chars});
+    SYL_ORDER.push(d);
+  });
+  var PUNCT = ['，','。','？','！','…','～','（','）'];
+  var KEY_DEFS = [
+    ['1','，。？'], ['2','ABC'], ['3','DEF'],
+    ['4','GHI'], ['5','JKL'], ['6','MNO'],
+    ['7','PQRS'], ['8','TUV'], ['9','WXYZ'],
+    ['*','☺'], ['0','空格'], ['#','⇧']
+  ];
+
+  var mode = 'challenge';
+  var TARGET = '我想你';
+  var buf = '', msg = '';
+  var presses = 0, startT = null, timerId = null;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var msgEl = $('msg'), digEl = $('digits'), candEl = $('cands'), logEl = $('chatlog');
+
+  var keysEl = $('keys');
+  KEY_DEFS.forEach(function(k){
+    var b = document.createElement('button');
+    b.className = 'key';
+    b.innerHTML = '<span class="d">' + k[0] + '</span><span class="l">' + k[1] + '</span>';
+    b.addEventListener('click', function(){ pressKey(k[0]); });
+    keysEl.appendChild(b);
+  });
+
+  function pressKey(k){
+    if (k === '*' || k === '#'){ toastLcd('这个键光荣退休了'); return; }
+    countPress();
+    if (k === '0'){ msg += ' '; render(); return; }
+    if (k === '1'){ buf = ''; renderCands(PUNCT.map(function(p){ return {c:p}; })); digEl.textContent = '1'; return; }
+    buf += k;
+    render();
+  }
+
+  function countPress(){
+    presses++;
+    if (mode === 'challenge' && startT === null){
+      startT = performance.now();
+      timerId = setInterval(function(){
+        $('timer').textContent = ((performance.now() - startT) / 1000).toFixed(1) + ' s';
+      }, 100);
+    }
+    $('presses').textContent = '按键 ' + presses;
+  }
+
+  function matches(digits){
+    var out = [];
+    if (BY_DIGIT[digits]){
+      BY_DIGIT[digits].forEach(function(g){
+        out.push({lbl: g.syl});
+        for (var i = 0; i < g.chars.length && i < 10; i++) out.push({c: g.chars[i]});
+      });
+    }
+    return out;
+  }
+
+  function hasPrefix(digits){
+    for (var d in BY_DIGIT){ if (d.length > digits.length && d.indexOf(digits) === 0) return true; }
+    return false;
+  }
+
+  function render(){
+    msgEl.textContent = msg;
+    digEl.textContent = buf || ' ';
+    if (!buf){ candEl.innerHTML = ''; return; }
+    var m = matches(buf);
+    if (m.length){ renderCands(m); }
+    else if (hasPrefix(buf)){ candEl.innerHTML = '<span class="cand lbl">继续按…</span>'; }
+    else { candEl.innerHTML = '<span class="cand lbl">词库里没有这个组合，删掉重来</span>'; }
+  }
+
+  function renderCands(list){
+    candEl.innerHTML = '';
+    list.forEach(function(item){
+      var s = document.createElement('span');
+      if (item.lbl){ s.className = 'cand lbl'; s.textContent = item.lbl; }
+      else {
+        s.className = 'cand';
+        s.textContent = item.c;
+        s.addEventListener('click', function(){
+          countPress();
+          msg += item.c;
+          buf = '';
+          render();
+          checkAuto();
+        });
+      }
+      candEl.appendChild(s);
+    });
+  }
+
+  function checkAuto(){
+    if (mode === 'challenge' && msg === TARGET) send();
+  }
+
+  function send(){
+    if (!msg) return;
+    if (mode === 'challenge'){
+      if (msg === TARGET){
+        clearInterval(timerId);
+        var sec = (performance.now() - startT) / 1000;
+        var verdict = sec < 15 ? '拇指宗师，梦回 2005。' :
+                      sec < 30 ? '肌肉记忆还在，宝刀未老。' :
+                      sec < 60 ? '有点生疏，但那个感觉回来了吧。' :
+                                 '二十一世纪的孩子，欢迎第一次体验。';
+        $('resStat').textContent = '用时 ' + sec.toFixed(1) + ' 秒 · 按键 ' + presses + ' 次';
+        $('resVerdict').textContent = verdict;
+        $('result').classList.add('show');
+      } else {
+        document.querySelector('.lcd').classList.remove('shake');
+        void document.querySelector('.lcd').offsetWidth;
+        document.querySelector('.lcd').classList.add('shake');
+        toastLcd('目标是「我想你」，检查一下再发');
+      }
+      return;
+    }
+    addBubble(msg, 'me');
+    var sent = msg;
+    msg = ''; buf = '';
+    render();
+    setTimeout(function(){ addBubble(replyTo(sent), 'ta'); }, 900);
+  }
+
+  function replyTo(t){
+    if (t.indexOf('想你') >= 0) return '我也是。';
+    if (t.indexOf('吃') >= 0) return '我刚吃过啦，你呢';
+    if (t.indexOf('睡') >= 0) return '晚安，做个好梦';
+    var pool = ['嗯嗯', '：）', '哈哈哈', '收到～', '明天见', '早点睡'];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function addBubble(t, who){
+    var d = document.createElement('div');
+    d.className = 'bub ' + who;
+    d.textContent = t;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  var toastT = null;
+  function toastLcd(t){
+    candEl.innerHTML = '<span class="cand lbl">' + t + '</span>';
+    clearTimeout(toastT);
+    toastT = setTimeout(render, 1800);
+  }
+
+  function resetChallenge(){
+    buf = ''; msg = ''; presses = 0; startT = null;
+    clearInterval(timerId);
+    $('timer').textContent = '0.0 s';
+    $('presses').textContent = '按键 0';
+    $('result').classList.remove('show');
+    logEl.innerHTML = '';
+    if (mode === 'challenge'){
+      $('goalbar').style.display = 'flex';
+      addBubble('挑战开始：用九键打出「我想你」', 'ta');
+      addBubble('提示：先按 96，再按 94264，再按 64', 'ta');
+    } else {
+      $('goalbar').style.display = 'none';
+      addBubble('自由模式：随便聊，TA 会回你', 'ta');
+    }
+    render();
+  }
+
+  $('skDel').addEventListener('click', function(){
+    countPress();
+    if (buf) buf = buf.slice(0, -1);
+    else msg = msg.slice(0, -1);
+    render();
+  });
+  $('skClear').addEventListener('click', function(){ buf = ''; msg = ''; render(); });
+  $('btnSend').addEventListener('click', send);
+  $('resAgain').addEventListener('click', resetChallenge);
+  $('tabChallenge').addEventListener('click', function(){
+    mode = 'challenge';
+    this.classList.add('on'); $('tabFree').classList.remove('on');
+    resetChallenge();
+  });
+  $('tabFree').addEventListener('click', function(){
+    mode = 'free';
+    this.classList.add('on'); $('tabChallenge').classList.remove('on');
+    resetChallenge();
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key >= '0' && e.key <= '9'){ pressKey(e.key); }
+    else if (e.key === 'Backspace'){ e.preventDefault(); $('skDel').click(); }
+    else if (e.key === 'Enter'){ send(); }
+  });
+
+  var now = new Date();
+  $('clock').textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  resetChallenge();
+})();
+</script>
+</body>
+</html>
