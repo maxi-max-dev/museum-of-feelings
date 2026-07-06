@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三体问题 · 感觉博物馆</title>
+<meta name="description" content="三颗星，一套万有引力，没有人算得出明天。亲眼看混沌，看奇迹的8字舞，看一根头发丝的差别长成两个宇宙。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#0b0f24;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .stage-btns{position:absolute;top:12px;right:12px;display:flex;gap:8px;z-index:5;flex-wrap:wrap;justify-content:flex-end;}
+  .stage-btns button{
+    font-family:var(--serif);border:1px solid rgba(245,239,226,.4);border-radius:8px;
+    background:rgba(11,15,36,.72);color:#e8e2d2;font-size:13px;letter-spacing:.08em;
+    padding:8px 12px;cursor:pointer;transition:transform .15s, border-color .15s;
+  }
+  .stage-btns button:hover{transform:translateY(-1px);border-color:#e8e2d2;}
+  .stage-btns button.on{background:#e8e2d2;color:#0b0f24;border-color:#e8e2d2;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №008</span>
+  </div>
+
+  <header>
+    <h1>三体问题</h1>
+    <div class="en">The Three-Body Problem</div>
+    <p class="sub">三颗星，一套引力定律，没有人算得出明天</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="cv" width="800" height="560"></canvas>
+    <div class="stage-btns">
+      <button id="btnNew">🎲 换个宇宙</button>
+      <button id="btnFig8">∞ 奇迹解：8字舞</button>
+      <button id="btnGhost">👻 平行宇宙</button>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 为什么三体人算不出日子</div>
+    <div class="pb">
+      <b>两个天体共舞，轨道是永恒的椭圆；加进第三个，数学就投降了。</b>1890 年庞加莱证明三体问题没有通用解析解，这一天常被当作混沌理论的起点。混沌不是没有规律，而是对起点无限敏感：点开「平行宇宙」，把一颗星挪动十万分之一，看两个宇宙从重叠到分道扬镳，这就是为什么天气预报只敢报七天，为什么小说里的三体人永远算不出下一个乱纪元。而「8字舞」是 2000 年才被发现的奇迹周期解，三颗星在同一条 8 字上首尾相追，优雅得不像这个混沌宇宙里的东西。多按几次「换个宇宙」你会发现，大多数三体宇宙的结局是把一颗星甩出去，剩下两颗过安稳日子。宇宙的稳定，常常靠开除第三者达成。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №008 · Max 造<br>
+    <a href="../wealth/">下一个展厅：公平赌场 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 800, H = 560, CX = W / 2, CY = H / 2;
+  var COLORS = ['#ffd76e', '#6fd3c7', '#e88ab0'];
+  var EPS2 = 0.0004;
+  var DT = 0.0035, SUBS_PER_SEC = 180; /* 模拟速率：0.63 时间单位/秒 */
+
+  var bodies, ghost, ghostOn = false;
+  var scalePx = 85, uniN = 0, simT = 0;
+  var dead = null; /* {msg, t} */
+  var stars = [];
+  for (var s = 0; s < 90; s++) stars.push([Math.random() * W, Math.random() * H, Math.random() * 1.4 + 0.4]);
+
+  function newRandom(){
+    uniN++;
+    simT = 0; dead = null;
+    scalePx = 85;
+    bodies = [];
+    var px = 0, py = 0;
+    for (var i = 0; i < 3; i++){
+      var ang = i * 2.094 + (Math.random() - 0.5) * 0.7;
+      var r = 0.85 + Math.random() * 0.5;
+      var x = Math.cos(ang) * r, y = Math.sin(ang) * r;
+      var sp = 0.28 + Math.random() * 0.24;
+      var vx = -Math.sin(ang) * sp + (Math.random() - 0.5) * 0.1;
+      var vy = Math.cos(ang) * sp + (Math.random() - 0.5) * 0.1;
+      bodies.push({x: x, y: y, vx: vx, vy: vy, m: 1});
+      px += vx; py += vy;
+    }
+    for (var j = 0; j < 3; j++){ bodies[j].vx -= px / 3; bodies[j].vy -= py / 3; }
+    if (ghostOn) makeGhost();
+    clearCanvas();
+  }
+
+  function newFig8(){
+    uniN++;
+    simT = 0; dead = null;
+    scalePx = 200;
+    bodies = [
+      {x: -0.97000436, y: 0.24308753, vx: 0.4662036850, vy: 0.4323657300, m: 1},
+      {x: 0.97000436, y: -0.24308753, vx: 0.4662036850, vy: 0.4323657300, m: 1},
+      {x: 0, y: 0, vx: -0.93240737, vy: -0.86473146, m: 1}
+    ];
+    if (ghostOn) makeGhost();
+    clearCanvas();
+  }
+
+  function makeGhost(){
+    ghost = bodies.map(function(b){ return {x: b.x, y: b.y, vx: b.vx, vy: b.vy, m: b.m}; });
+    ghost[0].x += 0.00001; /* 十万分之一的差别 */
+  }
+
+  function accel(bs){
+    var ax = [0, 0, 0], ay = [0, 0, 0];
+    for (var i = 0; i < 3; i++){
+      for (var j = i + 1; j < 3; j++){
+        var dx = bs[j].x - bs[i].x, dy = bs[j].y - bs[i].y;
+        var d2 = dx * dx + dy * dy + EPS2;
+        var inv = 1 / (Math.sqrt(d2) * d2);
+        ax[i] += dx * inv * bs[j].m; ay[i] += dy * inv * bs[j].m;
+        ax[j] -= dx * inv * bs[i].m; ay[j] -= dy * inv * bs[i].m;
+      }
+    }
+    return [ax, ay];
+  }
+
+  function stepSys(bs, dt){
+    var a1 = accel(bs);
+    for (var i = 0; i < 3; i++){
+      bs[i].x += bs[i].vx * dt + 0.5 * a1[0][i] * dt * dt;
+      bs[i].y += bs[i].vy * dt + 0.5 * a1[1][i] * dt * dt;
+    }
+    var a2 = accel(bs);
+    for (var j = 0; j < 3; j++){
+      bs[j].vx += 0.5 * (a1[0][j] + a2[0][j]) * dt;
+      bs[j].vy += 0.5 * (a1[1][j] + a2[1][j]) * dt;
+    }
+  }
+
+  function checkFate(){
+    if (dead) return;
+    for (var i = 0; i < 3; i++){
+      var r = Math.hypot(bodies[i].x, bodies[i].y);
+      if (r > 6){
+        dead = {msg: '一颗星被甩出了宇宙 · 文明存活 ' + Math.floor(simT) + ' 个纪元', t: 0};
+        return;
+      }
+      for (var j = i + 1; j < 3; j++){
+        if (Math.hypot(bodies[j].x - bodies[i].x, bodies[j].y - bodies[i].y) < 0.045){
+          dead = {msg: '两颗星相撞了 · 文明存活 ' + Math.floor(simT) + ' 个纪元', t: 0};
+          return;
+        }
+      }
+    }
+  }
+
+  function clearCanvas(){
+    ctx.fillStyle = '#0b0f24';
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function sx(x){ return CX + x * scalePx; }
+  function sy(y){ return CY + y * scalePx; }
+
+  var last = performance.now();
+  function loop(now){
+    var dtReal = Math.min(4, (now - last) / 1000);
+    last = now;
+
+    if (!dead){
+      var subs = Math.round(dtReal * SUBS_PER_SEC);
+      for (var s = 0; s < subs; s++){
+        stepSys(bodies, DT);
+        if (ghostOn && ghost) stepSys(ghost, DT);
+        simT += DT;
+      }
+      checkFate();
+    } else {
+      dead.t += dtReal;
+      if (dead.t > 3){ newRandom(); }
+    }
+
+    /* 拖尾：半透明罩 */
+    ctx.fillStyle = 'rgba(11,15,36,0.05)';
+    ctx.fillRect(0, 0, W, H);
+
+    for (var st = 0; st < stars.length; st++){
+      ctx.fillStyle = 'rgba(232,226,210,0.5)';
+      ctx.fillRect(stars[st][0], stars[st][1], stars[st][2], stars[st][2]);
+    }
+
+    if (ghostOn && ghost){
+      for (var g = 0; g < 3; g++){
+        ctx.beginPath();
+        ctx.arc(sx(ghost[g].x), sy(ghost[g].y), 6, 0, 7);
+        ctx.strokeStyle = COLORS[g];
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    for (var b = 0; b < 3; b++){
+      var x = sx(bodies[b].x), y = sy(bodies[b].y);
+      var grd = ctx.createRadialGradient(x, y, 0, x, y, 14);
+      grd.addColorStop(0, COLORS[b]);
+      grd.addColorStop(1, 'rgba(11,15,36,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(x, y, 14, 0, 7); ctx.fill();
+      ctx.fillStyle = COLORS[b];
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill();
+    }
+
+    ctx.textAlign = 'left';
+    ctx.font = '13px "Noto Serif SC","Songti SC",serif';
+    ctx.fillStyle = 'rgba(232,226,210,0.75)';
+    ctx.fillText('第 ' + uniN + ' 号宇宙 · 已存活 ' + Math.floor(simT) + ' 个纪元', 16, 26);
+
+    if (ghostOn && ghost && !dead){
+      var div = Math.hypot(bodies[0].x - ghost[0].x, bodies[0].y - ghost[0].y);
+      var stage = div < 0.001 ? '还看不出差别' : div < 0.05 ? '开始分家了' : div < 0.5 ? '已经是两种命运' : '完全是两个宇宙';
+      ctx.fillText('👻 平行宇宙偏差：' + (div < 0.0001 ? div.toExponential(1) : div.toFixed(4)) + ' · ' + stage, 16, H - 40);
+      var w = Math.min(1, Math.max(0, (Math.log10(div + 1e-9) + 5) / 5.3)) * 240;
+      ctx.fillStyle = 'rgba(232,226,210,0.25)';
+      ctx.fillRect(16, H - 30, 240, 6);
+      ctx.fillStyle = '#e88ab0';
+      ctx.fillRect(16, H - 30, w, 6);
+      if (div > 0.5){
+        ctx.fillStyle = 'rgba(232,226,210,0.85)';
+        ctx.fillText('一根头发丝的差别，长成了两个完全不同的宇宙。', 16, H - 52);
+      }
+    }
+
+    if (dead){
+      ctx.fillStyle = 'rgba(11,15,36,0.55)';
+      ctx.fillRect(0, H / 2 - 44, W, 88);
+      ctx.textAlign = 'center';
+      ctx.font = '20px "Noto Serif SC","Songti SC",serif';
+      ctx.fillStyle = '#e8e2d2';
+      ctx.fillText('💥 ' + dead.msg, CX, H / 2 - 4);
+      ctx.font = '13px "Noto Serif SC","Songti SC",serif';
+      ctx.fillStyle = 'rgba(232,226,210,0.7)';
+      ctx.fillText('正在生成下一个宇宙…', CX, H / 2 + 26);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('btnNew').addEventListener('click', newRandom);
+  document.getElementById('btnFig8').addEventListener('click', newFig8);
+  document.getElementById('btnGhost').addEventListener('click', function(){
+    ghostOn = !ghostOn;
+    this.classList.toggle('on', ghostOn);
+    if (ghostOn){ makeGhost(); }
+    else { ghost = null; }
+  });
+
+  newRandom();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

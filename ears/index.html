@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>耳朵商店 · 感觉博物馆</title>
+<meta name="description" content="测测你的耳朵几岁了，借一副 85 岁的耳朵听歌，忍一分钟耳鸣，再看看狗和蝙蝠的世界。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .advisory{
+    display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:12px 16px;margin-bottom:22px;
+    font-size:13px;color:#57503f;letter-spacing:.05em;
+    animation:rise .8s .05s ease both;
+  }
+  .advisory input{accent-color:var(--seal);width:120px;}
+
+  .counters{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:700px){.counters{grid-template-columns:1fr;}}
+  .counter{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:20px 20px 18px;animation:rise .8s .1s ease both;
+  }
+  .counter h2{font-size:17px;letter-spacing:.12em;margin-bottom:4px;}
+  .counter .tag{font-size:11.5px;color:var(--seal);letter-spacing:.15em;margin-bottom:12px;}
+  .counter p.desc{font-size:13px;line-height:1.95;color:#57503f;margin-bottom:12px;}
+
+  .freq-grid{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+  .fbtn{
+    font-family:var(--serif);font-size:12.5px;
+    border:1.5px solid var(--line);border-radius:8px;background:#fff8;
+    padding:7px 10px;cursor:pointer;color:var(--ink);letter-spacing:.03em;
+  }
+  .fbtn:hover{border-color:var(--seal);color:var(--seal);}
+  .fbtn.playing{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .fbtn.heard{border-color:#3f7d3a;color:#3f7d3a;box-shadow:0 0 0 1px #3f7d3a;}
+  .verdict{
+    font-size:13.5px;line-height:1.9;color:#453e30;border-top:1px dashed var(--line);
+    padding-top:10px;min-height:44px;
+  }
+  .verdict b{color:var(--seal);font-size:16px;}
+
+  .earbtns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .ebtn{
+    font-family:var(--serif);font-size:13px;
+    border:1.5px solid var(--line);border-radius:9px;background:#fff8;
+    padding:9px 13px;cursor:pointer;letter-spacing:.05em;
+  }
+  .ebtn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .playrow{display:flex;gap:8px;align-items:center;margin-bottom:12px;}
+  .bigbtn{
+    font-family:var(--serif);font-size:14.5px;letter-spacing:.1em;
+    background:var(--card);border:1.5px solid var(--ink);border-radius:10px;
+    padding:10px 18px;cursor:pointer;
+  }
+  .bigbtn:hover{border-color:var(--seal);color:var(--seal);}
+  .bigbtn.on{background:var(--seal);border-color:var(--seal);color:#fdf6ee;}
+
+  .tin-timer{font-size:22px;letter-spacing:.1em;color:var(--seal);min-width:80px;display:inline-block;}
+
+  .range-chart{width:100%;height:auto;display:block;margin-bottom:10px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:20px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №007</span>
+  </div>
+
+  <header>
+    <h1>耳朵商店</h1>
+    <div class="en">The Ear Shop</div>
+    <p class="sub">眼睛商店的姊妹馆：这次换耳朵</p>
+  </header>
+
+  <div class="advisory">
+    <span>🎧 建议戴耳机 · 音量从小开，够听到就行</span>
+    <span>总音量 <input type="range" id="vol" min="5" max="100" value="45"></span>
+  </div>
+
+  <div class="counters">
+    <!-- 柜台一：耳龄 -->
+    <div class="counter">
+      <h2>🦟 你的耳朵几岁了</h2>
+      <div class="tag">柜台一 · 蚊音测试</div>
+      <p class="desc">从低到高挨个试。听到的按钮会亮，听不到的就是你的天花板。人的高频听力从二十多岁起悄悄退场，这是最诚实的年龄检测。</p>
+      <div class="freq-grid" id="freqGrid"></div>
+      <div class="verdict" id="ageVerdict">测完点亮你能听到的最高频率，这里会给出耳龄。</div>
+    </div>
+
+    <!-- 柜台二：爷爷的耳朵 -->
+    <div class="counter">
+      <h2>👴 爷爷的耳朵</h2>
+      <div class="tag">柜台二 · 同一首歌，三副耳朵</div>
+      <p class="desc">同一段《茉莉花》，随时切换耳朵听。老去的耳朵先丢高频，而高频里住着辅音和清脆，所以爷爷听得见你在说话，却听不清你在说什么。</p>
+      <div class="playrow">
+        <button class="bigbtn" id="songBtn">▶ 播放茉莉花</button>
+      </div>
+      <div class="earbtns">
+        <button class="ebtn on" data-ear="25">25 岁的耳朵</button>
+        <button class="ebtn" data-ear="60">60 岁的耳朵</button>
+        <button class="ebtn" data-ear="85">85 岁的耳朵</button>
+      </div>
+      <div class="verdict" id="earNote">提示：一边播一边切，落差最明显。对爷爷别喊，凑近、放慢比大声管用。</div>
+    </div>
+
+    <!-- 柜台三：耳鸣 -->
+    <div class="counter">
+      <h2>🔔 一分钟耳鸣</h2>
+      <div class="tag">柜台三 · 共情体验</div>
+      <p class="desc">大约十分之一的人耳朵里长期放着这个声音，安静的深夜最响。这个柜台的全部意义在于：你可以关掉，他们不行。</p>
+      <div class="playrow">
+        <button class="bigbtn" id="tinBtn">▶ 开始体验</button>
+        <span class="tin-timer" id="tinTimer">0 秒</span>
+      </div>
+      <div class="verdict" id="tinNote">坚持满一分钟自动结束。</div>
+    </div>
+
+    <!-- 柜台四：别人的耳朵 -->
+    <div class="counter">
+      <h2>🐾 别人的耳朵</h2>
+      <div class="tag">柜台四 · 听域对照</div>
+      <svg class="range-chart" viewBox="0 0 380 190" xmlns="http://www.w3.org/2000/svg">
+        <text x="10" y="16" font-size="11" fill="#8a8071">可听频率范围（对数轴，Hz）</text>
+        <g font-size="12" fill="#453e30">
+          <text x="10" y="44">🧑 人</text>
+          <rect x="70" y="33" width="150" height="13" rx="6" fill="#b5402c" opacity=".8"/>
+          <text x="226" y="44" font-size="10" fill="#8a8071">20 – 2 万</text>
+          <text x="10" y="74">🐶 狗</text>
+          <rect x="88" y="63" width="168" height="13" rx="6" fill="#c98a2c" opacity=".85"/>
+          <text x="262" y="74" font-size="10" fill="#8a8071">67 – 4.5 万</text>
+          <text x="10" y="104">🐱 猫</text>
+          <rect x="86" y="93" width="184" height="13" rx="6" fill="#3f9d8a" opacity=".85"/>
+          <text x="276" y="104" font-size="10" fill="#8a8071">55 – 7.9 万</text>
+          <text x="10" y="134">🦇 蝙蝠</text>
+          <rect x="130" y="123" width="152" height="13" rx="6" fill="#7d5fd0" opacity=".85"/>
+          <text x="288" y="134" font-size="10" fill="#8a8071">1千 – 12 万</text>
+          <text x="10" y="164">🐘 大象</text>
+          <rect x="42" y="153" width="128" height="13" rx="6" fill="#7a8699" opacity=".9"/>
+          <text x="176" y="164" font-size="10" fill="#8a8071">14 – 1.2 万</text>
+        </g>
+      </svg>
+      <div class="playrow">
+        <button class="fbtn" id="dogBtn">▶ 播一段 18000 Hz</button>
+      </div>
+      <div class="verdict">你多半听不到，但如果家里有狗，看看它的耳朵动没动。狗哨吹的是 2.2 万到 4.6 万赫兹，对人是寂静，对狗是哨声。大象的次声波和蝙蝠的超声波，扬声器根本发不出来，那是设备的天花板，不是你的。</div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 听觉是最先老去的感官</div>
+    <div class="pb">
+      <b>耳蜗里负责高频的毛细胞排在入口处，一辈子首当其冲，磨损最早，而且不可再生。</b>所以耳龄测试测的不是听力好坏，是毛细胞的里程表。想让它慢点老：耳机音量六成以下，连续听一小时歇十分钟，KTV 和演唱会离音箱远一点。本柜台所有声音均为设备可发出的近似演示，结果受扬声器影响很大，不作医学参考。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №007 · Max 造<br>
+    <a href="../threebody/">下一个展厅：三体问题 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = +document.getElementById('vol').value / 100;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  document.getElementById('vol').addEventListener('input', function(){
+    if (master) master.gain.value = +this.value / 100;
+  });
+
+  /* ---------- 柜台一：蚊音 ---------- */
+  var FREQS = [8000, 10000, 12000, 14000, 15000, 16000, 17000, 18000, 19000];
+  var AGE = {8000:'75 岁以上', 10000:'65 岁左右', 12000:'55 岁左右', 14000:'45 岁左右', 15000:'37 岁左右', 16000:'30 岁左右', 17000:'24 岁左右', 18000:'20 岁左右', 19000:'19 岁以下，出厂新机'};
+  var grid = document.getElementById('freqGrid');
+  var heardMax = 0;
+
+  FREQS.forEach(function(f){
+    var b = document.createElement('button');
+    b.className = 'fbtn';
+    b.textContent = '▶ ' + (f/1000) + 'k';
+    b.title = f + ' Hz';
+    b.addEventListener('click', function(){
+      playTone(f, 1.4, b);
+    });
+    grid.appendChild(b);
+
+    var h = document.createElement('button');
+    h.className = 'fbtn';
+    h.textContent = '听到了';
+    h.style.fontSize = '11px';
+    h.addEventListener('click', function(){
+      h.classList.add('heard');
+      if (f > heardMax){
+        heardMax = f;
+        document.getElementById('ageVerdict').innerHTML =
+          '你能听到 <b>' + (f/1000) + ' kHz</b>，耳龄大约 <b>' + AGE[f] + '</b>。<br><span style="font-size:11.5px;color:#8a8071">受设备影响很大：手机外放高频衰减严重，换耳机可能立刻年轻十岁。</span>';
+      }
+    });
+    grid.appendChild(h);
+  });
+
+  function playTone(freq, dur, btn){
+    var ctx = ensureAC();
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = freq;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.5, t + 0.03);
+    g.gain.setValueAtTime(0.5, t + dur - 0.05);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + dur + 0.02);
+    if (btn){
+      btn.classList.add('playing');
+      setTimeout(function(){ btn.classList.remove('playing'); }, dur * 1000);
+    }
+  }
+
+  /* ---------- 柜台二：茉莉花 ---------- */
+  /* 茉莉花旋律（民歌，公有领域），C 调简谱转半音 */
+  var MELODY = [
+    [64,.5],[64,.5],[67,.5],[69,.5],[72,.5],[72,.5],[69,.5],[67,.5],[67,.5],[69,.5],[67,1],
+    [64,.5],[64,.5],[67,.5],[69,.5],[72,.5],[72,.5],[69,.5],[67,.5],[67,.5],[69,.5],[67,1],
+    [67,.5],[67,.5],[67,.5],[64,.5],[67,.5],[69,1],[69,.5],[67,1.5]
+  ];
+  var songOn = false, songTimer = null, noteIdx = 0;
+  var earFilter = null, earGain = null;
+  var EARS = {
+    '25': {freq: 16000, gain: 1.0},
+    '60': {freq: 3000, gain: 0.85},
+    '85': {freq: 1100, gain: 0.7}
+  };
+  var curEar = '25';
+
+  function setupSongChain(){
+    var ctx = ensureAC();
+    earFilter = ctx.createBiquadFilter();
+    earFilter.type = 'lowpass';
+    earFilter.Q.value = 0.5;
+    earGain = ctx.createGain();
+    earFilter.connect(earGain);
+    earGain.connect(master);
+    applyEar();
+  }
+  function applyEar(){
+    if (!earFilter) return;
+    earFilter.frequency.setTargetAtTime(EARS[curEar].freq, AC.currentTime, 0.05);
+    earGain.gain.setTargetAtTime(EARS[curEar].gain, AC.currentTime, 0.05);
+  }
+  function noteOn(midi, dur){
+    var ctx = AC;
+    var f = 440 * Math.pow(2, (midi - 69) / 12);
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    var o2 = ctx.createOscillator();
+    o2.type = 'sine';
+    o2.frequency.value = f * 2;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.34, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.92);
+    var g2 = ctx.createGain();
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.linearRampToValueAtTime(0.12, t + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.7);
+    o.connect(g); g.connect(earFilter);
+    o2.connect(g2); g2.connect(earFilter);
+    o.start(t); o.stop(t + dur);
+    o2.start(t); o2.stop(t + dur);
+  }
+  function songStep(){
+    if (!songOn) return;
+    var n = MELODY[noteIdx % MELODY.length];
+    var beat = 0.42;
+    noteOn(n[0], n[1] * beat * 1.9);
+    noteIdx++;
+    songTimer = setTimeout(songStep, n[1] * beat * 1000);
+  }
+  document.getElementById('songBtn').addEventListener('click', function(){
+    songOn = !songOn;
+    if (songOn){
+      ensureAC();
+      if (!earFilter) setupSongChain();
+      this.textContent = '⏸ 停止';
+      this.classList.add('on');
+      noteIdx = 0;
+      songStep();
+    } else {
+      clearTimeout(songTimer);
+      this.textContent = '▶ 播放茉莉花';
+      this.classList.remove('on');
+    }
+  });
+  document.querySelectorAll('.ebtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.ebtn').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      curEar = b.dataset.ear;
+      ensureAC();
+      if (!earFilter) setupSongChain();
+      applyEar();
+      var note = {'25':'出厂设置，全频段在线。','60':'3 千赫以上开始塌，清脆没了，人声还行。','85':'只剩 1 千赫以下，像隔着一堵墙听世界。'}[curEar];
+      document.getElementById('earNote').textContent = curEar + ' 岁的耳朵：' + note;
+    });
+  });
+
+  /* ---------- 柜台三：耳鸣 ---------- */
+  var tinOn = false, tinNodes = null, tinStart = 0, tinTick = null;
+  function tinStop(msg){
+    tinOn = false;
+    if (tinNodes){
+      tinNodes.g.gain.setTargetAtTime(0.0001, AC.currentTime, 0.1);
+      var n = tinNodes;
+      setTimeout(function(){ n.o.stop(); n.ns.stop(); }, 400);
+      tinNodes = null;
+    }
+    clearInterval(tinTick);
+    var b = document.getElementById('tinBtn');
+    b.textContent = '▶ 开始体验';
+    b.classList.remove('on');
+    if (msg) document.getElementById('tinNote').textContent = msg;
+  }
+  document.getElementById('tinBtn').addEventListener('click', function(){
+    if (tinOn){
+      var sec = Math.floor((performance.now() - tinStart) / 1000);
+      tinStop('你在第 ' + sec + ' 秒选择了关掉。这就是这个柜台想说的：你可以，他们不行。');
+      return;
+    }
+    var ctx = ensureAC();
+    tinOn = true;
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = 4200;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.6);
+    var nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+    var nd = nb.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    var ns = ctx.createBufferSource();
+    ns.buffer = nb; ns.loop = true;
+    var bp = ctx.createBiquadFilter();
+    bp.type = 'highpass'; bp.frequency.value = 6000;
+    var ng = ctx.createGain();
+    ng.gain.value = 0.012;
+    o.connect(g); g.connect(master);
+    ns.connect(bp); bp.connect(ng); ng.connect(master);
+    o.start(); ns.start();
+    tinNodes = {o: o, ns: ns, g: g};
+    tinStart = performance.now();
+    this.textContent = '✕ 我受不了了';
+    this.classList.add('on');
+    var timerEl = document.getElementById('tinTimer');
+    tinTick = setInterval(function(){
+      var sec = Math.floor((performance.now() - tinStart) / 1000);
+      timerEl.textContent = sec + ' 秒';
+      if (sec >= 60){
+        tinStop('你撑满了一分钟。他们的计时器不会停，晚安的时候也不会。');
+        timerEl.textContent = '60 秒';
+      }
+    }, 250);
+  });
+
+  /* ---------- 柜台四：狗 ---------- */
+  document.getElementById('dogBtn').addEventListener('click', function(){
+    playTone(18000, 1.4, this);
+  });
+})();
+</script>
+</body>
+</html>
