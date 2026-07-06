@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时间加速器 · 感觉博物馆</title>
+<meta name="description" content="为什么长大后一年比一年快？把你的人生按体感时长画成一条带子，再测测你体内的十秒有多长。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .counter{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-bottom:20px;animation:rise .8s .1s ease both;
+  }
+  .counter h2{font-size:17px;letter-spacing:.12em;margin-bottom:4px;}
+  .counter .tag{font-size:11.5px;color:var(--seal);letter-spacing:.15em;margin-bottom:12px;}
+  .counter p.desc{font-size:13.5px;line-height:2;color:#57503f;margin-bottom:14px;}
+
+  .holdwrap{text-align:center;}
+  .holdbtn{
+    font-family:var(--serif);font-size:17px;letter-spacing:.12em;
+    background:var(--seal);color:#fdf6ee;border:none;border-radius:14px;
+    padding:20px 34px;cursor:pointer;user-select:none;-webkit-user-select:none;
+    box-shadow:0 5px 0 #7e2b1c;transition:transform .08s, box-shadow .08s;
+    touch-action:none;
+  }
+  .holdbtn.holding{transform:translateY(4px);box-shadow:0 1px 0 #7e2b1c;background:#8f3323;}
+  .holdresult{
+    min-height:56px;margin-top:16px;font-size:15px;line-height:2;color:#453e30;
+  }
+  .holdresult b{color:var(--seal);font-size:20px;}
+
+  .agectl{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:14px;font-size:14px;color:#453e30;}
+  .agectl input{width:min(380px,60vw);accent-color:var(--seal);}
+  .agectl b{font-size:19px;color:var(--seal);min-width:64px;text-align:center;}
+  .lifewrap{border:1px solid var(--line);background:#fffdf6;padding:14px 12px 10px;}
+  #lifeCv{display:block;width:100%;height:auto;}
+  .bigfact{
+    text-align:center;font-size:17px;line-height:2.1;color:#453e30;margin-top:14px;
+  }
+  .bigfact b{color:var(--seal);font-size:26px;}
+  .facts{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;
+  }
+  @media(max-width:640px){.facts{grid-template-columns:1fr;}}
+  .fact{
+    border:1px dashed var(--line);border-radius:8px;padding:10px 14px;
+    font-size:13px;line-height:1.9;color:#57503f;background:rgba(255,255,255,.4);
+  }
+  .fact b{color:var(--ink);}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:0;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №012</span>
+  </div>
+
+  <header>
+    <h1>时间加速器</h1>
+    <div class="en">The Time Accelerator</div>
+    <p class="sub">为什么长大后，一年比一年快</p>
+  </header>
+
+  <!-- 柜台一：体内十秒 -->
+  <div class="counter">
+    <h2>⏱️ 你体内的十秒</h2>
+    <div class="tag">柜台一 · 先校准一下你的表</div>
+    <p class="desc">按住下面的按钮，别数一二三，凭感觉觉得过了十秒就松手。测的不是数学，是你身体里那座钟走多快。</p>
+    <div class="holdwrap">
+      <button class="holdbtn" id="holdBtn">🕙 按住，感觉满十秒就松手</button>
+      <div class="holdresult" id="holdResult">（手机上按住不动就行）</div>
+    </div>
+  </div>
+
+  <!-- 柜台二：人生带子 -->
+  <div class="counter">
+    <h2>📏 你的人生，按体感画出来</h2>
+    <div class="tag">柜台二 · 比例理论</div>
+    <p class="desc">5 岁时，一年是你已知人生的五分之一，漫长得像一个时代；30 岁时，一年只是三十分之一，像一个普通的季度。把每一年按「占当时人生的比例」画出宽度，就是下面这条带子。拖动你的年龄看看。</p>
+    <div class="agectl">
+      我今年 <input type="range" id="ageSlider" min="5" max="80" value="24"> <b id="ageVal">24 岁</b>
+    </div>
+    <div class="lifewrap">
+      <canvas id="lifeCv" width="780" height="150"></canvas>
+    </div>
+    <div class="bigfact" id="bigFact"></div>
+    <div class="facts">
+      <div class="fact" id="fact1"></div>
+      <div class="fact" id="fact2"></div>
+      <div class="fact" id="fact3"></div>
+      <div class="fact">💊 唯一的解药是<b>新鲜感</b>：大脑只给「第一次」多存档。去陌生的路上走，学没用的东西，进没进过的展厅。这也是这座博物馆存在的理由。</div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 时间没有变快，是分母变大了</div>
+    <div class="pb">
+      <b>这条带子画的是「比例理论」：每段时光的体感长度，约等于它占你已有人生的比例。</b>它解释了为什么小学的暑假像一个纪元，而去年的暑假像上周。另一个凶手是「新奇效应」：大脑按新鲜事的密度记录时间，童年每天都是第一次，所以每天都很长；成年后日子按下了复制粘贴，回忆里就只剩快进。这两个都只是假说，但你贴着自己的人生看这条带子时，大概会承认它们说中了什么。往好处想：带子右边越来越窄的部分，宽度由你决定。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №012 · Max 造<br>
+    <a href="../birds/">下一个展厅：鸟群 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* ---------- 柜台一：十秒 ---------- */
+  var btn = document.getElementById('holdBtn');
+  var res = document.getElementById('holdResult');
+  var t0 = null;
+
+  function start(e){
+    e.preventDefault();
+    if (t0 !== null) return;
+    t0 = performance.now();
+    btn.classList.add('holding');
+    res.textContent = '……';
+  }
+  function stop(e){
+    e.preventDefault();
+    if (t0 === null) return;
+    var sec = (performance.now() - t0) / 1000;
+    t0 = null;
+    btn.classList.remove('holding');
+    var diff = sec - 10;
+    var verdict;
+    if (Math.abs(diff) <= 0.8) verdict = '体内的钟校得像原子钟，佩服。';
+    else if (diff < -3.5) verdict = '你的时间跑得比世界快太多了。难怪总觉得一天什么都没干就没了。';
+    else if (diff < 0) verdict = '你体内的钟偏快：世界还没走完十秒，你已经觉得到了。时间当然显得不够用。';
+    else if (diff > 3.5) verdict = '你活得比世界慢很多，这在 2026 年是一种稀有的福气。';
+    else verdict = '你体内的钟偏慢：你以为的十秒更长。恭喜，你的日子比别人的耐用。';
+    res.innerHTML = '你的十秒，实际是 <b>' + sec.toFixed(1) + ' 秒</b><br>' + verdict + '　<span style="color:#8a8071">再按一次可以重测。</span>';
+  }
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('touchstart', start, {passive: false});
+  document.addEventListener('mouseup', stop);
+  btn.addEventListener('touchend', stop);
+
+  /* ---------- 柜台二：人生带子 ---------- */
+  var cv = document.getElementById('lifeCv');
+  var ctx = cv.getContext('2d');
+  var W = 780, H = 150;
+  var START = 4; /* 4 岁前的记忆大多没存档 */
+
+  function feltWidths(age){
+    var ws = [];
+    var sum = 0;
+    for (var y = START; y <= age; y++){ ws.push(1 / y); sum += 1 / y; }
+    return {ws: ws, sum: sum};
+  }
+
+  function draw(age){
+    ctx.clearRect(0, 0, W, H);
+    var f = feltWidths(age);
+    var x = 0;
+    var barTop = 30, barH = 62;
+    for (var i = 0; i < f.ws.length; i++){
+      var w = f.ws[i] / f.sum * W;
+      var year = START + i;
+      var t = i / Math.max(1, f.ws.length - 1);
+      var r = Math.round(217 + (122 - 217) * t);
+      var g = Math.round(165 + (134 - 165) * t);
+      var b = Math.round(60 + (153 - 60) * t);
+      ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+      ctx.fillRect(x, barTop, Math.max(0.5, w - 0.6), barH);
+      if (year === START || year === 8 || year === 18 || year === age){
+        ctx.fillStyle = '#57503f';
+        ctx.font = '11.5px "Noto Serif SC",serif';
+        ctx.textAlign = year === age ? 'right' : 'left';
+        var lx = year === age ? Math.min(x + w, W) : x + 1;
+        ctx.fillText(year + '岁', lx, barTop - 8);
+        ctx.strokeStyle = 'rgba(90,80,60,.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(year === age ? Math.min(x + w, W) - 0.5 : x + 0.5, barTop - 4);
+        ctx.lineTo(year === age ? Math.min(x + w, W) - 0.5 : x + 0.5, barTop);
+        ctx.stroke();
+      }
+      x += w;
+    }
+    ctx.fillStyle = '#8a8071';
+    ctx.font = '12px "Noto Serif SC",serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('← 每个色块是一年，宽度 = 那一年在体感里的长度（4 岁前没画：那时的存档大多丢了）', 0, barTop + barH + 26);
+    ctx.textAlign = 'right';
+    ctx.fillText('现在 →', W, barTop + barH + 26);
+  }
+
+  function feltPercent(age, lifespan){
+    var num = Math.log(age / START);
+    var den = Math.log(lifespan / START);
+    return num / den * 100;
+  }
+
+  function update(){
+    var age = +document.getElementById('ageSlider').value;
+    document.getElementById('ageVal').textContent = age + ' 岁';
+    draw(age);
+    var pct = feltPercent(age, 80);
+    document.getElementById('bigFact').innerHTML =
+      '如果活到 80 岁，按体感算，' + age + ' 岁的你已经走过了人生的 <b>' + pct.toFixed(0) + '%</b>';
+    var mid = Math.round(Math.sqrt(START * 80));
+    document.getElementById('fact1').innerHTML = '⏳ 按体感，人生的<b>一半</b>在 <b>' + mid + ' 岁</b>之前就过完了。';
+    var ratio = (age / 8).toFixed(1);
+    document.getElementById('fact2').innerHTML = '🏖️ 8 岁那年的一个暑假，体感上相当于你现在的 <b>' + ratio + ' 个</b>暑假。';
+    document.getElementById('fact3').innerHTML = '📆 接下来这一年，只占你体感人生的 <b>' + (100 / (Math.log(80 / START) / (1 / age) )).toFixed(1) + '%</b> 左右，除非你把它过得足够陌生。';
+  }
+
+  document.getElementById('ageSlider').addEventListener('input', update);
+  update();
+})();
+</script>
+</body>
+</html>

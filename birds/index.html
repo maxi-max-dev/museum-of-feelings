@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鸟群 · 感觉博物馆</title>
+<meta name="description" content="几百只鸟，没有指挥，只靠三条规则跳出满天的舞。你的鼠标是一只游隼。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#2b2140;overflow:hidden;animation:rise .8s .1s ease both;
+    cursor:crosshair;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .presets{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:14px;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 14px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .sliders{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:640px){.sliders{grid-template-columns:1fr;}}
+  .sl label{font-size:13px;color:#453e30;display:flex;justify-content:space-between;margin-bottom:4px;letter-spacing:.05em;}
+  .sl input{width:100%;accent-color:var(--seal);}
+  .sl .hint{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №013</span>
+  </div>
+
+  <header>
+    <h1>鸟群</h1>
+    <div class="en">The Murmuration</div>
+    <p class="sub">没有指挥，没有领队，只有三条规则</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="800" height="540"></canvas>
+  </div>
+
+  <div class="ctrls">
+    <div class="presets">
+      <button class="btn on" id="pAll">🕊️ 三条规则都在</button>
+      <button class="btn" id="pNoSep">🫧 关掉「保持距离」</button>
+      <button class="btn" id="pNoAli">🌀 关掉「跟上大家」</button>
+      <button class="btn" id="pNoCoh">💨 关掉「别掉队」</button>
+    </div>
+    <div class="sliders">
+      <div class="sl">
+        <label>① 保持距离 <span id="vSep">100%</span></label>
+        <input type="range" id="sSep" min="0" max="200" value="100">
+        <div class="hint">别撞上身边的鸟</div>
+      </div>
+      <div class="sl">
+        <label>② 跟上大家 <span id="vAli">100%</span></label>
+        <input type="range" id="sAli" min="0" max="200" value="100">
+        <div class="hint">往邻居飞的方向飞</div>
+      </div>
+      <div class="sl">
+        <label>③ 别掉队 <span id="vCoh">100%</span></label>
+        <input type="range" id="sCoh" min="0" max="200" value="100">
+        <div class="hint">往邻居的中心靠</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 没有指挥的舞蹈</div>
+    <div class="pb">
+      <b>罗马冬天的黄昏，几十万只椋鸟在天上拧成会呼吸的墨团，没有一只鸟知道整支舞的样子。</b>每只鸟只遵守三条小规则：别撞到邻居、跟着邻居飞、别离邻居太远。仅此而已，满天的舞就自己长了出来，这叫「涌现」：简单规则相加，长出没人设计过的复杂。把你的鼠标开进鸟群，它们会当你是游隼，看惊散的波浪怎样一圈圈传出去。再试试关掉某一条规则：少了「保持距离」挤成一颗黑珍珠，少了「别掉队」一哄而散。蚁群、堵车、城市、你大脑里的八百亿个神经元，玩的都是同一套数学：没有谁在指挥，但整体活了。
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №013 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 800, H = 540;
+  var N = 210;
+  var birds = [];
+  var wSep = 1, wAli = 1, wCoh = 1;
+  var falcon = null; /* {x,y} 鼠标 */
+  var caption = {text: '把鼠标（或手指）开进鸟群，你是一只游隼。', t: 0};
+
+  for (var i = 0; i < N; i++){
+    var a = Math.random() * Math.PI * 2;
+    birds.push({
+      x: Math.random() * W, y: Math.random() * H * 0.8,
+      vx: Math.cos(a) * 90, vy: Math.sin(a) * 90,
+      sz: 0.8 + Math.random() * 0.5
+    });
+  }
+
+  var R_SEP2 = 24 * 24, R_NEI2 = 60 * 60, R_FAL2 = 110 * 110;
+  var VMAX = 150, VMIN = 55;
+
+  function step(dt){
+    for (var i = 0; i < N; i++){
+      var b = birds[i];
+      var sepX = 0, sepY = 0, aliX = 0, aliY = 0, cohX = 0, cohY = 0, n = 0;
+      for (var j = 0; j < N; j++){
+        if (j === i) continue;
+        var o = birds[j];
+        var dx = o.x - b.x, dy = o.y - b.y;
+        var d2 = dx * dx + dy * dy;
+        if (d2 < R_NEI2){
+          n++;
+          aliX += o.vx; aliY += o.vy;
+          cohX += o.x; cohY += o.y;
+          if (d2 < R_SEP2 && d2 > 0.01){
+            var inv = 1 / Math.sqrt(d2);
+            sepX -= dx * inv; sepY -= dy * inv;
+          }
+        }
+      }
+      var ax = 0, ay = 0;
+      if (n > 0){
+        ax += sepX * 42 * wSep;
+        ay += sepY * 42 * wSep;
+        ax += (aliX / n - b.vx) * 1.6 * wAli;
+        ay += (aliY / n - b.vy) * 1.6 * wAli;
+        ax += (cohX / n - b.x) * 1.1 * wCoh;
+        ay += (cohY / n - b.y) * 1.1 * wCoh;
+      }
+      /* 游隼 */
+      if (falcon){
+        var fx = b.x - falcon.x, fy = b.y - falcon.y;
+        var fd2 = fx * fx + fy * fy;
+        if (fd2 < R_FAL2 && fd2 > 1){
+          var finv = 1 / Math.sqrt(fd2);
+          ax += fx * finv * 620;
+          ay += fy * finv * 620;
+        }
+      }
+      /* 软边界 */
+      var M = 70, TURN = 320;
+      if (b.x < M) ax += TURN * (1 - b.x / M);
+      if (b.x > W - M) ax -= TURN * (1 - (W - b.x) / M);
+      if (b.y < M) ay += TURN * (1 - b.y / M);
+      if (b.y > H - M) ay -= TURN * (1 - (H - b.y) / M);
+
+      b.vx += ax * dt;
+      b.vy += ay * dt;
+      var sp = Math.hypot(b.vx, b.vy);
+      if (sp > VMAX){ b.vx *= VMAX / sp; b.vy *= VMAX / sp; }
+      else if (sp < VMIN && sp > 0){ b.vx *= VMIN / sp; b.vy *= VMIN / sp; }
+    }
+    for (var k = 0; k < N; k++){
+      birds[k].x += birds[k].vx * dt;
+      birds[k].y += birds[k].vy * dt;
+    }
+  }
+
+  function draw(){
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#3b2c58');
+    sky.addColorStop(0.55, '#7a4460');
+    sky.addColorStop(0.85, '#c96f52');
+    sky.addColorStop(1, '#e8a05c');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    var glow = ctx.createRadialGradient(W * 0.72, H * 0.93, 10, W * 0.72, H * 0.93, 180);
+    glow.addColorStop(0, 'rgba(255,214,110,.7)');
+    glow.addColorStop(1, 'rgba(255,214,110,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, H - 260, W, 260);
+
+    ctx.fillStyle = '#241a30';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    ctx.lineTo(0, H - 44);
+    ctx.quadraticCurveTo(140, H - 78, 300, H - 50);
+    ctx.quadraticCurveTo(420, H - 30, 560, H - 56);
+    ctx.quadraticCurveTo(690, H - 76, 800, H - 40);
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#1f1a2e';
+    for (var i = 0; i < N; i++){
+      var b = birds[i];
+      var ang = Math.atan2(b.vy, b.vx);
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.rotate(ang);
+      ctx.scale(b.sz, b.sz);
+      ctx.beginPath();
+      ctx.moveTo(6, 0);
+      ctx.lineTo(-5, 3.6);
+      ctx.lineTo(-2.5, 0);
+      ctx.lineTo(-5, -3.6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (falcon){
+      ctx.save();
+      ctx.translate(falcon.x, falcon.y);
+      ctx.fillStyle = '#40202a';
+      ctx.beginPath();
+      ctx.moveTo(12, 0);
+      ctx.lineTo(-8, 8);
+      ctx.lineTo(-4, 0);
+      ctx.lineTo(-8, -8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (caption.text){
+      caption.t += 0.016;
+      var alpha = caption.t > 7 ? Math.max(0, 1 - (caption.t - 7)) : 1;
+      if (alpha > 0){
+        ctx.fillStyle = 'rgba(36,26,48,' + (alpha * 0.75) + ')';
+        ctx.fillRect(0, 12, W, 32);
+        ctx.font = '14.5px "Noto Serif SC","Songti SC",serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(245,236,220,' + alpha + ')';
+        ctx.fillText(caption.text, W / 2, 33);
+      }
+    }
+  }
+
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(2, (now - last) / 1000);
+    last = now;
+    while (dt > 0){
+      var h = Math.min(0.033, dt);
+      step(h);
+      dt -= h;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  /* 鼠标 = 游隼 */
+  function toCanvas(e){
+    var r = cv.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return {x: cx * (W / r.width), y: cy * (H / r.height)};
+  }
+  cv.addEventListener('mousemove', function(e){ falcon = toCanvas(e); });
+  cv.addEventListener('mouseleave', function(){ falcon = null; });
+  cv.addEventListener('touchmove', function(e){ e.preventDefault(); falcon = toCanvas(e); }, {passive: false});
+  cv.addEventListener('touchend', function(){ falcon = null; });
+
+  /* 滑杆与预设 */
+  function setW(){
+    wSep = +document.getElementById('sSep').value / 100;
+    wAli = +document.getElementById('sAli').value / 100;
+    wCoh = +document.getElementById('sCoh').value / 100;
+    document.getElementById('vSep').textContent = Math.round(wSep * 100) + '%';
+    document.getElementById('vAli').textContent = Math.round(wAli * 100) + '%';
+    document.getElementById('vCoh').textContent = Math.round(wCoh * 100) + '%';
+  }
+  ['sSep', 'sAli', 'sCoh'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      setW();
+      document.querySelectorAll('.presets .btn').forEach(function(b){ b.classList.remove('on'); });
+    });
+  });
+  function preset(btn, s, a, c, text){
+    document.getElementById('sSep').value = s;
+    document.getElementById('sAli').value = a;
+    document.getElementById('sCoh').value = c;
+    setW();
+    document.querySelectorAll('.presets .btn').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+    caption = {text: text, t: 0};
+  }
+  document.getElementById('pAll').addEventListener('click', function(){
+    preset(this, 100, 100, 100, '三条规则都在：这就是没有指挥的舞蹈。');
+  });
+  document.getElementById('pNoSep').addEventListener('click', function(){
+    preset(this, 0, 100, 100, '没有「保持距离」：整群挤成一颗黑珍珠。');
+  });
+  document.getElementById('pNoAli').addEventListener('click', function(){
+    preset(this, 100, 0, 100, '没有「跟上大家」：一锅原地打转的无头苍蝇。');
+  });
+  document.getElementById('pNoCoh').addEventListener('click', function(){
+    preset(this, 100, 100, 0, '没有「别掉队」：鸟群散伙，各奔天涯。');
+  });
+
+  setW();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
