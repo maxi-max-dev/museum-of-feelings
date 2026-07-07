@@ -426,10 +426,31 @@
       <span class="tip">你和任何人之间，隔六次握手</span>
     </a>
 
+    <a class="icon" data-win="hall" data-cat="physics" data-no="026" data-icon="🪨" data-name="打水漂" data-hook="水没有变硬，是你快得让它来不及柔软" href="stone/">
+      <span class="tile">🪨</span>
+      <span class="iname">打水漂</span>
+      <span class="ino">№026</span>
+      <span class="tip">水没有变硬，是你快得让它来不及柔软</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="physics" data-no="027" data-icon="🧂" data-name="盐粒排成的声音" data-hook="声音一直有形状，只是你需要一把盐" href="chladni/">
+      <span class="tile">🧂</span>
+      <span class="iname">盐粒排成的声音</span>
+      <span class="ino">№027</span>
+      <span class="tip">声音一直有形状，只是你需要一把盐</span>
+    </a>
+
+    <a class="icon" data-win="hall" data-cat="physics" data-no="028" data-icon="🌙" data-name="九十分钟一班的夜车" data-hook="起床像被车撞，是闹钟停在了深睡站" href="sleep/">
+      <span class="tile">🌙</span>
+      <span class="iname">九十分钟一班的夜车</span>
+      <span class="ino">№028</span>
+      <span class="tip">起床像被车撞，是闹钟停在了深睡站</span>
+    </a>
+
     <!-- 特殊图标 -->
     <button class="icon special locked" id="iconMystery" data-win="mystery" type="button">
       <span class="tile">🎁</span>
-      <span class="iname">№026 安装中…</span>
+      <span class="iname">№029 安装中…</span>
       <span class="ino">筹备中</span>
       <span class="tip">下一批展厅，正在下载</span>
     </button>
@@ -535,14 +556,14 @@
       if (!btn) return;
       btn.addEventListener('click', function(){
         alert(btn.id === 'iconMystery'
-          ? '新展厅下载中 87%\n馆长的图纸上还剩：水面上的一块石头、盐粒排成的声音、九十分钟一班的夜车。'
+          ? '新展厅下载中 87%\n馆长的图纸上还剩：洗七次才算乱的牌、雨滴里拐弯的光、黑暗里用耳朵看路的家伙。'
           : btn.id === 'iconTrash'
           ? '被毙掉的展厅点子：\n· 蚊子视角模拟器：馆长在验收时被咬了\n· 无限会议模拟器：做完发现就是会议本身\n· 排队学姊妹馆·电梯篇：挤不进电梯本身\n· 早高峰呼吸模拟器：模拟到一半馆长先喘不上气'
-          : '感觉博物馆 · Museum of Feelings\n25 个展厅 · 纯前端 · 零依赖\n常年开放 免票入场\nMax 造\ngithub.com/maxi-max-dev/museum-of-feelings');
+          : '感觉博物馆 · Museum of Feelings\n28 个展厅 · 纯前端 · 零依赖\n常年开放 免票入场\nMax 造\ngithub.com/maxi-max-dev/museum-of-feelings');
       });
     });
     if (mbLogo) mbLogo.addEventListener('click', function(){
-      alert('感觉博物馆 · Museum of Feelings\n25 个展厅 · 纯前端 · 零依赖\n常年开放 免票入场\nMax 造');
+      alert('感觉博物馆 · Museum of Feelings\n28 个展厅 · 纯前端 · 零依赖\n常年开放 免票入场\nMax 造');
     });
     return; // 移动端到此为止，不装窗口管理器
   }
@@ -752,11 +773,11 @@
 
   /* ---- 特殊图标 ---- */
   document.getElementById('iconMystery').addEventListener('click', function(){
-    openUtilityWindow('mystery', '🎁', '№026 安装中…',
+    openUtilityWindow('mystery', '🎁', '№029 安装中…',
       '<h3>新展厅下载中</h3>' +
       '<div class="fakebar"><i></i></div>' +
       '<div class="pct">87%（卡在这里很久了，馆长说快了）</div>' +
-      '<p>馆长的图纸上还剩：水面上的一块石头、盐粒排成的声音、九十分钟一班的夜车。</p>'
+      '<p>馆长的图纸上还剩：洗七次才算乱的牌、雨滴里拐弯的光、黑暗里用耳朵看路的家伙。</p>'
     );
   });
 
@@ -775,7 +796,7 @@
   document.getElementById('iconAbout').addEventListener('click', function(){
     openUtilityWindow('about', 'ℹ️', '关于本馆',
       '<h3>感觉博物馆 · Museum of Feelings</h3>' +
-      '<p>25 个展厅 · 纯前端 · 零依赖<br>常年开放 免票入场<br>Max 造</p>' +
+      '<p>28 个展厅 · 纯前端 · 零依赖<br>常年开放 免票入场<br>Max 造</p>' +
       '<p><a href="https://github.com/maxi-max-dev/museum-of-feelings" target="_blank" rel="noopener">github.com/maxi-max-dev/museum-of-feelings</a></p>'
     );
   });

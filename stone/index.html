@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>打水漂 · 感觉博物馆</title>
+<meta name="description" content="水没有变硬，是你快得让它来不及柔软。拖动瞄准，扔一块石头，看它在湖面上跑几步。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#3a2f42;overflow:hidden;animation:rise .8s .1s ease both;
+    touch-action:none;cursor:crosshair;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .hud{
+    position:absolute;top:10px;left:12px;right:12px;
+    display:flex;justify-content:space-between;
+    font-size:12.5px;letter-spacing:.06em;color:rgba(250,240,222,.92);
+    text-shadow:0 1px 3px rgba(0,0,0,.5);pointer-events:none;
+  }
+  .hud .wr{color:rgba(250,240,222,.55);}
+  .caption{
+    position:absolute;left:0;right:0;bottom:14px;text-align:center;
+    font-size:14.5px;color:rgba(250,240,222,.96);text-shadow:0 1px 4px rgba(0,0,0,.55);
+    pointer-events:none;min-height:20px;letter-spacing:.05em;
+    opacity:0;transition:opacity .25s ease;
+  }
+  .caption.show{opacity:1;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .stones{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:14px;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 14px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .spinrow{max-width:420px;margin:0 auto;}
+  .spinrow label{font-size:13px;color:#453e30;display:flex;justify-content:space-between;margin-bottom:4px;letter-spacing:.05em;}
+  .spinrow input{width:100%;accent-color:var(--seal);}
+  .spinrow .hint{font-size:11px;color:var(--ink-soft);margin-top:4px;text-align:center;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque .pb + .pt{margin-top:16px;}
+  .kicker{
+    text-align:center;font-size:15.5px;line-height:2;color:#453e30;
+    margin-top:16px;padding-top:16px;border-top:1px dashed var(--line);
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №026</span>
+  </div>
+
+  <header>
+    <h1>打水漂</h1>
+    <div class="en">STONE SKIPPING</div>
+    <p class="sub">水没有变硬，是你快得让它来不及柔软</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="440"></canvas>
+    <div class="hud">
+      <span id="hudNow">本次 0 跳</span>
+      <span id="hudBest">本届最佳 0 跳</span>
+      <span class="wr">世界纪录 88 跳</span>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="stones">
+      <button class="btn on" id="sFlat">🪨 扁石片</button>
+      <button class="btn" id="sRound">⚪ 圆卵石</button>
+      <button class="btn" id="sBrick">⬛ 方砖头</button>
+    </div>
+    <div class="spinrow">
+      <label>手腕的旋转 <span id="vSpin">60%</span></label>
+      <input type="range" id="spinSlider" min="0" max="100" value="60">
+      <div class="hint">在湖面低处按住拖动瞄准，往反方向松手，像弹弓一样把石头扔出去</div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 为什么会弹</div>
+    <div class="pb">
+      水需要时间让开。石头又快又平地拍上来，水来不及流走，那一瞬间硬得像地面。角度浅、速度够、转得稳，三个条件凑齐，石头就在水上跑。
+    </div>
+    <div class="pt">说明牌 · 魔法角 20°</div>
+    <div class="pb">
+      物理学家克拉内真的做了实验（2004 年发在《自然》），入水角 20° 附近弹跳最省能量。你手感里的「压着水扔」，就是在逼近这个角。
+    </div>
+    <div class="pt">说明牌 · 旋转是陀螺仪</div>
+    <div class="pb">
+      不转的石头第一跳就翻跟头。旋转不提供升力，它只负责让石头始终用正确的姿势见水。
+    </div>
+    <div class="pt">说明牌 · 88 跳</div>
+    <div class="pb">
+      世界纪录 88 跳，2013 年，宾夕法尼亚州一个采石场，用的是他攒了十年的「完美石片」之一。
+    </div>
+    <div class="kicker">石头终究会沉。但沉下去之前，它可以先在水上飞一会儿。</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №026 · Max 造<br>
+    <a href="../chladni/">下一个展厅：盐粒排成的声音 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 780, H = 440;
+  var waterY = H - H / 3; /* 水面线在下三分之一 */
+
+  /* ==================== 石头类型 ==================== */
+  var STONES = {
+    flat:  { name: 'flat',  critAngle: 22, bounceLoss: 0.78, chaos: 0 },
+    round: { name: 'round', critAngle: 11, bounceLoss: 0.72, chaos: 0 },
+    brick: { name: 'brick', critAngle: 22, bounceLoss: 0.70, chaos: 26 }
+  };
+  var stoneType = STONES.flat;
+
+  /* ==================== 状态 ==================== */
+  var GRAVITY = 620; /* px/s^2 */
+  var launchX = 70, launchY = waterY - 46; /* 出手点：左岸低处 */
+  var spin = 0.6; /* 0~1 */
+  var stone = null; /* 飞行中的石头 {x,y,vx,vy,angleTol,rot} */
+  var aiming = false;
+  var aimPt = null; /* 当前拖动点 */
+  var splashes = []; /* 水花粒子 */
+  var ripples = []; /* 涟漪 */
+  var sinker = null; /* 下沉动画 */
+  var bubbles = [];
+  var hopsNow = 0;
+  var hopsBest = 0;
+  var caption = { text: '', t: 99, holdUntil: 0 };
+  var lastImpactAngle = null; /* 上一跳入水角，用于旋转稳定退化 */
+
+  var elHudNow = document.getElementById('hudNow');
+  var elHudBest = document.getElementById('hudBest');
+  var elCaption = document.getElementById('caption');
+
+  function setCaption(text, holdSec){
+    caption.text = text;
+    caption.t = 0;
+    caption.holdUntil = holdSec || 2.2;
+    elCaption.textContent = text;
+    elCaption.classList.add('show');
+  }
+
+  function updateHud(){
+    elHudNow.textContent = '本次 ' + hopsNow + ' 跳';
+    elHudBest.textContent = '本届最佳 ' + hopsBest + ' 跳';
+  }
+
+  /* ==================== 音效（WebAudio 合成） ==================== */
+  var AC = null, master = null;
+  function ensureAC(){
+    if (!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain();
+      master.gain.value = 0.5;
+      master.connect(AC.destination);
+    }
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function playPlip(hopIndex){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var freq = 340 + Math.min(9, hopIndex) * 42;
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(freq * 0.55, t + 0.09);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.32, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.17);
+  }
+  function playBloop(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.32);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.34, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.4);
+  }
+  function playRecord(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var notes = [523, 659, 784, 1046];
+    notes.forEach(function(f, i){
+      var o = AC.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      var g = AC.createGain();
+      var st = t + i * 0.09;
+      g.gain.setValueAtTime(0.0001, st);
+      g.gain.linearRampToValueAtTime(0.26, st + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, st + 0.28);
+      o.connect(g); g.connect(master);
+      o.start(st); o.stop(st + 0.3);
+    });
+  }
+
+  /* ==================== 物理：单次抛物线 + 弹跳判定 ==================== */
+  function launch(vx, vy){
+    hopsNow = 0;
+    lastImpactAngle = null;
+    stone = {
+      x: launchX, y: launchY, vx: vx, vy: vy,
+      rot: 0, rotSpeed: (Math.random() * 2 - 1) * 4,
+      alive: true
+    };
+    sinker = null;
+    updateHud();
+    setCaption('', 0);
+    elCaption.classList.remove('show');
+  }
+
+  function spawnSplash(x, speed){
+    var n = Math.min(14, 5 + Math.floor(speed / 60));
+    for (var i = 0; i < n; i++){
+      var a = -Math.PI * 0.5 + (Math.random() * 2 - 1) * 0.9;
+      var s = 60 + Math.random() * speed * 0.5;
+      splashes.push({
+        x: x, y: waterY,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: 0.5 + Math.random() * 0.35, t: 0,
+        r: 1.2 + Math.random() * 1.8
+      });
+    }
+  }
+  function spawnRipple(x){
+    ripples.push({ x: x, y: waterY, r: 4, life: 1.1, t: 0 });
+  }
+  function spawnBubbles(x, y){
+    for (var i = 0; i < 6; i++){
+      bubbles.push({
+        x: x + (Math.random() * 2 - 1) * 10,
+        y: y,
+        vy: -18 - Math.random() * 22,
+        r: 1.5 + Math.random() * 2.2,
+        t: 0, life: 0.8 + Math.random() * 0.6
+      });
+    }
+  }
+
+  function judge(hopIndex){
+    if (hopIndex === 0){
+      /* 一跳就沉：由 sink() 单独处理文案，这里不重复 */
+      return;
+    }
+    if (hopIndex >= 8){
+      setCaption('岸边有人开始鼓掌', 2.6);
+    } else if (hopIndex >= 3){
+      setCaption('有那味了', 2.2);
+    }
+  }
+
+  function doBounce(impactAngleDeg, speed){
+    hopsNow++;
+    playPlip(hopsNow);
+    spawnSplash(stone.x, speed);
+    spawnRipple(stone.x);
+
+    if (hopsNow > hopsBest){
+      hopsBest = hopsNow;
+      updateHud();
+      if (hopsBest > 1){
+        setCaption('新纪录！', 2.6);
+        playRecord();
+      }
+    } else {
+      updateHud();
+    }
+
+    /* 真实反弹：垂直分量按恢复系数反弹衰减，水平分量的衰减率随
+       「偏离魔法角 20°」变差（克拉内效应：20° 附近碰撞最省能量）。
+       陡角碰撞后垂直分量依旧偏大，容易下一跳超过临界角而沉；
+       角度明显偏浅（低于 dig 阈值）时额外记「扎水」惩罚：石头没有
+       足够的垂直分量把水顶开，会小幅切入水面，比单纯的偏离魔法角
+       损耗更多水平速度。两种惩罚叠加，跳数随入水角呈单峰，
+       峰值落在魔法角 20° 附近，明显优于更浅的角度。*/
+    var dir = stone.vx >= 0 ? 1 : -1;
+    var vxAbs = Math.abs(stone.vx);
+    var vyAbs = Math.abs(stone.vy);
+    var magicAngle = 20;
+    var offMagic = Math.abs(impactAngleDeg - magicAngle);
+    var efficiency = Math.max(0.62, 1 - offMagic * offMagic * 0.0015);
+    var digFloor = 15;
+    var digPenalty = impactAngleDeg < digFloor ? (digFloor - impactAngleDeg) * 0.02 : 0;
+    efficiency = Math.max(0.45, efficiency - digPenalty);
+    var newVx = vxAbs * stoneType.bounceLoss * efficiency;
+    var newVy = vyAbs * (stoneType.bounceLoss * 0.52);
+    stone.vx = newVx * dir;
+    stone.vy = -newVy; /* 弹起，向上 */
+    stone.y = waterY - 0.5;
+
+    judge(hopsNow);
+  }
+
+  function doSink(){
+    stone.alive = false;
+    playBloop();
+    spawnSplash(stone.x, 90);
+    spawnRipple(stone.x);
+    spawnBubbles(stone.x, waterY + 4);
+    sinker = { x: stone.x, y: waterY, t: 0, life: 1.4 };
+    if (hopsNow === 0){
+      setCaption('角度太陡，水根本没来得及硬', 2.6);
+    }
+    stone = null;
+  }
+
+  function critAngleNow(hopIndex){
+    /* 旋转越高，恶化越慢；每跳临界角略微收紧，旋转抵消收紧速度 */
+    var degrade = hopIndex * (1 - spin) * 2.6;
+    return Math.max(4, stoneType.critAngle - degrade);
+  }
+
+  function tryImpact(){
+    var speed = Math.hypot(stone.vx, stone.vy);
+    var impactAngleDeg = Math.atan2(Math.max(0.001, stone.vy), Math.abs(stone.vx)) * 180 / Math.PI;
+    var crit = critAngleNow(hopsNow);
+    if (stoneType.chaos > 0){
+      impactAngleDeg += (Math.random() * 2 - 1) * stoneType.chaos;
+      impactAngleDeg = Math.max(1, impactAngleDeg);
+    }
+    var SPEED_THRESHOLD = 95;
+    lastImpactAngle = impactAngleDeg;
+    if (impactAngleDeg < crit && speed > SPEED_THRESHOLD){
+      doBounce(impactAngleDeg, speed);
+    } else {
+      doSink();
+    }
+  }
+
+  /* ==================== 步进 ==================== */
+  function step(dt){
+    if (stone && stone.alive){
+      stone.vy += GRAVITY * dt;
+      stone.x += stone.vx * dt;
+      stone.y += stone.vy * dt;
+      stone.rot += stone.rotSpeed * dt * (0.4 + spin * 1.4);
+
+      if (stone.y >= waterY && stone.vy > 0){
+        tryImpact();
+      }
+      if (stone && (stone.x < -30 || stone.x > W + 30 || stone.y > H + 40)){
+        stone = null;
+      }
+    }
+
+    for (var i = splashes.length - 1; i >= 0; i--){
+      var p = splashes[i];
+      p.t += dt;
+      if (p.t > p.life){ splashes.splice(i, 1); continue; }
+      p.vy += GRAVITY * 0.6 * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+    for (var r = ripples.length - 1; r >= 0; r--){
+      var rp = ripples[r];
+      rp.t += dt;
+      if (rp.t > rp.life){ ripples.splice(r, 1); continue; }
+      rp.r += dt * 130;
+    }
+    for (var b = bubbles.length - 1; b >= 0; b--){
+      var bb = bubbles[b];
+      bb.t += dt;
+      if (bb.t > bb.life){ bubbles.splice(b, 1); continue; }
+      bb.y += bb.vy * dt;
+    }
+    if (sinker){
+      sinker.t += dt;
+      if (sinker.t > sinker.life) sinker = null;
+    }
+
+    if (caption.text){
+      caption.t += dt;
+      if (caption.t > caption.holdUntil){
+        elCaption.classList.remove('show');
+      }
+    }
+  }
+
+  /* ==================== 绘制 ==================== */
+  function drawSky(){
+    var sky = ctx.createLinearGradient(0, 0, 0, waterY);
+    sky.addColorStop(0, '#463a52');
+    sky.addColorStop(0.45, '#8a5568');
+    sky.addColorStop(0.78, '#d08a5c');
+    sky.addColorStop(1, '#f0b46e');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, waterY);
+
+    var glow = ctx.createRadialGradient(W * 0.68, waterY * 0.92, 8, W * 0.68, waterY * 0.92, 210);
+    glow.addColorStop(0, 'rgba(255,214,140,.65)');
+    glow.addColorStop(1, 'rgba(255,214,140,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, waterY - 240, W, 240);
+
+    /* 远岸剪影 */
+    ctx.fillStyle = '#33283c';
+    ctx.beginPath();
+    ctx.moveTo(0, waterY);
+    ctx.lineTo(0, waterY - 34);
+    ctx.quadraticCurveTo(120, waterY - 60, 260, waterY - 38);
+    ctx.quadraticCurveTo(400, waterY - 20, 540, waterY - 44);
+    ctx.quadraticCurveTo(660, waterY - 62, 780, waterY - 28);
+    ctx.lineTo(W, waterY);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawWater(){
+    var wg = ctx.createLinearGradient(0, waterY, 0, H);
+    wg.addColorStop(0, 'rgba(52,40,58,.94)');
+    wg.addColorStop(1, 'rgba(20,16,26,.97)');
+    ctx.fillStyle = wg;
+    ctx.fillRect(0, waterY, W, H - waterY);
+
+    /* 水面高光带 */
+    ctx.fillStyle = 'rgba(240,190,130,.16)';
+    ctx.fillRect(0, waterY, W, 3);
+
+    /* 涟漪 */
+    ripples.forEach(function(rp){
+      var alpha = Math.max(0, 1 - rp.t / rp.life) * 0.5;
+      ctx.strokeStyle = 'rgba(240,214,180,' + alpha + ')';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.ellipse(rp.x, rp.y, rp.r, rp.r * 0.28, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+    /* 气泡 */
+    ctx.fillStyle = 'rgba(220,230,235,.5)';
+    bubbles.forEach(function(bb){
+      var alpha = Math.max(0, 1 - bb.t / bb.life);
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.beginPath();
+      ctx.arc(bb.x, bb.y, bb.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawSplashes(){
+    splashes.forEach(function(p){
+      var alpha = Math.max(0, 1 - p.t / p.life);
+      ctx.fillStyle = 'rgba(230,220,205,' + (alpha * 0.85) + ')';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawStone(){
+    if (!stone) return;
+    ctx.save();
+    ctx.translate(stone.x, stone.y);
+    ctx.rotate(stone.rot);
+    if (stoneType.name === 'round'){
+      ctx.fillStyle = '#7c7268';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 7, 6.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.18)';
+      ctx.beginPath();
+      ctx.ellipse(-2, -2, 2.6, 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (stoneType.name === 'brick'){
+      ctx.fillStyle = '#5c5248';
+      ctx.fillRect(-8, -5, 16, 10);
+      ctx.strokeStyle = 'rgba(0,0,0,.3)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-8, -5, 16, 10);
+    } else {
+      ctx.fillStyle = '#6b6156';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 9, 3.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.16)';
+      ctx.beginPath();
+      ctx.ellipse(-2, -1, 3.2, 1.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSinker(){
+    if (!sinker) return;
+    var t = Math.min(1, sinker.t / sinker.life);
+    var y = sinker.y + t * 40;
+    var alpha = 1 - t;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.7;
+    ctx.fillStyle = '#4a4238';
+    ctx.beginPath();
+    ctx.ellipse(sinker.x, y, 6 - t * 3, 3 - t * 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAim(){
+    if (!aiming || !aimPt) return;
+    var dx = launchX - aimPt.x, dy = launchY - aimPt.y;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(250,238,220,.55)';
+    ctx.lineWidth = 1.6;
+    ctx.setLineDash([5, 6]);
+    ctx.beginPath();
+    ctx.moveTo(launchX, launchY);
+    ctx.lineTo(launchX + dx, launchY + dy);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 预瞄抛物线 */
+    var power = Math.min(1, Math.hypot(dx, dy) / 190);
+    var vx0 = dx * 2.7, vy0 = dy * 2.7;
+    ctx.strokeStyle = 'rgba(250,238,220,.4)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    var px = launchX, py = launchY;
+    ctx.moveTo(px, py);
+    var svx = vx0, svy = vy0;
+    for (var i = 0; i < 26; i++){
+      var h = 0.045;
+      svy += GRAVITY * h;
+      px += svx * h;
+      py += svy * h;
+      if (py > waterY || px < 0 || px > W) break;
+      ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(181,64,44,' + (0.5 + power * 0.5) + ')';
+    ctx.beginPath();
+    ctx.arc(aimPt.x, aimPt.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLaunchPoint(){
+    ctx.save();
+    ctx.fillStyle = 'rgba(40,32,26,.55)';
+    ctx.beginPath();
+    ctx.ellipse(launchX, launchY + 6, 16, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    drawSky();
+    drawLaunchPoint();
+    drawWater();
+    drawSplashes();
+    drawSinker();
+    drawStone();
+    drawAim();
+  }
+
+  /* ==================== 主循环：rAF 真实时间补帧 ==================== */
+  var last = performance.now();
+  function loop(now){
+    var dt = Math.min(2, (now - last) / 1000);
+    last = now;
+    while (dt > 0){
+      var h = Math.min(0.033, dt);
+      step(h);
+      dt -= h;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  /* ==================== 拖拽瞄准（鼠标 + 触摸） ==================== */
+  function toCanvas(e){
+    var r = cv.getBoundingClientRect();
+    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: cx * (W / r.width), y: cy * (H / r.height) };
+  }
+
+  var stage = document.getElementById('stage');
+
+  function pointerDown(e){
+    e.preventDefault();
+    ensureAC();
+    aiming = true;
+    aimPt = toCanvas(e);
+  }
+  function pointerMove(e){
+    if (!aiming) return;
+    e.preventDefault();
+    aimPt = toCanvas(e);
+  }
+  function pointerUp(e){
+    if (!aiming) return;
+    e.preventDefault();
+    var dx = launchX - aimPt.x, dy = launchY - aimPt.y;
+    var dragDist = Math.hypot(dx, dy);
+    aiming = false;
+    if (dragDist < 14){ aimPt = null; return; }
+    var vx0 = dx * 2.7, vy0 = dy * 2.7;
+    var maxSpeed = 780;
+    var sp = Math.hypot(vx0, vy0);
+    if (sp > maxSpeed){ vx0 *= maxSpeed / sp; vy0 *= maxSpeed / sp; }
+    aimPt = null;
+    launch(vx0, vy0);
+  }
+
+  stage.addEventListener('mousedown', pointerDown);
+  window.addEventListener('mousemove', pointerMove);
+  window.addEventListener('mouseup', pointerUp);
+  stage.addEventListener('touchstart', pointerDown, { passive: false });
+  stage.addEventListener('touchmove', pointerMove, { passive: false });
+  stage.addEventListener('touchend', pointerUp, { passive: false });
+
+  /* ==================== 石头切换 ==================== */
+  function selectStone(btn, type){
+    stoneType = STONES[type];
+    document.querySelectorAll('.stones .btn').forEach(function(b){ b.classList.remove('on'); });
+    btn.classList.add('on');
+  }
+  document.getElementById('sFlat').addEventListener('click', function(){ selectStone(this, 'flat'); });
+  document.getElementById('sRound').addEventListener('click', function(){ selectStone(this, 'round'); });
+  document.getElementById('sBrick').addEventListener('click', function(){ selectStone(this, 'brick'); });
+
+  /* ==================== 旋转滑杆 ==================== */
+  var spinSlider = document.getElementById('spinSlider');
+  var vSpin = document.getElementById('vSpin');
+  spinSlider.addEventListener('input', function(){
+    spin = +spinSlider.value / 100;
+    vSpin.textContent = spinSlider.value + '%';
+  });
+
+  updateHud();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

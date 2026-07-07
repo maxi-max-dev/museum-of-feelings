@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>九十分钟一班的夜车 · 感觉博物馆</title>
+<meta name="description" content="起床像被车撞，不是没睡够，是闹钟响的时候你正停在深睡站。拖动上床时间和闹钟，看你的夜车今晚怎么开。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 20px;margin-bottom:16px;animation:rise .8s .05s ease both;
+  }
+  .ctrlrow{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:640px){.ctrlrow{grid-template-columns:1fr;}}
+  .sl label{font-size:13.5px;color:#453e30;display:flex;justify-content:space-between;margin-bottom:6px;letter-spacing:.05em;}
+  .sl label b{color:var(--seal);font-size:15px;}
+  .sl input[type="range"]{width:100%;accent-color:var(--seal);height:26px;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#11162a;overflow:hidden;animation:rise .8s .1s ease both;margin-bottom:16px;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .stage-btns{
+    display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+    padding:12px;background:var(--card);border-top:1px solid var(--line);
+  }
+  .stage-btns button{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.06em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 14px;cursor:pointer;transition:transform .15s;
+  }
+  .stage-btns button:hover{border-color:var(--seal);color:var(--seal);}
+  .stage-btns button:disabled{opacity:.45;cursor:default;}
+  .stage-btns button.egg{border-color:#4a5a8a;color:#3a4570;}
+  .stage-btns button.egg:hover{border-color:var(--seal);color:var(--seal);}
+
+  .cap{
+    position:absolute;left:14px;right:14px;bottom:14px;z-index:6;
+    background:rgba(20,16,32,.86);color:#f2ecd8;font-size:13.5px;letter-spacing:.05em;
+    line-height:1.7;padding:10px 14px;border-radius:9px;
+    opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s;pointer-events:none;
+  }
+  .cap.show{opacity:1;transform:translateY(0);}
+
+  .verdict{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:20px 22px;margin-bottom:16px;text-align:center;animation:rise .8s .12s ease both;
+  }
+  .verdict .vtitle{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .verdict .vmain{font-size:19px;line-height:1.8;color:var(--ink);margin-bottom:6px;}
+  .verdict .vmain.hit{color:var(--seal);}
+  .verdict .vsub{font-size:13.5px;color:#57503f;line-height:1.9;}
+  .verdict .vsub b{color:var(--ink);}
+
+  .tool{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 22px;margin-bottom:16px;animation:rise .8s .16s ease both;
+  }
+  .tool h2{font-size:15.5px;letter-spacing:.1em;margin-bottom:10px;}
+  .tool .row{font-size:14px;line-height:2.2;color:#453e30;}
+  .tool .row b{color:var(--seal);}
+
+  .plaques{display:grid;gap:12px;margin-bottom:16px;}
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque.final{text-align:center;}
+  .plaque.final .pb{font-size:16.5px;letter-spacing:.03em;color:var(--ink);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}.cap{transition:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №028</span>
+  </div>
+
+  <header>
+    <h1>九十分钟一班的夜车</h1>
+    <div class="en">THE NIGHT TRAIN OF SLEEP</div>
+    <p class="sub">起床像被车撞，不是没睡够，是闹钟响的时候你正停在深睡站</p>
+  </header>
+
+  <div class="ctrls">
+    <div class="ctrlrow">
+      <div class="sl">
+        <label>🛏️ 你几点上床 <b id="bedVal">23:30</b></label>
+        <input type="range" id="sBed" min="0" max="300" step="5" value="150">
+      </div>
+      <div class="sl">
+        <label>⏰ 闹钟定在几点 <b id="alarmVal">07:30</b></label>
+        <input type="range" id="sAlarm" min="0" max="300" step="5" value="150">
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <canvas id="cv" width="780" height="360"></canvas>
+    <div class="cap" id="cap"></div>
+    <div class="stage-btns">
+      <button id="btnPlay">▶ 睡给你看</button>
+      <button id="btnPhone" class="egg" disabled>📱 半夜刷手机</button>
+      <button id="btnReset" disabled>⟲ 重来</button>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdictBox">
+    <div class="vtitle">判决 · 闹钟响的那一刻，你在哪一站</div>
+    <div class="vmain" id="vmain">拖动上面两根滑杆，看今晚的夜车怎么开。</div>
+    <div class="vsub" id="vsub"></div>
+  </div>
+
+  <div class="tool">
+    <h2>🧮 几点睡才好起</h2>
+    <div class="row" id="reverseCalc"></div>
+  </div>
+
+  <div class="plaques">
+    <div class="plaque">
+      <div class="pt">说明牌 · 一夜不是一觉</div>
+      <div class="pb">
+        一夜不是一觉，是 4 到 6 班九十分钟的列车。<b>深睡集中在前半夜，梦集中在后半夜</b>：熬夜熬掉的主要是深睡，睡懒觉补回来的主要是梦。图上的轨道会告诉你，越往清晨，车往深处开得越少，在梦境站停得越久。
+      </div>
+    </div>
+    <div class="plaque">
+      <div class="pt">说明牌 · 起床像被车撞</div>
+      <div class="pb">
+        这学名叫<b>睡眠惯性</b>：闹钟正好响在深睡站，大脑还有一半留在车上没下来。同样睡七个半小时，闹钟差二十分钟，起床是两种人生。上面判决区那句「顺路」还是「被拖下车」，说的就是这二十分钟的运气。
+      </div>
+    </div>
+    <div class="plaque">
+      <div class="pt">说明牌 · 90 分钟不是你的时刻表</div>
+      <div class="pb">
+        90 分钟是<b>全人类的均值</b>，不是刻在你身上的数字：有人 80，有人 105，同一个人每晚也在变。这台计算器算的是参考线，你半夜醒来时的手感，才是真正的时刻表。
+      </div>
+    </div>
+    <div class="plaque">
+      <div class="pt">说明牌 · 午睡的正确姿势</div>
+      <div class="pb">
+        现实同款：午睡要么 20 分钟（还没进深睡站就出来），要么 90 分钟（完整坐完一班车），<b>千万别睡 60 分钟</b>：那正好是在深睡站被人叫醒，比不睡还难受。
+      </div>
+    </div>
+    <div class="plaque final">
+      <div class="pt">收尾</div>
+      <div class="pb">重要的不是睡了多久，是闹钟响起的时候，你的列车正停在哪一站。</div>
+    </div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №028 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =====================================================================
+     一、睡眠周期模型
+     ===================================================================== */
+  var LATENCY = 15;      /* 上床到真正入睡的潜伏期（分钟） */
+  var CYCLE_LEN = 90;     /* 一班车的时长（均值，说明牌里已交代是均值） */
+  var DESCENT = 9;        /* 每班车：先经过浅睡站下潜到深睡站，用掉的分钟 */
+  var MIN_LIGHT_TAIL = 14;/* 深睡站出来到进 REM 前，至少留的浅睡分钟 */
+
+  /* 第 k 班车（k 从 1 开始）：深睡时长递减，REM 时长递增，教科书比例近似 */
+  function cycleDeepMin(k){ return Math.max(5, 27 - 5.5 * (k - 1)); }
+  function cycleRemMin(k){ return Math.min(35, 7 + 5.5 * (k - 1)); }
+
+  /* 生成从 sleepStart（分钟，可跨天）开始、覆盖到 coverUntil 的整晚分段序列
+     segments: [{start, end, stage, k}]  stage: 'light' | 'deep' | 'rem'
+     extraDelay: 可选，{afterMin: 触发时刻之后, amount: 20} 用于"半夜刷手机"彩蛋。
+     从"触发时刻之后遇到的下一班车"开始，整体右移 amount 分钟 */
+  function buildNight(sleepStart, coverUntil, extraDelay){
+    var segs = [];
+    var t = sleepStart;
+    var k = 1;
+    var delayApplied = false;
+    var guard = 0;
+    while (t < coverUntil && guard < 30){
+      guard++;
+      /* 彩蛋：从下一班车开始，整条轨道右移 */
+      if (extraDelay && !delayApplied && t >= extraDelay.afterMin){
+        /* 显式画一段「清醒」平台，不然轨道会在缺口处画出一条斜穿的连线 */
+        segs.push({start:t, end:t + extraDelay.amount, stage:'wake', k:0});
+        t += extraDelay.amount;
+        delayApplied = true;
+      }
+      var deep = cycleDeepMin(k);
+      var rem = cycleRemMin(k);
+      var lightTotal = CYCLE_LEN - deep - rem;
+      if (lightTotal < DESCENT + MIN_LIGHT_TAIL) lightTotal = DESCENT + MIN_LIGHT_TAIL;
+      var descent = DESCENT;
+      var ascent = lightTotal - descent;
+
+      var s0 = t;
+      var s1 = s0 + descent;                 /* 浅睡（下潜） */
+      var s2 = s1 + deep;                    /* 深睡站 */
+      var s3 = s2 + ascent;                  /* 浅睡（回升） */
+      var s4 = s3 + rem;                     /* 梦境站 REM */
+
+      segs.push({start:s0, end:s1, stage:'light', k:k});
+      segs.push({start:s1, end:s2, stage:'deep',  k:k});
+      segs.push({start:s2, end:s3, stage:'light', k:k});
+      segs.push({start:s3, end:s4, stage:'rem',   k:k});
+
+      t = s4;
+      k++;
+    }
+    return segs;
+  }
+
+  /* 查询某一时刻（分钟，与 segs 同一时间轴）所处阶段；返回 'awake' 若在段外 */
+  function stageAt(segs, minute){
+    for (var i = 0; i < segs.length; i++){
+      if (minute >= segs[i].start && minute < segs[i].end) return segs[i];
+    }
+    return null;
+  }
+
+  /* 找离 minute 最近的「浅睡/REM」窗口（能顺路醒来的窗口）的中点，
+     用于"往前/往后拨 X 分钟"建议。deep 站不算数。 */
+  function nearestLightWindowCenter(segs, minute){
+    var best = null, bestDist = Infinity;
+    for (var i = 0; i < segs.length; i++){
+      var s = segs[i];
+      if (s.stage === 'deep') continue;
+      var center = (s.start + s.end) / 2;
+      var dist = Math.abs(center - minute);
+      if (dist < bestDist){ bestDist = dist; best = center; }
+    }
+    return best;
+  }
+
+  /* =====================================================================
+     二、时间轴换算
+     内部统一用"分钟数，从当天正午 12:00 起算"的绝对时间轴（axis 0 = 12:00），
+     这样 21:00~次日02:00、05:00~10:00 都落在 +9h~+22h 的单调递增区间里，不用处理跨天减法。
+     滑杆「上床时间」：0~300，step5 -> 21:00(+9h=540) ~ 次日02:00(+14h=840)，默认 150 -> 23:30
+     滑杆「闹钟时间」：0~300，step5 -> 05:00(+17h=1020) ~ 10:00(+22h=1320)，默认 150 -> 07:30
+     ===================================================================== */
+  function bedSliderToAbsMin(v){ return 540 + v; }
+  function alarmSliderToAbsMin(v){ return 1020 + v; }
+
+  function absMinToLabel(absMin){
+    absMin = Math.round(absMin); /* 班次时长带 0.5 分钟步长，不取整会显示出「05:49.5」 */
+    var totalMin = (((absMin + 12 * 60) % (24 * 60)) + 24 * 60) % (24 * 60);
+    var hh = Math.floor(totalMin / 60);
+    var mm = totalMin % 60;
+    return (hh < 10 ? '0' + hh : '' + hh) + ':' + (mm < 10 ? '0' + mm : '' + mm);
+  }
+
+  /* 显示窗口固定 23:00 ~ 次日 09:00（spec 规定），对应绝对轴：
+     23:00 = 正午 +11h = 660 分钟；次日09:00 = 正午 +21h = 1260 分钟 */
+  var VIEW_START = 11 * 60;   /* 23:00 */
+  var VIEW_END = 21 * 60;     /* 次日 09:00 */
+  var VIEW_SPAN = VIEW_END - VIEW_START;
+
+  /* =====================================================================
+     三、DOM 与状态
+     ===================================================================== */
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var W = 780, H = 360;
+
+  var sBed = document.getElementById('sBed');
+  var sAlarm = document.getElementById('sAlarm');
+  var bedVal = document.getElementById('bedVal');
+  var alarmVal = document.getElementById('alarmVal');
+  var vmain = document.getElementById('vmain');
+  var vsub = document.getElementById('vsub');
+  var reverseCalc = document.getElementById('reverseCalc');
+  var capEl = document.getElementById('cap');
+
+  var state = {
+    bedAbs: bedSliderToAbsMin(+sBed.value),
+    alarmAbs: alarmSliderToAbsMin(+sAlarm.value),
+    segs: [],
+    phoneDelay: null /* {afterMin, amount} 一旦触发彩蛋就常驻，直到滑杆重新变更或重来 */
+  };
+
+  var ALARM_BUFFER = 30; /* 只需盖过闹钟时刻一点点，保证判定查得到站；不额外多算一整班车，避免稀释深睡/REM占比 */
+  function recompute(){
+    var sleepStart = state.bedAbs + LATENCY;
+    state.segs = buildNight(sleepStart, state.alarmAbs + ALARM_BUFFER, state.phoneDelay);
+  }
+
+  /* =====================================================================
+     四、判决逻辑
+     ===================================================================== */
+  function judge(){
+    var seg = stageAt(state.segs, state.alarmAbs);
+    if (!seg){
+      vmain.textContent = '闹钟响的时候，你已经下车很久了（或者还没上车）。';
+      vsub.innerHTML = '';
+      return;
+    }
+    if (seg.stage === 'deep'){
+      vmain.className = 'vmain hit';
+      vmain.textContent = '⚠️ 你会像被车撞。闹钟把你从深睡站拖下车';
+      var center = nearestLightWindowCenter(state.segs, state.alarmAbs);
+      var diff = center - state.alarmAbs;
+      var dir = diff > 0 ? '往后' : '往前';
+      vsub.innerHTML = '第 <b>' + seg.k + '</b> 班车，深睡站正开到一半。建议' + dir + '拨 <b>' + Math.round(Math.abs(diff)) + ' 分钟</b>（闹钟改到 <b>' + absMinToLabel(center) + '</b>），正好卡在两班车之间的浅睡窗口。 <button type="button" class="adoptBtn" data-min="' + Math.round(center) + '" style="font-family:var(--serif);font-size:12.5px;letter-spacing:.05em;background:var(--seal);color:#fdf6ee;border:none;border-radius:7px;padding:5px 12px;cursor:pointer;margin-left:4px;">就改成这个</button>';
+    } else {
+      vmain.className = 'vmain';
+      vmain.textContent = '☀️ 顺路。你几乎是自己醒的';
+      var stageName = seg.stage === 'rem' ? '梦境站（REM）' : '浅睡站';
+      vsub.innerHTML = '第 <b>' + seg.k + '</b> 班车，闹钟响在 <b>' + stageName + '</b>，这是最容易醒得利索的地方。';
+    }
+  }
+
+  /* =====================================================================
+     五、反向计算器：几点睡才好起
+     ===================================================================== */
+  function updateReverseCalc(){
+    var lines = [];
+    for (var n = 4; n <= 6; n++){
+      var bedAbs = state.alarmAbs - n * CYCLE_LEN - LATENCY;
+      lines.push('<b>' + absMinToLabel(bedAbs) + '</b> 上床 → 睡满 ' + n + ' 班车');
+    }
+    reverseCalc.innerHTML = '按闹钟 <b>' + absMinToLabel(state.alarmAbs) + '</b> 倒推，这几个点上床最容易顺路醒来：<br>' + lines.join('　·　');
+  }
+
+  /* =====================================================================
+     六、画布：夜车轨道剖面（催眠图）
+     ===================================================================== */
+  var PAD_L = 46, PAD_R = 18, PAD_T = 26, PAD_B = 40;
+  var PLOT_W = W - PAD_L - PAD_R;
+  var PLOT_H = H - PAD_T - PAD_B;
+
+  /* 纵轴：从上到下 清醒(0) / REM(1) / 浅睡(2) / 深睡(3) */
+  var LEVEL_Y = {awake:0, rem:1, light:2, deep:3};
+  function levelToY(lv){ return PAD_T + (lv / 3) * PLOT_H; }
+  function stageToLevel(stage){
+    if (stage === 'wake') return LEVEL_Y.awake;
+    if (stage === 'rem') return LEVEL_Y.rem;
+    if (stage === 'deep') return LEVEL_Y.deep;
+    return LEVEL_Y.light;
+  }
+  function xOfAbsMin(absMin){ return PAD_L + ((absMin - VIEW_START) / VIEW_SPAN) * PLOT_W; }
+
+  function skyColorAt(frac){
+    /* frac: 0(23:00,深夜)~1(次日09:00,晨光)；夜深→渐深，再渐亮 */
+    var stops = [
+      {t:0.00, c:[20,22,46]},
+      {t:0.28, c:[13,15,34]},
+      {t:0.55, c:[10,12,26]},
+      {t:0.78, c:[45,55,86]},
+      {t:0.90, c:[140,120,120]},
+      {t:1.00, c:[230,196,140]}
+    ];
+    for (var i = 0; i < stops.length - 1; i++){
+      if (frac >= stops[i].t && frac <= stops[i+1].t){
+        var lt = (frac - stops[i].t) / (stops[i+1].t - stops[i].t);
+        var c0 = stops[i].c, c1 = stops[i+1].c;
+        var r = c0[0] + (c1[0]-c0[0])*lt, g = c0[1] + (c1[1]-c0[1])*lt, b = c0[2] + (c1[2]-c0[2])*lt;
+        return 'rgb(' + (r|0) + ',' + (g|0) + ',' + (b|0) + ')';
+      }
+    }
+    return 'rgb(20,22,46)';
+  }
+
+  function drawSky(){
+    var grad = ctx.createLinearGradient(0, 0, W, 0);
+    var steps = 14;
+    for (var i = 0; i <= steps; i++){
+      grad.addColorStop(i/steps, skyColorAt(i/steps));
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    /* 星星（前半段更密） */
+    ctx.fillStyle = 'rgba(255,250,230,.55)';
+    var starSeeds = [
+      [60,40],[130,60],[210,35],[300,55],[380,42],[40,80],[160,90],[260,75],
+      [90,110],[230,105],[340,95],[420,60],[480,45],[440,85]
+    ];
+    for (var s = 0; s < starSeeds.length; s++){
+      ctx.beginPath();
+      ctx.arc(starSeeds[s][0], starSeeds[s][1], 1.1, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function drawAxes(){
+    ctx.strokeStyle = 'rgba(245,239,226,.18)';
+    ctx.lineWidth = 1;
+    ctx.font = '11px "Noto Serif SC",serif';
+    var labels = ['清醒','梦境站','浅睡站','深睡站'];
+    for (var lv = 0; lv <= 3; lv++){
+      var y = levelToY(lv);
+      ctx.beginPath();
+      ctx.moveTo(PAD_L, y);
+      ctx.lineTo(W - PAD_R, y);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(245,239,226,.7)';
+      ctx.textAlign = 'right';
+      ctx.fillText(labels[lv], PAD_L - 6, y + 4);
+    }
+    /* 横轴时刻 */
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(245,239,226,.6)';
+    var hourMarks = [23, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    for (var h = 0; h < hourMarks.length; h++){
+      var absMin = VIEW_START + h * 60;
+      var x = xOfAbsMin(absMin);
+      if (x < PAD_L - 2 || x > W - PAD_R + 2) continue;
+      ctx.fillText((hourMarks[h] < 10 ? '0'+hourMarks[h] : hourMarks[h]) + ':00', x, H - PAD_B + 18);
+    }
+  }
+
+  function drawTrack(segs){
+    if (!segs.length) return;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#f2c14e';
+    ctx.beginPath();
+    var started = false;
+    for (var i = 0; i < segs.length; i++){
+      var s = segs[i];
+      var x0 = xOfAbsMin(s.start), x1 = xOfAbsMin(s.end);
+      var y = levelToY(stageToLevel(s.stage));
+      if (x1 < PAD_L || x0 > W - PAD_R) continue;
+      if (!started){ ctx.moveTo(Math.max(x0,PAD_L), y); started = true; }
+      else { ctx.lineTo(Math.max(x0,PAD_L), y); }
+      ctx.lineTo(Math.min(x1, W-PAD_R), y);
+    }
+    ctx.stroke();
+
+    /* 站点标注：每班车深睡站中点标"深睡站"，REM 站中点标"梦境站" */
+    ctx.font = '10.5px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    for (var j = 0; j < segs.length; j++){
+      var sg = segs[j];
+      var mx = xOfAbsMin((sg.start+sg.end)/2);
+      if (mx < PAD_L || mx > W - PAD_R) continue;
+      if (sg.stage === 'deep' && (sg.end - sg.start) >= 6){
+        ctx.fillStyle = 'rgba(210,150,150,.85)';
+        ctx.fillText('●', mx, levelToY(LEVEL_Y.deep) - 8);
+      } else if (sg.stage === 'rem' && (sg.end - sg.start) >= 6){
+        ctx.fillStyle = 'rgba(160,180,240,.85)';
+        ctx.fillText('◆', mx, levelToY(LEVEL_Y.rem) - 8);
+      }
+    }
+  }
+
+  function drawAlarmLine(){
+    var x = xOfAbsMin(state.alarmAbs);
+    if (x < PAD_L || x > W - PAD_R) return;
+    ctx.save();
+    ctx.strokeStyle = '#b5402c';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    ctx.moveTo(x, PAD_T - 6);
+    ctx.lineTo(x, H - PAD_B + 4);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    /* 印章式圆戳，留在 PAD_T 顶部留白带内，不贴画布边缘 */
+    ctx.translate(x, 13);
+    ctx.rotate(-0.08);
+    ctx.strokeStyle = '#b5402c';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.fillStyle = '#b5402c';
+    ctx.font = '9px "Noto Serif SC",serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('闹', 0, 3);
+    ctx.restore();
+  }
+
+  var trainAnim = null; /* {t0, duration, nightStart, nightEnd, playing} */
+
+  function drawTrainAt(absMin){
+    var seg = stageAt(state.segs, absMin);
+    var y = seg ? levelToY(stageToLevel(seg.stage)) : levelToY(LEVEL_Y.awake);
+    var x = xOfAbsMin(absMin);
+    if (x < PAD_L || x > W - PAD_R) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = '#fdf6ee';
+    ctx.strokeStyle = '#2a2521';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(-11, -7);
+    ctx.lineTo(11, -7);
+    ctx.lineTo(11, 7);
+    ctx.lineTo(-11, 7);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#b5402c';
+    ctx.fillRect(-11, -7, 22, 3.4);
+    ctx.beginPath();
+    ctx.arc(-5, 8, 2.6, 0, Math.PI*2);
+    ctx.arc(5, 8, 2.6, 0, Math.PI*2);
+    ctx.fillStyle = '#2a2521';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function render(playheadAbs){
+    drawSky();
+    drawAxes();
+    drawTrack(state.segs);
+    drawAlarmLine();
+    if (playheadAbs !== undefined && playheadAbs !== null){
+      drawTrainAt(playheadAbs);
+    }
+  }
+
+  /* =====================================================================
+     七、字幕
+     ===================================================================== */
+  var capTimer = null;
+  function showCap(text, hold){
+    capEl.textContent = text;
+    capEl.classList.add('show');
+    clearTimeout(capTimer);
+    capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, hold || 3200);
+  }
+
+  /* =====================================================================
+     八、音效（全合成，首次手势建 AudioContext）
+     ===================================================================== */
+  var AC = null, master = null;
+  function ensureAudio(){
+    if (AC) return;
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain();
+    master.gain.value = 0.85;
+    master.connect(AC.destination);
+  }
+  function chime(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    var o = AC.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(1180, t);
+    var g = AC.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    o.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.3);
+  }
+  function alarmBuzz(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    for (var i = 0; i < 3; i++){
+      var start = t + i * 0.16;
+      var o = AC.createOscillator();
+      o.type = 'square';
+      o.frequency.setValueAtTime(880, start);
+      var g = AC.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.28, start + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.13);
+      o.connect(g); g.connect(master);
+      o.start(start); o.stop(start + 0.14);
+    }
+  }
+  function birdChirp(){
+    if (!AC) return;
+    var t = AC.currentTime;
+    [0, 0.32].forEach(function(off){
+      var start = t + off;
+      var o = AC.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(2200, start);
+      o.frequency.exponentialRampToValueAtTime(2900, start + 0.09);
+      o.frequency.exponentialRampToValueAtTime(2000, start + 0.18);
+      var g = AC.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.14, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + 0.2);
+      o.connect(g); g.connect(master);
+      o.start(start); o.stop(start + 0.22);
+    });
+  }
+
+  /* =====================================================================
+     九、控件事件
+     ===================================================================== */
+  function stopAnim(){
+    if (trainAnim) trainAnim.playing = false;
+    trainAnim = null;
+    btnPlay.disabled = false;
+    btnPlay.textContent = '▶ 睡给你看';
+    btnPhone.disabled = true;
+    btnReset.disabled = true;
+  }
+
+  function onSlidersChange(){
+    state.bedAbs = bedSliderToAbsMin(+sBed.value);
+    state.alarmAbs = alarmSliderToAbsMin(+sAlarm.value);
+    bedVal.textContent = absMinToLabel(state.bedAbs);
+    alarmVal.textContent = absMinToLabel(state.alarmAbs);
+    state.phoneDelay = null; /* 拖动滑杆即重算整晚，彩蛋状态清空 */
+    stopAnim();
+    recompute();
+    judge();
+    updateReverseCalc();
+    render(null);
+  }
+
+  sBed.addEventListener('input', onSlidersChange);
+  sAlarm.addEventListener('input', onSlidersChange);
+
+  /* 「就改成这个」：一键把闹钟拨到建议时刻，判决当场变绿，反馈闭环 */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('.adoptBtn');
+    if (!b) return;
+    var v = (+b.getAttribute('data-min')) - 1020;
+    var lo = +sAlarm.min, hi = +sAlarm.max;
+    if (v < lo) v = lo;
+    if (v > hi) v = hi;
+    sAlarm.value = v;
+    sAlarm.dispatchEvent(new Event('input', {bubbles:true}));
+  });
+
+  /* ---- 睡给你看：40 秒动画走完一晚 ---- */
+  var btnPlay = document.getElementById('btnPlay');
+  var btnPhone = document.getElementById('btnPhone');
+  var btnReset = document.getElementById('btnReset');
+  var ANIM_DURATION = 40000; /* ms */
+  var lastCycleAnnounced = -1;
+  var announcedDeep = {}, announcedRem = {};
+  var endingPlayed = false;
+
+  function nightPlayBounds(){
+    var sleepStart = state.bedAbs + LATENCY;
+    var last = state.segs.length ? state.segs[state.segs.length-1].end : sleepStart + CYCLE_LEN;
+    /* 动画从上床时刻播到闹钟之后一小段（若闹钟落在轨道范围内），否则播到最后一段结束 */
+    var end = Math.max(state.alarmAbs + 20, sleepStart + CYCLE_LEN * 3);
+    return {start: state.bedAbs, end: Math.min(end, last)};
+  }
+
+  function stepAnim(now){
+    if (!trainAnim || !trainAnim.playing) return;
+    var elapsed = now - trainAnim.t0;
+    var frac = Math.min(1, elapsed / ANIM_DURATION);
+    var absMin = trainAnim.start + frac * (trainAnim.end - trainAnim.start);
+
+    render(absMin);
+
+    /* 报站字幕：进入某一站时触发一次 */
+    var seg = stageAt(state.segs, absMin);
+    if (seg){
+      if (seg.stage === 'deep' && !announcedDeep[seg.k]){
+        announcedDeep[seg.k] = true;
+        showCap('深睡站：生长激素在这里发货，白天的碎片在这里归档。');
+        chime();
+      }
+      if (seg.stage === 'rem' && !announcedRem[seg.k]){
+        announcedRem[seg.k] = true;
+        showCap('放映厅开门，今晚的梦开演。');
+        chime();
+      }
+    }
+    /* 每班车终点报站：检测"跨越到下一班车"的瞬间触发一次 */
+    var curCycleK = seg ? seg.k : null;
+    if (curCycleK !== null && curCycleK !== lastCycleAnnounced && lastCycleAnnounced !== -1){
+      showCap('第 ' + curCycleK + ' 班车到站，下一班马上发车。');
+    }
+    if (curCycleK !== null) lastCycleAnnounced = curCycleK;
+
+    /* 闹钟竖线：动画播过闹钟时刻，播判定结局（只播一次） */
+    if (!endingPlayed && absMin >= state.alarmAbs){
+      endingPlayed = true;
+      var alarmSeg = stageAt(state.segs, state.alarmAbs);
+      if (alarmSeg && alarmSeg.stage === 'deep'){
+        showCap('⚠️ 闹钟响了。你被从深睡站硬拖下车。', 4200);
+        alarmBuzz();
+        var stageEl = document.querySelector('.stage');
+        stageEl.style.transform = 'translateX(-6px)';
+        setTimeout(function(){ stageEl.style.transform = 'translateX(6px)'; }, 60);
+        setTimeout(function(){ stageEl.style.transform = ''; }, 130);
+      } else {
+        showCap('☀️ 闹钟响了。你几乎是自己醒的，很顺路。', 4200);
+        birdChirp();
+      }
+    }
+
+    if (frac >= 1){
+      trainAnim.playing = false;
+      btnPlay.disabled = false;
+      btnPlay.textContent = '▶ 再睡一次';
+      btnPhone.disabled = true;
+      return;
+    }
+    requestAnimationFrame(stepAnim);
+  }
+
+  btnPlay.addEventListener('click', function(){
+    ensureAudio();
+    if (AC.state === 'suspended') AC.resume();
+    var bounds = nightPlayBounds();
+    trainAnim = {t0: performance.now(), start: bounds.start, end: bounds.end, playing: true};
+    lastCycleAnnounced = -1;
+    announcedDeep = {}; announcedRem = {};
+    endingPlayed = false;
+    btnPlay.disabled = true;
+    btnPlay.textContent = '⏸ 夜车行驶中…';
+    btnPhone.disabled = false;
+    btnReset.disabled = false;
+    showCap('发车了。灯灭，第 1 班车出发。');
+    requestAnimationFrame(stepAnim);
+  });
+
+  btnPhone.addEventListener('click', function(){
+    if (!trainAnim || !trainAnim.playing) return;
+    var elapsed = performance.now() - trainAnim.t0;
+    var frac = elapsed / ANIM_DURATION;
+    var curAbs = trainAnim.start + frac * (trainAnim.end - trainAnim.start);
+    state.phoneDelay = {afterMin: curAbs, amount: 20};
+    recompute();
+    judge();
+    /* 重算后动画的 end 边界也要跟着延后，保持播放时长内看到完整效果 */
+    trainAnim.end += 20;
+    showCap('📱 屏幕亮起，蓝光把发车时刻表改了：下一班车推迟 20 分钟。', 4000);
+    btnPhone.disabled = true;
+  });
+
+  btnReset.addEventListener('click', function(){
+    stopAnim();
+    state.phoneDelay = null;
+    recompute();
+    judge();
+    render(null);
+    capEl.classList.remove('show');
+  });
+
+  /* =====================================================================
+     十、初始化
+     ===================================================================== */
+  function init(){
+    onSlidersChange();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
