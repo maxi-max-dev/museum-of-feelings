@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雨滴里拐弯的光 · 感觉博物馆</title>
+<meta name="description" content="彩虹没有位置，只有角度。拖一束光进一滴雨，看它折射、反射、再折射，拆成七种颜色堆在42度出去。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  /* ---- 舞台切换 ---- */
+  .switcher{display:flex;justify-content:center;gap:9px;margin-bottom:16px;}
+  .swbtn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.1em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--line);
+    border-radius:10px;padding:9px 18px;cursor:pointer;transition:transform .15s,border-color .15s;
+  }
+  .swbtn:hover{border-color:var(--seal);transform:translateY(-1px);}
+  .swbtn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  /* ---- 舞台 ---- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    overflow:hidden;animation:rise .8s .1s ease both;background:#1c2331;
+  }
+  .stage canvas{display:block;width:100%;height:auto;touch-action:none;}
+  #caption{
+    position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:5;
+    background:rgba(20,18,14,.82);color:#f5efe2;font-size:13px;letter-spacing:.05em;
+    line-height:1.7;padding:9px 16px;border-radius:8px;max-width:90%;text-align:center;
+    opacity:0;transition:opacity .4s;pointer-events:none;
+  }
+  #caption.show{opacity:1;}
+
+  /* ---- 控制区 ---- */
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hud{
+    display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;
+    font-size:13px;color:#453e30;letter-spacing:.03em;margin-bottom:14px;
+    border-bottom:1px dashed var(--line);padding-bottom:12px;
+  }
+  .hud b{color:var(--seal);}
+  .row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:center;margin-bottom:12px;}
+  .row:last-child{margin-bottom:0;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .toggle{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#453e30;cursor:pointer;user-select:none;}
+  .toggle input{width:16px;height:16px;accent-color:var(--seal);}
+  .slidebox{display:flex;align-items:center;gap:10px;font-size:13.5px;color:#453e30;flex:1;min-width:220px;}
+  .slidebox input[type=range]{flex:1;accent-color:var(--seal);}
+  .slidebox b{color:var(--seal);min-width:52px;text-align:center;}
+  .hint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:8px;letter-spacing:.03em;}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;}
+  .plaque .pb b{color:var(--ink);}
+  .plaque + .plaque{margin-top:14px;}
+
+  .quote{
+    text-align:center;font-size:16px;line-height:2;color:#453e30;
+    padding:18px 10px 4px;letter-spacing:.03em;
+  }
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+  @media(max-width:640px){
+    .row{gap:10px;}
+    .slidebox{min-width:0;width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №030</span>
+  </div>
+
+  <header>
+    <h1>雨滴里拐弯的光</h1>
+    <div class="en">HOW RAINBOWS BEND</div>
+    <p class="sub">彩虹没有位置，只有角度，所以谁也不能替你看你的那道</p>
+  </header>
+
+  <div class="switcher">
+    <button class="swbtn on" id="swDrop" type="button">💧 一滴雨</button>
+    <button class="swbtn" id="swSky" type="button">🌈 天空</button>
+  </div>
+
+  <!-- 舞台一：一滴雨 -->
+  <div class="stage" id="stageDrop">
+    <canvas id="cvDrop" width="780" height="460"></canvas>
+    <div id="captionDrop" class="cap"></div>
+  </div>
+
+  <div class="ctrls" id="ctrlsDrop">
+    <div class="hud" id="hudDrop"></div>
+    <div class="row">
+      <button class="btn" id="sweepBtn">🌈 彩虹角扫描</button>
+      <label class="toggle"><input type="checkbox" id="secondBounce"> 二次反射（副虹）</label>
+    </div>
+    <div class="hint">上下拖动入射光点，改变碰撞参数；扫描按钮会自动跑一遍所有高度。</div>
+  </div>
+
+  <!-- 舞台二：天空 -->
+  <div class="stage" id="stageSky" style="display:none;">
+    <canvas id="cvSky" width="780" height="460"></canvas>
+    <div id="captionSky" class="cap"></div>
+  </div>
+
+  <div class="ctrls" id="ctrlsSky" style="display:none;">
+    <div class="hud" id="hudSky"></div>
+    <div class="row">
+      <div class="slidebox">
+        太阳高度 <input type="range" id="sunAlt" min="0" max="60" value="20"> <b id="sunAltVal">20°</b>
+      </div>
+      <label class="toggle"><input type="checkbox" id="secondBounceSky"> 二次反射（副虹）</label>
+    </div>
+    <div class="hint">拖动滑杆抬高太阳；虚线指向你的反日点，虹弧永远绕着它转。</div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 一滴雨里的三件事</div>
+    <div class="pb">
+      一滴雨里发生了三件事：进门时折射一次，后墙上反射一次，出门时再折射一次。<b>红光弯得少（42.5°），紫光弯得多（40.6°）</b>，白光就这样被拆成了七种颜色。
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 为什么是一条弧</div>
+    <div class="pb">
+      <b>光从雨滴的每个高度进来，出射方向却在 42° 附近堆积（最小偏向角）。</b>天上一亿滴雨同时做这件事，凡是站在与你视线成 42° 锥面上的雨滴，都把红光送进你的眼睛。彩虹是几何，不是物体。
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 彩虹没有位置</div>
+    <div class="pb">
+      它跟着你的反日点走，你走它也走，你永远到不了彩虹脚下。两个人并肩看彩虹，看到的是两道不同的彩虹，由不同的雨滴点亮。
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 副虹与暗带</div>
+    <div class="pb">
+      在滴里多反射一次就是第二道虹，颜色反排，亮度更弱；两道虹之间的天空最暗，那条带有自己的名字：<b>亚历山大暗带</b>，公元 200 年就被人写下来了。
+    </div>
+  </div>
+
+  <div class="quote">「彩虹没有位置，只有角度。所以你看到的那道，只属于你。」</div>
+
+  <footer>
+    ※ 折射率取水对可见光谱两端的近似值，动画为简化演示<br>
+    感觉博物馆 · 展厅 №030 · Max 造<br>
+    <a href="../echo/">下一个展厅：黑暗里用耳朵看路 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var DEG = Math.PI / 180;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==================== 光学核心（斯涅尔定律真算） ==================== */
+  var SPECTRUM = [
+    { name: '红', n: 1.331, css: '#e0453a' },
+    { name: '橙', n: 1.334, css: '#e8813a' },
+    { name: '黄', n: 1.336, css: '#e2c93a' },
+    { name: '绿', n: 1.338, css: '#4bab5c' },
+    { name: '蓝', n: 1.340, css: '#3e7fd6' },
+    { name: '靛', n: 1.342, css: '#4a4fc4' },
+    { name: '紫', n: 1.344, css: '#8a4fc0' }
+  ];
+  var N_RED = 1.331, N_VIOLET = 1.344;
+
+  /* 给定碰撞参数 b(0~1)、折射率 n、内反射次数 k，返回总偏转角 D（度）
+     标准 Descartes 公式：D = 2(θi-θr) + k(180-2θr) */
+  function deviationDeg(b, n, k){
+    var thetaI = Math.asin(Math.min(0.999999, b));
+    var thetaR = Math.asin(Math.sin(thetaI) / n);
+    var D = 2 * (thetaI - thetaR) + k * (Math.PI - 2 * thetaR);
+    return D / DEG;
+  }
+  /* 回头角（彩虹角）：k=1 时 D 有极小值，回头角=180-D；k=2 时 D 也有极小值(约230°附近)，回头角=D-180。
+     两种情形本质相同：都是"D(b) 的极值处形成焦散"，换算公式不同只是因为 D 的取值区间不同。 */
+  function turnBackAngle(b, n, k){
+    var D = deviationDeg(b, n, k);
+    return (k === 1) ? (180 - D) : (D - 180);
+  }
+  /* 扫描 b∈(0,1) 找 D(b) 的极小值点，再换算成回头角，用于显示"理论峰值"参考数字。
+     注意：这里必须直接找 D 的极小值，不能对 turnBackAngle 取最大值，因为 k=2 时 D-180
+     在 b→0 边界会假性偏大，不是真正的物理极值，必须先定位 D 本身的极小值再换算。 */
+  function scanPeak(n, k, steps){
+    steps = steps || 4000;
+    var bestD = Infinity, bestB = 0;
+    for (var i = 1; i < steps; i++){
+      var b = i / steps;
+      var D = deviationDeg(b, n, k);
+      if (D < bestD){ bestD = D; bestB = b; }
+    }
+    var angle = (k === 1) ? (180 - bestD) : (bestD - 180);
+    return { angle: angle, b: bestB };
+  }
+  var PEAK_RED1 = scanPeak(N_RED, 1);
+  var PEAK_VIOLET1 = scanPeak(N_VIOLET, 1);
+  var PEAK_RED2 = scanPeak(N_RED, 2);
+  var PEAK_VIOLET2 = scanPeak(N_VIOLET, 2);
+
+  /* ==================== 舞台一：一滴雨 ==================== */
+  var cvD = document.getElementById('cvDrop');
+  var ctxD = cvD.getContext('2d');
+  var WD = 780, HD = 460;
+  var DROP_CX = WD * 0.54, DROP_CY = HD * 0.52, DROP_R = 150;
+  var hudD = document.getElementById('hudDrop');
+  var secondBounce = document.getElementById('secondBounce');
+  var sweepBtn = document.getElementById('sweepBtn');
+  var captionD = document.getElementById('captionDrop');
+
+  var bParam = 0.55; /* 碰撞参数 0~0.99，由拖拽入射高度控制 */
+  var dragging = false;
+
+  var capTimerD = null;
+  function showCaptionD(text, ms){
+    captionD.textContent = text;
+    captionD.classList.add('show');
+    clearTimeout(capTimerD);
+    capTimerD = setTimeout(function(){ captionD.classList.remove('show'); }, ms || 3200);
+  }
+
+  /* 入射高度 h（像素，相对滴心，正=上方）与 b 的换算 */
+  function hToB(hPx){ return Math.max(0, Math.min(0.99, Math.abs(hPx) / DROP_R)); }
+  function bToHPx(b){ return b * DROP_R; }
+
+  function toCanvasXY(clientX, clientY, cv, W, H){
+    var r = cv.getBoundingClientRect();
+    return { x: (clientX - r.left) * (W / r.width), y: (clientY - r.top) * (H / r.height) };
+  }
+  function eventXY(e, cv, W, H){
+    if (e.touches && e.touches.length) return toCanvasXY(e.touches[0].clientX, e.touches[0].clientY, cv, W, H);
+    if (e.changedTouches && e.changedTouches.length) return toCanvasXY(e.changedTouches[0].clientX, e.changedTouches[0].clientY, cv, W, H);
+    return toCanvasXY(e.clientX, e.clientY, cv, W, H);
+  }
+
+  function pointerDownD(e){
+    var p = eventXY(e, cvD, WD, HD);
+    /* 允许在入射光束整条水平线附近（画布左侧到入射点之间）按住拖动，不必精确点在圆点上；
+       竖直方向要求落在当前光束高度附近一个容差带内，避免点在雨滴本体或空白区域时误触发拖拽。 */
+    var beamY = DROP_CY + dragSign * bToHPx(bParam);
+    /* 可抓区必须盖住画出来的手柄圆点：入水交点在 b 大时会跑到 DROP_CX−R 右边不少 */
+    var withinBeamX = p.x <= DROP_CX;
+    var withinBeamY = Math.abs(p.y - beamY) <= 26;
+    if (!(withinBeamX && withinBeamY)) return;
+    e.preventDefault();
+    dragging = true;
+    sweeping = false;
+  }
+  function pointerMoveD(e){
+    if (!dragging) return;
+    e.preventDefault();
+    var p = eventXY(e, cvD, WD, HD);
+    var hPx = DROP_CY - p.y; /* 屏幕上方为正 */
+    bParam = hToB(hPx);
+    /* 拖拽的上下方向决定光线是从上方还是下方入射；用符号记录，仅影响作图对称，不影响角度数值。
+       dragSign=-1 对应"入射光在屏幕上方"，与 drawDropStage 里 h=bVal*DROP_R*dragSign
+       （画布 y 向下为正，local y=h 越大越靠下）保持一致：屏幕上方 → local h 应为负。 */
+    dragSign = hPx >= 0 ? -1 : 1;
+  }
+  function pointerUpD(){ dragging = false; }
+  var dragSign = 1;
+
+  cvD.addEventListener('mousedown', pointerDownD);
+  window.addEventListener('mousemove', pointerMoveD);
+  window.addEventListener('mouseup', pointerUpD);
+  cvD.addEventListener('touchstart', pointerDownD, { passive: false });
+  cvD.addEventListener('touchmove', pointerMoveD, { passive: false });
+  cvD.addEventListener('touchend', pointerUpD, { passive: false });
+
+  /* ==================== 扫描动画 ==================== */
+  var sweeping = false;
+  var sweepT = 0;
+  var SWEEP_DUR = 2; /* 秒 */
+  var sweepFan = []; /* 扫描留下的出射方向余像点 {ang} */
+  var anchorExit = null; /* 42°/51° 锚线方向缓存，首次画余像时按峰值 b 追迹一次 */
+
+  sweepBtn.addEventListener('click', function(){
+    if (sweeping) return;
+    sweeping = true;
+    sweepT = 0;
+    sweepFan = [];
+    sweepBtn.disabled = true;
+  });
+
+  /* 把向量 u 转到向量 v 所需的有符号夹角，范围 (-π, π]。用 atan2(cross,dot) 而不是
+     acos(dot)：acos 只回 [0,π]，会丢失旋转方向，是本函数早期版本折返角算错的根源。 */
+  function signedAngleBetween(u, v){
+    return Math.atan2(u.x * v.y - u.y * v.x, u.x * v.x + u.y * v.y);
+  }
+
+  /* ==================== 光路几何计算（用于作图） ====================
+     以滴心为原点建立局部坐标：入射光沿 +x 方向从左侧远处射来，
+     在圆上 y = h（h=b*R，取上半支，下半支由调用方镜像 y 即可，物理完全对称）处命中。
+     入射折射、内部反射、出射折射全部用有符号夹角旋转法算，最终整体平移到画布坐标
+     (DROP_CX, DROP_CY)。 */
+  function traceRayRobust(b, n, k){
+    var h = b * DROP_R;
+    var thetaI = Math.asin(Math.min(0.999999, b));
+    var thetaR = Math.asin(Math.sin(thetaI) / n);
+
+    var x0 = -Math.sqrt(Math.max(0, DROP_R * DROP_R - h * h));
+    var y0 = h;
+    var P0 = { x: x0, y: y0 };
+    /* 内法线（从入射点指向圆心）单位向量 */
+    var inN = { x: -x0 / DROP_R, y: -y0 / DROP_R };
+    /* 入射光方向：+x 方向 (1,0)。折射光线 = 内法线绕"内法线→入射光"的旋转方向转 thetaR。 */
+    var incident = { x: 1, y: 0 };
+    var rot0 = signedAngleBetween(inN, incident);
+    var sign0 = rot0 >= 0 ? 1 : -1;
+    var inNAngle = Math.atan2(inN.y, inN.x);
+    var refractedAngle = inNAngle + sign0 * thetaR;
+    var dir = { x: Math.cos(refractedAngle), y: Math.sin(refractedAngle) };
+
+    var pts = [{ x: P0.x - 300, y: P0.y }, { x: P0.x, y: P0.y }];
+
+    /* 沿 dir 从 P0 出发，求与圆的下一个交点（弦），反射 k 次 */
+    var cur = P0;
+    for (var i = 0; i < k; i++){
+      var hit = raySphereExit(cur, dir);
+      pts.push(hit);
+      /* 在 hit 点反射：法线 = hit/R（单位化） */
+      var hn = { x: hit.x / DROP_R, y: hit.y / DROP_R };
+      var d = dir.x * hn.x + dir.y * hn.y;
+      dir = { x: dir.x - 2 * d * hn.x, y: dir.y - 2 * d * hn.y };
+      cur = hit;
+    }
+    /* 最后一次与圆相交 = 出射点 */
+    var exitPt = raySphereExit(cur, dir);
+    pts.push(exitPt);
+
+    /* 出射折射：关键是用"外法线"（不是内法线！）算 dir 与法线的有符号夹角，
+       dir 在出射点附近朝外传播，和外法线在同一侧，这样才能拿到与 thetaR 相符、
+       连续无跳变的角度；用错内法线会落在 180°-thetaR 附近的错误分支。 */
+    var exitOutN = { x: exitPt.x / DROP_R, y: exitPt.y / DROP_R };
+    var rotExit = signedAngleBetween(exitOutN, dir);
+    var angInside = Math.abs(rotExit); /* 应等于 thetaR（弦的圆内对称性） */
+    /* 斯涅尔定律：n*sin(angInside) = 1*sin(angOut)，内部到外部 */
+    var sinOut = n * Math.sin(angInside);
+    if (sinOut > 1){
+      /* 全反射（几乎不会在真实彩虹几何里发生，兜底处理） */
+      return { pts: pts, exitDir: dir, totalReflect: true };
+    }
+    var angOut = Math.asin(sinOut);
+    var signExit = rotExit >= 0 ? 1 : -1;
+    var outNAngle = Math.atan2(exitOutN.y, exitOutN.x);
+    var exitAngle = outNAngle + signExit * angOut;
+    var exitDir = { x: Math.cos(exitAngle), y: Math.sin(exitAngle) };
+
+    var far = { x: exitPt.x + exitDir.x * 420, y: exitPt.y + exitDir.y * 420 };
+    pts.push(far);
+
+    return { pts: pts, exitDir: exitDir, exitAngle: exitAngle, totalReflect: false };
+  }
+  /* 从圆内一点 cur 沿单位方向 dir 求与圆 x²+y²=R² 的下一个交点（沿 dir 正方向最近的一个） */
+  function raySphereExit(cur, dir){
+    var a = dir.x * dir.x + dir.y * dir.y;
+    var bq = 2 * (cur.x * dir.x + cur.y * dir.y);
+    var cq = cur.x * cur.x + cur.y * cur.y - DROP_R * DROP_R;
+    var disc = Math.max(0, bq * bq - 4 * a * cq);
+    var sq = Math.sqrt(disc);
+    var t1 = (-bq + sq) / (2 * a);
+    var t2 = (-bq - sq) / (2 * a);
+    var t = Math.max(t1, t2); /* 取正向较大根，即前进方向上的交点 */
+    return { x: cur.x + dir.x * t, y: cur.y + dir.y * t };
+  }
+
+  /* ==================== 绘制：舞台一 ==================== */
+  function drawDropStage(bVal, showFanOverlay){
+    ctxD.clearRect(0, 0, WD, HD);
+    /* 深蓝灰背景 */
+    var sky = ctxD.createLinearGradient(0, 0, 0, HD);
+    sky.addColorStop(0, '#141a26'); sky.addColorStop(1, '#232c3d');
+    ctxD.fillStyle = sky; ctxD.fillRect(0, 0, WD, HD);
+    /* 淡星点缀氛围 */
+    ctxD.fillStyle = 'rgba(255,255,255,.5)';
+    for (var s = 0; s < 26; s++){
+      var sx = (s * 97) % WD, sy = (s * 53) % (HD * 0.4);
+      ctxD.globalAlpha = 0.12 + (s % 5) * 0.05;
+      ctxD.beginPath(); ctxD.arc(sx, sy, 1, 0, Math.PI * 2); ctxD.fill();
+    }
+    ctxD.globalAlpha = 1;
+
+    ctxD.save();
+    ctxD.translate(DROP_CX, DROP_CY);
+
+    /* 扫描余像扇形（右侧，淡淡的出射方向轨迹） */
+    if (sweepFan.length > 1){
+      ctxD.save();
+      ctxD.globalAlpha = 0.5;
+      for (var f = 0; f < sweepFan.length; f++){
+        var fa = sweepFan[f];
+        ctxD.strokeStyle = fa.css;
+        ctxD.globalAlpha = 0.16;
+        ctxD.lineWidth = 1;
+        ctxD.beginPath();
+        ctxD.moveTo(DROP_R * 0.3 * Math.cos(fa.exitAngle), DROP_R * 0.3 * Math.sin(fa.exitAngle));
+        ctxD.lineTo(340 * Math.cos(fa.exitAngle), 340 * Math.sin(fa.exitAngle));
+        ctxD.stroke();
+      }
+      /* 42° 锚线：把「交通堵塞」发生的方向用印章红钉在画面里，数字不再只活在字幕里 */
+      if (!anchorExit){
+        var meanN = (SPECTRUM[0].n + SPECTRUM[6].n) / 2;
+        anchorExit = {
+          1: traceRayRobust(PEAK_RED1.b, meanN, 1).exitAngle,
+          2: traceRayRobust(PEAK_RED2.b, meanN, 2).exitAngle
+        };
+      }
+      var aAng = anchorExit[secondBounce.checked ? 2 : 1];
+      ctxD.globalAlpha = 0.85;
+      ctxD.strokeStyle = '#b5402c';
+      ctxD.setLineDash([5, 6]);
+      ctxD.lineWidth = 1.3;
+      ctxD.beginPath();
+      ctxD.moveTo(DROP_R * 0.3 * Math.cos(aAng), DROP_R * 0.3 * Math.sin(aAng));
+      ctxD.lineTo(352 * Math.cos(aAng), 352 * Math.sin(aAng));
+      ctxD.stroke();
+      ctxD.setLineDash([]);
+      ctxD.fillStyle = '#b5402c';
+      ctxD.font = '12px "Noto Serif SC",serif';
+      ctxD.fillText(secondBounce.checked ? '51° 在这里堆积' : '42° 在这里堆积', 296 * Math.cos(aAng) + 10, 296 * Math.sin(aAng) - 8);
+      ctxD.restore();
+    }
+
+    /* 入射白光（从画面左边缘到滴前）*/
+    var h = bVal * DROP_R * dragSign;
+    var x0 = -Math.sqrt(Math.max(0, DROP_R * DROP_R - h * h));
+    ctxD.strokeStyle = 'rgba(255,255,255,.85)';
+    ctxD.lineWidth = 2.4;
+    ctxD.beginPath();
+    ctxD.moveTo(-DROP_CX + 20, h);
+    ctxD.lineTo(x0, h);
+    ctxD.stroke();
+    /* 入射点可拖手柄 */
+    ctxD.fillStyle = '#fff';
+    ctxD.beginPath(); ctxD.arc(x0, h, 5, 0, Math.PI * 2); ctxD.fill();
+    ctxD.strokeStyle = 'rgba(255,255,255,.4)'; ctxD.lineWidth = 6;
+    ctxD.beginPath(); ctxD.arc(x0, h, 9, 0, Math.PI * 2); ctxD.stroke();
+
+    /* 雨滴本体：半透明圆 */
+    var dropGrad = ctxD.createRadialGradient(-DROP_R * 0.3, -DROP_R * 0.35, DROP_R * 0.15, 0, 0, DROP_R);
+    dropGrad.addColorStop(0, 'rgba(210,230,255,.30)');
+    dropGrad.addColorStop(0.7, 'rgba(150,190,230,.16)');
+    dropGrad.addColorStop(1, 'rgba(120,160,210,.10)');
+    ctxD.fillStyle = dropGrad;
+    ctxD.beginPath(); ctxD.arc(0, 0, DROP_R, 0, Math.PI * 2); ctxD.fill();
+    ctxD.strokeStyle = 'rgba(220,235,255,.55)'; ctxD.lineWidth = 1.6;
+    ctxD.beginPath(); ctxD.arc(0, 0, DROP_R, 0, Math.PI * 2); ctxD.stroke();
+    /* 高光 */
+    ctxD.fillStyle = 'rgba(255,255,255,.35)';
+    ctxD.beginPath(); ctxD.ellipse(-DROP_R * 0.42, -DROP_R * 0.46, DROP_R * 0.16, DROP_R * 0.09, -0.5, 0, Math.PI * 2); ctxD.fill();
+
+    var k = secondBounce.checked ? 2 : 1;
+    var bSigned = Math.abs(bVal);
+
+    /* 七色谱线：真实折射+反射+折射路径 */
+    var traces = [];
+    for (var i = 0; i < SPECTRUM.length; i++){
+      var c = SPECTRUM[i];
+      var tr = traceRayRobust(bSigned, c.n, k);
+      traces.push({ c: c, tr: tr });
+    }
+    ctxD.save();
+    if (dragSign < 0) ctxD.scale(1, -1); /* 下方入射时整体镜像绘制 */
+    for (var j = 0; j < traces.length; j++){
+      var cc = traces[j].c, tt = traces[j].tr;
+      ctxD.strokeStyle = cc.css;
+      ctxD.lineWidth = 1.6;
+      ctxD.globalAlpha = 0.88;
+      ctxD.beginPath();
+      for (var p = 1; p < tt.pts.length; p++){ /* 从索引1开始：索引0是入射光延长线，已单独画过 */
+        var pt = tt.pts[p];
+        if (p === 1) ctxD.moveTo(pt.x, pt.y); else ctxD.lineTo(pt.x, pt.y);
+      }
+      ctxD.stroke();
+    }
+    ctxD.restore();
+    ctxD.globalAlpha = 1;
+
+    ctxD.restore(); /* 结束 translate */
+
+    /* 读数计算（不受 dragSign 符号影响，几何对称） */
+    var redAngle = turnBackAngle(bSigned, N_RED, k);
+    var violetAngle = turnBackAngle(bSigned, N_VIOLET, k);
+    hudD.innerHTML =
+      '碰撞参数 b = <b>' + bSigned.toFixed(2) + '</b>　·　' +
+      '红光回头角 <b>' + redAngle.toFixed(1) + '°</b>　·　' +
+      '紫光回头角 <b>' + violetAngle.toFixed(1) + '°</b>　·　' +
+      (k === 2 ? '副虹模式（峰值≈' + PEAK_RED2.angle.toFixed(1) + '°/' + PEAK_VIOLET2.angle.toFixed(1) + '°）' : '主虹模式（峰值≈' + PEAK_RED1.angle.toFixed(1) + '°/' + PEAK_VIOLET1.angle.toFixed(1) + '°）');
+  }
+
+  /* ==================== 舞台一主循环 ==================== */
+  var lastD = performance.now();
+  function loopDrop(now){
+    var dt = Math.min(0.25, (now - lastD) / 1000);
+    lastD = now;
+
+    if (sweeping){
+      sweepT += reduceMotion ? SWEEP_DUR : dt;
+      var p = Math.min(1, sweepT / SWEEP_DUR);
+      bParam = p * 0.99;
+      var k = secondBounce.checked ? 2 : 1;
+      var tr = traceRayRobust(bParam, (SPECTRUM[0].n + SPECTRUM[6].n) / 2, k);
+      if (!tr.totalReflect){
+        sweepFan.push({ exitAngle: tr.exitAngle, css: 'rgba(230,200,140,1)' });
+        if (sweepFan.length > 90) sweepFan.shift();
+      }
+      if (p >= 1){
+        sweeping = false;
+        sweepBtn.disabled = false;
+        showCaptionD('光从每个高度进来，却挤在 42 度出去。彩虹就是这次交通堵塞。', 4200);
+      }
+    }
+
+    drawDropStage(bParam, true);
+    if (stageActive === 'drop') requestAnimationFrame(loopDrop);
+  }
+
+  /* ==================== 舞台二：天空 ==================== */
+  var cvS = document.getElementById('cvSky');
+  var ctxS = cvS.getContext('2d');
+  var WS = 780, HS = 460;
+  var hudS = document.getElementById('hudSky');
+  var sunAltSlider = document.getElementById('sunAlt');
+  var sunAltVal = document.getElementById('sunAltVal');
+  var secondBounceSky = document.getElementById('secondBounceSky');
+  var captionS = document.getElementById('captionSky');
+  var capTimerS = null;
+  function showCaptionS(text, ms){
+    captionS.textContent = text;
+    captionS.classList.add('show');
+    clearTimeout(capTimerS);
+    capTimerS = setTimeout(function(){ captionS.classList.remove('show'); }, ms || 3200);
+  }
+
+  var HORIZON_Y = HS * 0.66;
+  var OBS_X = WS * 0.5;
+  var wasBelowHorizon = false;
+
+  /* 雨幕：固定随机线条，暗示满天雨丝 */
+  var rainLines = [];
+  for (var rl = 0; rl < 70; rl++){
+    rainLines.push({ x: Math.random() * WS, y: Math.random() * HORIZON_Y, len: 10 + Math.random() * 16 });
+  }
+
+  function drawSkyStage(){
+    ctxS.clearRect(0, 0, WS, HS);
+    var sunAlt = +sunAltSlider.value;
+    var k = secondBounceSky.checked ? 2 : 1;
+
+    /* 天空：随太阳高度略变亮 */
+    var skyTop = mixColor([70, 90, 130], [120, 150, 195], sunAlt / 60);
+    var skyBot = mixColor([150, 175, 195], [210, 220, 220], sunAlt / 60);
+    var sky = ctxS.createLinearGradient(0, 0, 0, HORIZON_Y);
+    sky.addColorStop(0, skyTop); sky.addColorStop(1, skyBot);
+    ctxS.fillStyle = sky; ctxS.fillRect(0, 0, WS, HORIZON_Y);
+
+    /* 雨幕（细雨线） */
+    ctxS.strokeStyle = 'rgba(255,255,255,.22)';
+    ctxS.lineWidth = 1;
+    for (var i = 0; i < rainLines.length; i++){
+      var rl2 = rainLines[i];
+      ctxS.beginPath();
+      ctxS.moveTo(rl2.x, rl2.y);
+      ctxS.lineTo(rl2.x - 4, rl2.y + rl2.len);
+      ctxS.stroke();
+    }
+
+    /* 地面 */
+    ctxS.fillStyle = '#5c6b52';
+    ctxS.fillRect(0, HORIZON_Y, WS, HS - HORIZON_Y);
+    ctxS.strokeStyle = '#41493a'; ctxS.lineWidth = 2;
+    ctxS.beginPath(); ctxS.moveTo(0, HORIZON_Y); ctxS.lineTo(WS, HORIZON_Y); ctxS.stroke();
+
+    /* 反日点：正对太阳方向，位于观察者视线正下方，深度=太阳高度角 */
+    var antiY = HORIZON_Y + sunAlt * 3.6; /* 每度约3.6px，纯示意比例尺 */
+    var antiX = OBS_X;
+
+    /* 虹弧半径（像素）：用角度*统一比例尺换算，和 antiY 用同一把尺子，保证几何自洽。
+       只留亚历山大暗带实际要用的两个边界半径：主虹外缘(红)、副虹内缘(紫)。 */
+    var PX_PER_DEG = 3.6;
+    var redR1 = PEAK_RED1.angle * PX_PER_DEG;
+    var violetR2 = PEAK_VIOLET2.angle * PX_PER_DEG;
+
+    /* 主虹：从紫(内)到红(外)七彩弧，只画地平线以上的部分 */
+    ctxS.save();
+    ctxS.beginPath(); ctxS.rect(0, 0, WS, HORIZON_Y); ctxS.clip();
+    for (var si = SPECTRUM.length - 1; si >= 0; si--){
+      var c = SPECTRUM[si];
+      var peak = scanPeakCached(c.n, 1);
+      var rr = peak * PX_PER_DEG;
+      ctxS.strokeStyle = c.css;
+      ctxS.globalAlpha = 0.72;
+      ctxS.lineWidth = 5;
+      ctxS.beginPath();
+      ctxS.arc(antiX, antiY, rr, Math.PI, Math.PI * 2);
+      ctxS.stroke();
+    }
+    ctxS.globalAlpha = 1;
+
+    /* 亚历山大暗带：主虹与副虹之间变暗 */
+    if (k === 2){
+      ctxS.save();
+      ctxS.globalCompositeOperation = 'multiply';
+      ctxS.fillStyle = 'rgba(90,100,120,.4)';
+      ctxS.beginPath();
+      ctxS.arc(antiX, antiY, violetR2 - 2, Math.PI, Math.PI * 2);
+      ctxS.arc(antiX, antiY, redR1 + 2, Math.PI * 2, Math.PI, true);
+      ctxS.fill();
+      ctxS.restore();
+      var bandR = (redR1 + violetR2) / 2;
+      var bandY = antiY - bandR;
+      if (bandY > 14 && bandY < HORIZON_Y - 6){
+        ctxS.fillStyle = 'rgba(205,215,235,.8)';
+        ctxS.font = '11.5px "Noto Serif SC",serif';
+        ctxS.textAlign = 'center';
+        ctxS.fillText('亚历山大暗带', antiX, bandY + 4);
+      }
+
+      /* 副虹：从红(内)到紫(外)，顺序反转 */
+      for (var sj = 0; sj < SPECTRUM.length; sj++){
+        var c2 = SPECTRUM[sj];
+        var peak2 = scanPeakCached(c2.n, 2);
+        var rr2 = peak2 * PX_PER_DEG;
+        ctxS.strokeStyle = c2.css;
+        ctxS.globalAlpha = 0.55;
+        ctxS.lineWidth = 5;
+        ctxS.beginPath();
+        ctxS.arc(antiX, antiY, rr2, Math.PI, Math.PI * 2);
+        ctxS.stroke();
+      }
+      ctxS.globalAlpha = 1;
+    }
+    ctxS.restore();
+
+    /* 观察者头顶指向反日点的虚线 + 标注 */
+    var headY = HORIZON_Y - 46;
+    ctxS.strokeStyle = 'rgba(245,239,226,.6)';
+    ctxS.setLineDash([4, 5]);
+    ctxS.lineWidth = 1.4;
+    ctxS.beginPath();
+    ctxS.moveTo(OBS_X, headY);
+    ctxS.lineTo(antiX, antiY);
+    ctxS.stroke();
+    ctxS.setLineDash([]);
+    ctxS.fillStyle = 'rgba(245,239,226,.85)';
+    ctxS.font = '11.5px "Noto Serif SC",serif';
+    ctxS.textAlign = antiY < HORIZON_Y ? 'left' : 'center';
+    var labelY = Math.max(16, Math.min(HORIZON_Y - 8, antiY));
+    ctxS.fillText('你的反日点', antiX + (antiY < HORIZON_Y ? 8 : 56), labelY - (antiY < HORIZON_Y ? -4 : 6));
+
+    /* 观察者小人（背对太阳，即背对我们看向虹弧方向，脸朝画面外/北，背影朝我们） */
+    drawObserver(OBS_X, HORIZON_Y);
+
+    /* 太阳（示意，画在观察者身后上方，用角标代替真实位置避免遮挡虹弧） */
+    ctxS.save();
+    ctxS.fillStyle = 'rgba(255,220,140,.9)';
+    ctxS.beginPath(); ctxS.arc(WS - 46, 30 + (60 - sunAlt) * 1.2, 14, 0, Math.PI * 2); ctxS.fill();
+    ctxS.fillStyle = 'rgba(245,239,226,.7)';
+    ctxS.font = '10.5px "Noto Serif SC",serif';
+    ctxS.textAlign = 'right';
+    ctxS.fillText('太阳高度 ' + sunAlt + '°（在你身后）', WS - 10, 14 + (60 - sunAlt) * 1.2);
+    ctxS.restore();
+    ctxS.textAlign = 'left';
+
+    /* 主虹顶点是否沉入地平线：几何判定 */
+    var apexElev = PEAK_RED1.angle - sunAlt; /* 虹顶仰角 = 半径(红) - 太阳高度 */
+    var belowHorizon = apexElev < 0;
+    if (belowHorizon && !wasBelowHorizon){
+      showCaptionS('太阳超过 42 度，彩虹就沉到了地平线下面。所以正午没有彩虹，彩虹属于清晨和黄昏。', 4600);
+    }
+    wasBelowHorizon = belowHorizon;
+
+    /* 画面整体压暗，当彩虹沉入地平线以下时提示"只剩微光" */
+    if (belowHorizon){
+      ctxS.fillStyle = 'rgba(10,10,20,.5)';
+      ctxS.fillRect(0, 0, WS, HORIZON_Y);
+    }
+
+    hudS.innerHTML =
+      '太阳高度 <b>' + sunAlt + '°</b>　·　主虹半径(红) <b>' + PEAK_RED1.angle.toFixed(1) + '°</b>　·　' +
+      '虹顶仰角 <b>' + apexElev.toFixed(1) + '°</b>　·　' +
+      (belowHorizon ? '主虹已沉入地平线以下' : '主虹可见') +
+      (k === 2 ? '　·　副虹半径(紫) <b>' + PEAK_VIOLET2.angle.toFixed(1) + '°</b>' : '');
+  }
+
+  var peakCache = {};
+  function scanPeakCached(n, k){
+    var key = n + '_' + k;
+    if (!(key in peakCache)) peakCache[key] = scanPeak(n, k, 2000).angle;
+    return peakCache[key];
+  }
+
+  function mixColor(a, b, t){
+    t = Math.max(0, Math.min(1, t));
+    var r = Math.round(a[0] + (b[0] - a[0]) * t);
+    var g = Math.round(a[1] + (b[1] - a[1]) * t);
+    var bl = Math.round(a[2] + (b[2] - a[2]) * t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+  }
+
+  function drawObserver(x, groundY){
+    /* 背对太阳的小人剪影：面朝画面深处（即背影朝我们），简笔 */
+    ctxS.save();
+    ctxS.translate(x, groundY);
+    ctxS.fillStyle = '#2a2521';
+    ctxS.beginPath(); ctxS.arc(0, -44, 7, 0, Math.PI * 2); ctxS.fill();
+    ctxS.strokeStyle = '#2a2521'; ctxS.lineWidth = 4; ctxS.lineCap = 'round';
+    ctxS.beginPath(); ctxS.moveTo(0, -37); ctxS.lineTo(0, -10); ctxS.stroke();
+    ctxS.beginPath(); ctxS.moveTo(0, -32); ctxS.lineTo(-11, -18); ctxS.stroke();
+    ctxS.beginPath(); ctxS.moveTo(0, -32); ctxS.lineTo(11, -18); ctxS.stroke();
+    ctxS.beginPath(); ctxS.moveTo(0, -10); ctxS.lineTo(-8, 10); ctxS.stroke();
+    ctxS.beginPath(); ctxS.moveTo(0, -10); ctxS.lineTo(8, 10); ctxS.stroke();
+    ctxS.restore();
+  }
+
+  /* ==================== 舞台二主循环 ==================== */
+  function loopSky(){
+    drawSkyStage();
+    if (stageActive === 'sky') requestAnimationFrame(loopSky);
+  }
+
+  sunAltSlider.addEventListener('input', function(){
+    sunAltVal.textContent = sunAltSlider.value + '°';
+  });
+
+  /* ==================== 舞台切换 ==================== */
+  var swDrop = document.getElementById('swDrop');
+  var swSky = document.getElementById('swSky');
+  var stageDropEl = document.getElementById('stageDrop');
+  var stageSkyEl = document.getElementById('stageSky');
+  var ctrlsDropEl = document.getElementById('ctrlsDrop');
+  var ctrlsSkyEl = document.getElementById('ctrlsSky');
+  var stageActive = 'drop';
+
+  function setStage(which){
+    stageActive = which;
+    var onDrop = which === 'drop';
+    swDrop.classList.toggle('on', onDrop);
+    swSky.classList.toggle('on', !onDrop);
+    stageDropEl.style.display = onDrop ? '' : 'none';
+    ctrlsDropEl.style.display = onDrop ? '' : 'none';
+    stageSkyEl.style.display = onDrop ? 'none' : '';
+    ctrlsSkyEl.style.display = onDrop ? 'none' : '';
+    if (onDrop){ lastD = performance.now(); requestAnimationFrame(loopDrop); }
+    else { requestAnimationFrame(loopSky); }
+  }
+  swDrop.addEventListener('click', function(){ if (stageActive !== 'drop') setStage('drop'); });
+  swSky.addEventListener('click', function(){ if (stageActive !== 'sky') setStage('sky'); });
+
+  /* ==================== 初始化 ==================== */
+  sunAltVal.textContent = sunAltSlider.value + '°';
+  drawDropStage(bParam, false);
+  requestAnimationFrame(loopDrop);
+})();
+</script>
+</body>
+</html>

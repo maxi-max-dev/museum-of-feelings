@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>洗七次才算乱 · 感觉博物馆</title>
+<meta name="description" content="洗少了不乱，洗多了白洗，完美了等于没洗。一副52张牌交错洗7次才接近真正的随机，这是数学家证明过的。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  /* ---- 舞台：色带 + 牌背装饰 ---- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#3a3226;overflow:hidden;animation:rise .8s .1s ease both;
+    padding:16px 14px 12px;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  #bandCv{margin-bottom:6px;}
+  .caption{
+    min-height:1.9em;text-align:center;font-size:14px;letter-spacing:.05em;
+    color:#f0e8d6;line-height:1.8;padding:6px 6px 2px;
+  }
+  .caption b{color:#e8b98a;}
+
+  /* ---- 乱度仪表 ---- */
+  .gauge{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px 18px;margin-top:16px;animation:rise .8s .15s ease both;
+  }
+  .gauge h2{font-size:15.5px;letter-spacing:.1em;margin-bottom:3px;}
+  .gauge .tag{font-size:11px;color:var(--seal);letter-spacing:.12em;margin-bottom:12px;}
+  .gaugebar{position:relative;height:34px;border:1px solid var(--line);border-radius:17px;
+    background:linear-gradient(90deg,#e8dfc9 0%,#d9c9a3 30%,#c9975f 60%,#b5402c 100%);
+    margin-bottom:6px;overflow:visible;}
+  .needle{
+    position:absolute;top:-6px;left:0%;width:3px;height:46px;background:var(--ink);
+    border-radius:2px;transform:translateX(-1.5px);
+    box-shadow:0 0 0 2px rgba(245,239,226,.9);
+    transition:left .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .gaugelabels{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);letter-spacing:.05em;margin-bottom:12px;}
+  .gaugestats{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;font-size:13px;color:#453e30;}
+  .gaugestats b{color:var(--seal);font-size:15px;}
+
+  /* ---- 控制区 ---- */
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;animation:rise .8s .2s ease both;
+  }
+  .hud{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;font-size:13px;color:#453e30;
+    letter-spacing:.04em;margin-bottom:14px;border-bottom:1px dashed var(--line);padding-bottom:12px;}
+  .hud b{color:var(--seal);}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-bottom:12px;}
+  .row:last-child{margin-bottom:0;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.06em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 15px;cursor:pointer;touch-action:manipulation;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn:disabled{opacity:.45;cursor:default;}
+  .btn:disabled:hover{border-color:var(--ink);color:var(--ink);}
+  .btn.primary{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.primary:hover{color:#fdf6ee;background:#96331f;}
+  .btn.ghost{border-style:dashed;}
+  .subhint{font-size:11.5px;color:var(--ink-soft);text-align:center;margin-top:2px;letter-spacing:.03em;}
+
+  /* ---- 实验室 ---- */
+  .lab{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:18px 20px 20px;margin-top:16px;animation:rise .8s .25s ease both;
+  }
+  .lab h2{font-size:16px;letter-spacing:.1em;margin-bottom:4px;}
+  .lab .tag{font-size:11.5px;color:var(--seal);letter-spacing:.15em;margin-bottom:12px;}
+  .lab p.desc{font-size:13px;line-height:1.9;color:#57503f;margin-bottom:12px;}
+  .chartwrap{border:1px solid var(--line);background:#fffdf6;padding:12px 10px 8px;}
+  #chartCv{display:block;width:100%;height:auto;}
+  .labfoot{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap;}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .punch{
+    text-align:center;font-size:22px;letter-spacing:.1em;color:var(--seal);
+    padding:18px 10px 6px;line-height:1.7;
+  }
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .bandflash{animation:bandflash 1.3s ease;}
+  @keyframes bandflash{0%{box-shadow:0 0 0 4px var(--seal);}100%{box-shadow:0 0 0 4px transparent;}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}.needle{transition:none!important;}}
+  @media(max-width:640px){
+    .row{gap:8px;}
+    .btn{font-size:12.5px;padding:9px 12px;}
+    .gaugestats{gap:14px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №029</span>
+  </div>
+
+  <header>
+    <h1>洗七次才算乱</h1>
+    <div class="en">THE SEVEN SHUFFLES THEOREM</div>
+    <p class="sub">洗少了不乱，洗多了白洗，完美了等于没洗</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="bandCv" width="780" height="150"></canvas>
+    <canvas id="backCv" width="780" height="34"></canvas>
+    <div class="caption" id="caption">这是一副全新的牌，52 张按顺序排好，颜色是一道平滑的彩虹。</div>
+  </div>
+
+  <div class="gauge">
+    <h2>📟 乱度仪表</h2>
+    <div class="tag">本厅的证据 · 数学家真用的两个统计量</div>
+    <div class="gaugebar">
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="gaugelabels"><span>有序</span><span>乱</span></div>
+    <div class="gaugestats">
+      <span>上升序列数 <b id="statRS">1</b> / 26~27</span>
+      <span>相邻保持率 <b id="statAR">100%</b></span>
+    </div>
+    <div class="tag" style="margin-top:8px;">读数越接近 27，牌里残留的规律越少。全新的牌是 1，真正的乱就停在 26 附近</div>
+  </div>
+
+  <div class="ctrls">
+    <div class="hud">
+      <span>已洗 <b id="hudCount">0</b> 次</span>
+      <span>完美洗 <b id="hudPerfect">0</b> / 8</span>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="btnRiffle">🃏 交错洗一次</button>
+      <button class="btn" id="btnSeven">⚡ 一键洗七次</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnOverhand">🤲 奶奶的搓牌法</button>
+      <button class="btn" id="btnFaro">🎩 魔术师的完美洗牌</button>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="btnReset">🧹 换新牌</button>
+    </div>
+    <div class="subhint">每张色条的颜色 = 这张牌最初所在的位置，色带越碎，牌被打散得越彻底。</div>
+  </div>
+
+  <div class="lab">
+    <h2>🔬 一千副牌实验</h2>
+    <div class="tag">瞬时蒙特卡洛 · 不看动画，只看数字</div>
+    <p class="desc">同时虚拟洗 k=1~10 次，各洗 1000 副牌，把「洗完还剩多少相邻关系」画成下面的折线。断崖应该出现在 5~7 次之间，7 次之后曲线基本走平，这条平台，就是「洗七次」这个数字的来处。</p>
+    <div class="chartwrap">
+      <canvas id="chartCv" width="780" height="240"></canvas>
+    </div>
+    <div class="labfoot">
+      <button class="btn primary" id="btnExperiment">🔬 开始实验</button>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 贝叶-迪亚科尼斯定理</div>
+    <div class="pb">① 1992 年，数学家<b>贝叶</b>和<b>迪亚科尼斯</b>证明：一副 52 张的牌，交错洗 <b>7 次</b>才接近真正的随机。少于 5 次，牌面残留的秩序足够老千赢你的钱；多于 7 次，改善微乎其微。</div>
+    <div class="pb">② 乱不是「看起来乱」：仪表用的是数学家真用的统计量，叫<b>上升序列</b>。你觉得第 3 次就乱了，是因为人眼找不出模式，但模式还在，会数学的人找得出。</div>
+    <div class="pb">③ 嫩洗（一小叠一小叠往下捋的那种）弱得惊人：数学家的说法是它要洗上千次才追得上交错洗 7 次的效果。牌桌上那位一直搓牌的朋友，其实一直在发同一副牌。</div>
+    <div class="pb">④ 完美的反面教材：法罗洗每次都精确到一张隔一张，8 次后整副牌原样归位。魔术师靠它变魔术，赌场怕它出老千。可预测的操作永远造不出随机，随机需要失误。</div>
+    <div class="punch">「真正的混乱，<br>需要一点点笨拙。」</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №029 · Max 造<br>
+    <a href="../rainbow/">下一个展厅：雨滴里拐弯的光 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var N = 52;
+
+  /* ================= 洗牌数学核心 ================= */
+  /* 与离线验证脚本同源逻辑：GSR交错洗模型 / 完美法罗洗 / 段序倒转型嫩洗 */
+
+  function identity(){
+    var a = new Array(N);
+    for (var i = 0; i < N; i++) a[i] = i;
+    return a;
+  }
+
+  function binomialSplit(n){
+    var heads = 0;
+    for (var i = 0; i < n; i++) if (Math.random() < 0.5) heads++;
+    return heads;
+  }
+
+  /* GSR 模型的一次交错洗：二项分布劈两摞，按剩余张数比例随机交错合并 */
+  function riffleOnce(deck){
+    var n = deck.length;
+    var aSize = binomialSplit(n);
+    var A = deck.slice(0, aSize), B = deck.slice(aSize);
+    var out = new Array(n);
+    var ai = 0, bi = 0, oi = 0;
+    while (ai < A.length && bi < B.length){
+      var remA = A.length - ai, remB = B.length - bi;
+      if (Math.random() < remA / (remA + remB)) out[oi++] = A[ai++];
+      else out[oi++] = B[bi++];
+    }
+    while (ai < A.length) out[oi++] = A[ai++];
+    while (bi < B.length) out[oi++] = B[bi++];
+    return out;
+  }
+
+  /* 完美法罗洗（out-shuffle）：精确劈26+26，严格一张隔一张交错，首张不变 */
+  function perfectFaroOut(deck){
+    var n = deck.length, half = n / 2;
+    var A = deck.slice(0, half), B = deck.slice(half);
+    var out = new Array(n);
+    for (var i = 0; i < half; i++){
+      out[2*i] = A[i];
+      out[2*i+1] = B[i];
+    }
+    return out;
+  }
+
+  /* 嫩洗（overhand shuffle）：固定切2刀分3大段，段序整体倒转，段内顺序不变 */
+  function overhandOnce(deck){
+    var n = deck.length;
+    var numCuts = 2;
+    var cutSet = {};
+    var cuts = [];
+    while (cuts.length < numCuts){
+      var c = 1 + Math.floor(Math.random() * (n - 1));
+      if (!cutSet[c]){ cutSet[c] = true; cuts.push(c); }
+    }
+    cuts.sort(function(a,b){ return a - b; });
+    cuts.unshift(0); cuts.push(n);
+    var segments = [];
+    for (var i = 0; i < cuts.length - 1; i++) segments.push(deck.slice(cuts[i], cuts[i+1]));
+    var out = [];
+    for (var j = segments.length - 1; j >= 0; j--) out = out.concat(segments[j]);
+    return out;
+  }
+
+  /* 上升序列数：极大递增游程个数。有序=1，全乱期望≈(n+1)/2≈26.5 */
+  function risingSequences(perm){
+    var count = 1;
+    for (var i = 1; i < perm.length; i++) if (perm[i] < perm[i-1]) count++;
+    return count;
+  }
+
+  /* 相邻保持率：原本相邻的牌对，洗后仍相邻（不论前后）的比例 */
+  function adjacencyRetention(perm){
+    var pos = new Array(perm.length);
+    for (var i = 0; i < perm.length; i++) pos[perm[i]] = i;
+    var kept = 0, total = perm.length - 1;
+    for (var v = 0; v < perm.length - 1; v++){
+      if (Math.abs(pos[v] - pos[v+1]) === 1) kept++;
+    }
+    return kept / total;
+  }
+
+  /* ================= 状态 ================= */
+  var deck = identity();
+  var shuffleCount = 0;
+  var perfectCount = 0; /* 连续完美法罗计数，非完美操作会清零 */
+  var animating = false;
+
+  /* ================= 颜色：52色彩虹渐变，按初始位置 ================= */
+  var palette = (function(){
+    var arr = [];
+    for (var i = 0; i < N; i++){
+      var t = i / (N - 1);
+      var hue = t * 300; /* 红(0)到紫(300)，避免首尾撞色 */
+      arr.push('hsl(' + hue.toFixed(1) + ',68%,54%)');
+    }
+    return arr;
+  })();
+
+  /* ================= 画布 ================= */
+  var bandCv = document.getElementById('bandCv');
+  var bandCtx = bandCv.getContext('2d');
+  var BW = 780, BH = 150;
+  var backCv = document.getElementById('backCv');
+  var backCtx = backCv.getContext('2d');
+  var BKW = 780, BKH = 34;
+
+  function drawBand(order){
+    bandCtx.clearRect(0, 0, BW, BH);
+    var w = BW / order.length;
+    for (var i = 0; i < order.length; i++){
+      bandCtx.fillStyle = palette[order[i]];
+      bandCtx.fillRect(i * w, 20, Math.ceil(w) + 0.6, BH - 40);
+    }
+  }
+
+  function drawBandSplit(topOrder, botOrder, gapPx){
+    /* 洗牌动画中段：色带劈开成上下两条，逐渐用gapPx间隔 */
+    bandCtx.clearRect(0, 0, BW, BH);
+    var midY = BH / 2;
+    var stripH = (BH - 40) / 2 - 2;
+    if (topOrder && topOrder.length){
+      var w1 = BW / topOrder.length;
+      for (var i = 0; i < topOrder.length; i++){
+        bandCtx.fillStyle = palette[topOrder[i]];
+        bandCtx.fillRect(i * w1, midY - gapPx - stripH, Math.ceil(w1) + 0.6, stripH);
+      }
+    }
+    if (botOrder && botOrder.length){
+      var w2 = BW / botOrder.length;
+      for (var j = 0; j < botOrder.length; j++){
+        bandCtx.fillStyle = palette[botOrder[j]];
+        bandCtx.fillRect(j * w2, midY + gapPx, Math.ceil(w2) + 0.6, stripH);
+      }
+    }
+  }
+
+  function drawBacks(){
+    backCtx.clearRect(0, 0, BKW, BKH);
+    var count = 26, w = BKW / count;
+    for (var i = 0; i < count; i++){
+      backCtx.fillStyle = (i % 2 === 0) ? '#7a2e22' : '#8f382a';
+      backCtx.fillRect(i * w + 1.5, 3, w - 3, BKH - 8);
+      backCtx.strokeStyle = 'rgba(245,239,226,.35)';
+      backCtx.lineWidth = 1;
+      backCtx.strokeRect(i * w + 3.5, 5, w - 7, BKH - 12);
+    }
+  }
+
+  /* ================= 仪表 ================= */
+  var needle = document.getElementById('needle');
+  var statRS = document.getElementById('statRS');
+  var statAR = document.getElementById('statAR');
+
+  function updateGauge(order){
+    var rs = risingSequences(order);
+    var ar = adjacencyRetention(order);
+    statRS.textContent = rs;
+    statAR.textContent = (ar * 100).toFixed(1) + '%';
+    /* 指针位置：主要用上升序列数映射（1~26.5 -> 0%~100%），更贴近"7次断崖"叙事 */
+    var pct = (rs - 1) / (26.5 - 1);
+    pct = Math.max(0, Math.min(1, pct));
+    needle.style.left = (pct * 100) + '%';
+  }
+
+  /* ================= 字幕 ================= */
+  var captionEl = document.getElementById('caption');
+  function setCaption(html){ captionEl.innerHTML = html; }
+
+  function beatCaption(count){
+    if (count === 4) return '看起来乱了？仪表说还早';
+    if (count === 7) return '到了。之后再洗，都是白费力气';
+    if (count === 10) return '看，指针已经不动了';
+    return null;
+  }
+
+  /* ================= HUD ================= */
+  var hudCount = document.getElementById('hudCount');
+  var hudPerfect = document.getElementById('hudPerfect');
+  function updateHud(){
+    hudCount.textContent = shuffleCount;
+    hudPerfect.textContent = perfectCount;
+  }
+
+  /* ================= 按钮 ================= */
+  var btnRiffle = document.getElementById('btnRiffle');
+  var btnSeven = document.getElementById('btnSeven');
+  var btnOverhand = document.getElementById('btnOverhand');
+  var btnFaro = document.getElementById('btnFaro');
+  var btnReset = document.getElementById('btnReset');
+  var btnExperiment = document.getElementById('btnExperiment');
+
+  function setButtonsDisabled(v){
+    btnRiffle.disabled = v;
+    btnSeven.disabled = v;
+    btnOverhand.disabled = v;
+    btnFaro.disabled = v;
+    btnReset.disabled = v;
+  }
+
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- 交错洗一次：劈开+交错动画 ---------- */
+  function animateRiffle(beforeOrder, afterOrder, onDone){
+    if (reduceMotion){
+      drawBand(afterOrder);
+      onDone();
+      return;
+    }
+    setButtonsDisabled(true);
+    var DUR = 800; /* 0.8秒左右 */
+    var start = null;
+    /* 阶段一(0~0.42)：劈开，色带上下分离；阶段二(0.42~1)：交错合回，直接淡入最终结果 */
+    var half = Math.ceil(beforeOrder.length / 2);
+    var topPart = beforeOrder.slice(0, half);
+    var botPart = beforeOrder.slice(half);
+    function frame(now){
+      if (start === null) start = now;
+      var t = Math.min(1, (now - start) / DUR);
+      if (t < 0.42){
+        /* 阶段一：劈开，色带上下分离，间隔从0拉开到22px */
+        var gap = (t / 0.42) * 22;
+        drawBandSplit(topPart, botPart, gap);
+      } else if (t < 0.71){
+        /* 阶段二：合回，间隔从22px收回到0 */
+        var gap2 = 22 * (1 - (t - 0.42) / 0.29);
+        drawBandSplit(topPart, botPart, gap2);
+      } else {
+        /* 阶段三：交错完成，直接呈现洗好之后的最终色带 */
+        drawBand(afterOrder);
+      }
+      if (t < 1){
+        requestAnimationFrame(frame);
+      } else {
+        drawBand(afterOrder);
+        setButtonsDisabled(false);
+        onDone();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function doRiffle(){
+    if (animating) return;
+    animating = true;
+    ensureAudio();
+    playShuffleNoise();
+    var before = deck.slice();
+    var after = riffleOnce(deck);
+    perfectCount = 0; /* 打断完美法罗连击 */
+    animateRiffle(before, after, function(){
+      deck = after;
+      shuffleCount++;
+      updateHud();
+      updateGauge(deck);
+      var beat = beatCaption(shuffleCount);
+      if (beat){
+        setCaption(beat);
+      } else {
+        setCaption('已交错洗 <b>' + shuffleCount + '</b> 次');
+      }
+      animating = false;
+    });
+  }
+
+  function doSevenQuick(){
+    if (animating) return;
+    animating = true;
+    setButtonsDisabled(true);
+    ensureAudio();
+    var stepsLeft = 7;
+    perfectCount = 0;
+    function step(){
+      if (stepsLeft <= 0){
+        setButtonsDisabled(false);
+        animating = false;
+        setCaption('到了。之后再洗，都是白费力气');
+        return;
+      }
+      playShuffleNoise();
+      var after = riffleOnce(deck);
+      var before = deck.slice();
+      var half = Math.ceil(before.length / 2);
+      var topPart = before.slice(0, half), botPart = before.slice(half);
+      var DUR = 260; /* 连播动画更快 */
+      var start = null;
+      function frame(now){
+        if (start === null) start = now;
+        var t = Math.min(1, (now - start) / DUR);
+        if (t < 0.5) drawBandSplit(topPart, botPart, (t / 0.5) * 18);
+        else drawBand(after);
+        if (t < 1) requestAnimationFrame(frame);
+        else {
+          deck = after;
+          shuffleCount++;
+          updateHud();
+          updateGauge(deck);
+          stepsLeft--;
+          setTimeout(step, 40);
+        }
+      }
+      if (reduceMotion){
+        deck = after;
+        shuffleCount++;
+        updateHud();
+        updateGauge(deck);
+        drawBand(deck);
+        stepsLeft--;
+        setTimeout(step, 30);
+      } else {
+        requestAnimationFrame(frame);
+      }
+    }
+    step();
+  }
+
+  function doOverhand(){
+    if (animating) return;
+    animating = true;
+    setButtonsDisabled(true);
+    ensureAudio();
+    playShuffleNoise();
+    perfectCount = 0;
+    var before = deck.slice();
+    var after = overhandOnce(deck);
+    var DUR = 700;
+    var start = null;
+    function frame(now){
+      if (start === null) start = now;
+      var t = Math.min(1, (now - start) / DUR);
+      /* 嫩洗动画：故意做得比交错洗粗糙，色带整体轻微下沉再弹回，
+         暗示这是一次笨拙的手工挪动，不是精细的交错 */
+      var sink = Math.sin(Math.min(1, t / 0.5) * Math.PI) * 6;
+      bandCv.style.transform = 'translateY(' + sink.toFixed(1) + 'px)';
+      if (t < 0.5){
+        drawBand(before);
+      } else {
+        drawBand(after);
+      }
+      if (t < 1) requestAnimationFrame(frame);
+      else {
+        bandCv.style.transform = '';
+        deck = after;
+        shuffleCount++;
+        updateHud();
+        updateGauge(deck);
+        setCaption('这种搓法，数学家说要搓上千次才够乱');
+        setButtonsDisabled(false);
+        animating = false;
+      }
+    }
+    if (reduceMotion){
+      deck = after;
+      shuffleCount++;
+      updateHud();
+      updateGauge(deck);
+      drawBand(deck);
+      setCaption('这种搓法，数学家说要搓上千次才够乱');
+      setButtonsDisabled(false);
+      animating = false;
+    } else {
+      requestAnimationFrame(frame);
+    }
+  }
+
+  function doFaro(){
+    if (animating) return;
+    animating = true;
+    setButtonsDisabled(true);
+    ensureAudio();
+    playShuffleNoise();
+    var before = deck.slice();
+    var after = perfectFaroOut(deck);
+    var half = Math.ceil(before.length / 2);
+    var topPart = before.slice(0, half), botPart = before.slice(half);
+    var DUR = 800;
+    var start = null;
+    function frame(now){
+      if (start === null) start = now;
+      var t = Math.min(1, (now - start) / DUR);
+      if (t < 0.42) drawBandSplit(topPart, botPart, (t/0.42) * 22);
+      else if (t < 0.71) drawBandSplit(topPart, botPart, 22 * (1 - (t-0.42)/0.29));
+      else drawBand(after);
+      if (t < 1) requestAnimationFrame(frame);
+      else finishFaro();
+    }
+    function finishFaro(){
+      deck = after;
+      shuffleCount++;
+      perfectCount++;
+      updateHud();
+      updateGauge(deck);
+      drawBand(deck);
+      /* 8次法罗洗必定精确复位到"8次之前的那个排列"（无论起点是不是崭新的彩虹），
+         这里额外判断是否正好是最初的彩虹顺序，只有这种情况才算彩蛋达成 */
+      var isRainbow = deck.every(function(v, idx){ return v === idx; });
+      if (perfectCount >= 8){
+        if (isRainbow){
+          playChime();
+          setCaption('完美地洗了八次，等于一次都没洗。真正的乱，需要一点笨拙');
+          /* 全场唯一的完美结局，配一道印章红的闪光 */
+          var st = document.getElementById('stage');
+          st.classList.remove('bandflash');
+          void st.offsetWidth;
+          st.classList.add('bandflash');
+        } else {
+          setCaption('洗了八次，精确弹回了八次之前的样子，只是那时已经不是全新的彩虹了');
+        }
+        perfectCount = 0; /* 归零，可重新开始下一轮8次演示 */
+      } else {
+        setCaption('魔术师的法罗洗：精确一张隔一张（' + perfectCount + '/8）');
+      }
+      setButtonsDisabled(false);
+      animating = false;
+    }
+    if (reduceMotion){
+      finishFaro();
+    } else {
+      requestAnimationFrame(frame);
+    }
+  }
+
+  function doReset(){
+    if (animating) return;
+    deck = identity();
+    shuffleCount = 0;
+    perfectCount = 0;
+    updateHud();
+    updateGauge(deck);
+    drawBand(deck);
+    setCaption('这是一副全新的牌，52 张按顺序排好，颜色是一道平滑的彩虹。');
+  }
+
+  btnRiffle.addEventListener('click', doRiffle);
+  btnSeven.addEventListener('click', doSevenQuick);
+  btnOverhand.addEventListener('click', doOverhand);
+  btnFaro.addEventListener('click', doFaro);
+  btnReset.addEventListener('click', doReset);
+
+  /* ================= 实验室：一千副牌实验 ================= */
+  var chartCv = document.getElementById('chartCv');
+  var chartCtx = chartCv.getContext('2d');
+  var CW = 780, CH = 240;
+  var PAD_L = 46, PAD_R = 16, PAD_T = 16, PAD_B = 32;
+
+  function drawChart(points){
+    chartCtx.clearRect(0, 0, CW, CH);
+    var plotW = CW - PAD_L - PAD_R, plotH = CH - PAD_T - PAD_B;
+    var x0 = PAD_L, y0 = PAD_T;
+    function xOf(k){ return x0 + (k - 1) / 9 * plotW; }
+    function yOf(ar){ return y0 + plotH - Math.min(1, ar / 0.55) * plotH; } /* AR范围0~55%足够覆盖k=1 */
+
+    /* 坐标轴 */
+    chartCtx.strokeStyle = '#c9bc9e';
+    chartCtx.lineWidth = 1;
+    chartCtx.beginPath();
+    chartCtx.moveTo(x0, y0); chartCtx.lineTo(x0, y0 + plotH); chartCtx.lineTo(x0 + plotW, y0 + plotH);
+    chartCtx.stroke();
+
+    chartCtx.fillStyle = '#8a8071';
+    chartCtx.font = '10.5px "Noto Serif SC",serif';
+    chartCtx.textAlign = 'right';
+    [0, 0.1, 0.2, 0.3, 0.4, 0.5].forEach(function(p){
+      var y = yOf(p);
+      chartCtx.fillText((p*100).toFixed(0) + '%', x0 - 6, y + 3);
+      chartCtx.strokeStyle = 'rgba(90,80,60,.10)';
+      chartCtx.beginPath(); chartCtx.moveTo(x0, y); chartCtx.lineTo(x0 + plotW, y); chartCtx.stroke();
+    });
+    chartCtx.textAlign = 'center';
+    for (var k = 1; k <= 10; k++){
+      chartCtx.fillText(String(k), xOf(k), y0 + plotH + 16);
+    }
+    chartCtx.save();
+    chartCtx.translate(12, y0 + plotH/2);
+    chartCtx.rotate(-Math.PI/2);
+    chartCtx.textAlign = 'center';
+    chartCtx.fillText('相邻保持率', 0, 0);
+    chartCtx.restore();
+    chartCtx.fillText('洗牌次数 k', x0 + plotW/2, CH - 4);
+
+    /* k=7 竖虚线标注 */
+    var x7 = xOf(7);
+    chartCtx.save();
+    chartCtx.setLineDash([4,4]);
+    chartCtx.strokeStyle = '#b5402c';
+    chartCtx.lineWidth = 1.3;
+    chartCtx.beginPath(); chartCtx.moveTo(x7, y0); chartCtx.lineTo(x7, y0 + plotH); chartCtx.stroke();
+    chartCtx.restore();
+    chartCtx.fillStyle = '#b5402c';
+    chartCtx.font = '11px "Noto Serif SC",serif';
+    chartCtx.textAlign = 'center';
+    chartCtx.fillText('7', x7, y0 + plotH + 16);
+
+    if (!points || !points.length) return;
+
+    /* 折线 */
+    chartCtx.strokeStyle = '#8f382a';
+    chartCtx.lineWidth = 2;
+    chartCtx.beginPath();
+    points.forEach(function(pt, i){
+      var x = xOf(pt.k), y = yOf(pt.ar);
+      if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+    });
+    chartCtx.stroke();
+    /* 数据点 */
+    points.forEach(function(pt){
+      var x = xOf(pt.k), y = yOf(pt.ar);
+      chartCtx.beginPath();
+      chartCtx.arc(x, y, 3.4, 0, Math.PI*2);
+      chartCtx.fillStyle = (pt.k === 7) ? '#b5402c' : '#5a4632';
+      chartCtx.fill();
+    });
+  }
+
+  function runExperiment(){
+    btnExperiment.disabled = true;
+    var TRIALS = 1000;
+    var points = [];
+    var k = 1;
+    function batch(){
+      var sumAR = 0;
+      for (var t = 0; t < TRIALS; t++){
+        var d = identity();
+        for (var s = 0; s < k; s++) d = riffleOnce(d);
+        sumAR += adjacencyRetention(d);
+      }
+      points.push({ k: k, ar: sumAR / TRIALS });
+      drawChart(points);
+      k++;
+      if (k <= 10){
+        requestAnimationFrame(batch);
+      } else {
+        btnExperiment.disabled = false;
+      }
+    }
+    batch();
+  }
+  btnExperiment.addEventListener('click', runExperiment);
+
+  /* ================= 音效 ================= */
+  var actx = null, audioReady = false;
+  function ensureAudio(){
+    if (audioReady) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      actx = new AC();
+      audioReady = true;
+    } catch (e){ audioReady = false; }
+    if (actx && actx.state === 'suspended') actx.resume();
+  }
+
+  function playShuffleNoise(){
+    if (!audioReady || !actx) return;
+    var dur = 0.28;
+    var bufLen = Math.floor(actx.sampleRate * dur);
+    var buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1);
+    var src = actx.createBufferSource();
+    src.buffer = buf;
+    var filter = actx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 3200;
+    filter.Q.value = 0.9;
+    var gain = actx.createGain();
+    var now = actx.currentTime;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.09, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    src.connect(filter); filter.connect(gain); gain.connect(actx.destination);
+    src.start(now);
+    src.stop(now + dur + 0.02);
+  }
+
+  function playChime(){
+    if (!audioReady || !actx) return;
+    var now = actx.currentTime;
+    var o = actx.createOscillator();
+    var g = actx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 1318.5; /* E6，清亮的一声叮 */
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.09, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+    o.connect(g); g.connect(actx.destination);
+    o.start(now);
+    o.stop(now + 0.95);
+  }
+
+  /* ================= 启动 ================= */
+  drawBacks();
+  drawBand(deck);
+  updateHud();
+  updateGauge(deck);
+})();
+</script>
+</body>
+</html>

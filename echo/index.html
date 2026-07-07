@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黑暗里用耳朵看路 · 感觉博物馆</title>
+<meta name="description" content="世界只在你发出声音的那一刻存在。你是一只蝙蝠，靠回声在漆黑的洞穴里飞，把耳朵当眼睛用。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#050403;overflow:hidden;animation:rise .8s .1s ease both;
+    cursor:crosshair;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .hud{
+    position:absolute;top:10px;left:12px;right:12px;
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:12px;letter-spacing:.08em;color:rgba(235,228,210,.86);
+    pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.7);
+  }
+  .hud b{color:#f0c98a;font-weight:normal;}
+  .caption{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:10px 16px;font-size:13.5px;line-height:1.7;text-align:center;
+    color:rgba(245,236,220,.96);background:rgba(5,4,3,.72);
+    opacity:0;transform:translateY(6px);transition:opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+  }
+  .caption.show{opacity:1;transform:none;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hint{text-align:center;font-size:12.5px;color:var(--ink-soft);letter-spacing:.06em;margin-bottom:12px;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-items:center;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;color:#453e30;letter-spacing:.05em;}
+  .switch input{accent-color:var(--seal);width:16px;height:16px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:var(--ink);
+    padding-top:14px;margin-top:4px;border-top:1px dashed var(--line);
+  }
+  .quote b{color:var(--seal);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){header,.stage,.ctrls,.plaque{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №031</span>
+  </div>
+
+  <header>
+    <h1>黑暗里用耳朵看路</h1>
+    <div class="en">ECHOLOCATION</div>
+    <p class="sub">对会听的耳朵来说，黑暗一直在回答</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="480"></canvas>
+    <div class="hud">
+      <span>叫声 <b id="hudCalls">0</b> 次</span>
+      <span>捕获 <b id="hudCatch">0</b> 只</span>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="ctrls">
+    <p class="hint">点一下洞穴（或按空格）= 发出一声叫声；移动鼠标 / 手指拖动 = 飞</p>
+    <div class="btnrow">
+      <button class="btn" id="btnRegen">🌫 重新生成洞穴</button>
+      <label class="switch"><input type="checkbox" id="chkEyes"> 💡 人类的眼睛</label>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 一帧一帧的声音照片</div>
+    <div class="pb">蝙蝠每秒发出十几到两百次超声，用回声的延迟算距离（一毫秒的来回，等于十七厘米），用左右耳收到的时间差算方向，用音调的变化算对方的速度。它的世界不是连续的画面，是一帧一帧的声音照片，每一帧都要自己叫一声才会显影。</div>
+    <div class="pt">说明牌 · 你玩的是慢放一万倍的版本</div>
+    <div class="pb">真实的蝙蝠声波每秒飞出去三百四十米，一次捕猎要修正航线几十次，快到飞蛾只听得见死亡逼近的滴答声。有些飞蛾进化出了反制：一听到蝙蝠切换成连发的锁定音，立刻收起翅膀，自由落体装死。</div>
+    <div class="pt">说明牌 · 人类同款</div>
+    <div class="pb">B 超用回声看胎儿，声呐用回声看海底。更神奇的是真实存在的人类回声定位者：一些盲人练出了用舌头打响声走路、骑车、打篮球的本事，大脑把原本处理视觉的那块皮层，直接改造成了另一种「看见」。</div>
+    <div class="quote">黑不黑不重要。<b>对会听的耳朵来说，世界一直在回答。</b></div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №031 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var W = 780, H = 480;
+
+/* ================= 洞穴布局 ================= */
+var obstacles = []; // {x,y,r} 圆近似的钟乳石/石笋，边界洞壁另存
+var wallSegs = [];  // 洞壁线段 {x1,y1,x2,y2}
+var moth = null;    // {x,y,vx,vy,t}
+var seed = 1;
+
+function rng(){ seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+
+function genCave(){
+  seed = Date.now() & 0x7fffffff;
+  obstacles = [];
+  var n = 6 + Math.floor(rng() * 4);
+  for (var i = 0; i < n; i++){
+    var x = 90 + rng() * (W - 180);
+    var y = 90 + rng() * (H - 180);
+    var r = 18 + rng() * 26;
+    obstacles.push({x:x, y:y, r:r, glow:0});
+  }
+  /* 不规则洞壁：用锚点多边形近似，留出边界内墙 */
+  wallSegs = [];
+  var pts = [];
+  var cx = W/2, cy = H/2;
+  var baseR = Math.min(W,H)/2 - 14;
+  var k = 16;
+  for (var a = 0; a < k; a++){
+    var ang = a / k * Math.PI * 2;
+    var rad = baseR * (0.86 + rng() * 0.14);
+    pts.push({x: cx + Math.cos(ang) * rad * (W>H?1.55:1), y: cy + Math.sin(ang) * rad * (H>W?1.4:0.92)});
+  }
+  for (var p = 0; p < pts.length; p++){
+    var a2 = pts[p], b2 = pts[(p+1) % pts.length];
+    wallSegs.push({x1:a2.x, y1:a2.y, x2:b2.x, y2:b2.y, glow:0});
+  }
+  spawnMoth();
+}
+
+function spawnMoth(){
+  /* 蝙蝠被圆形边界锁住（半径 min(W,H)/2-4），蛾子必须生成在同一个圆内，否则看得见追不上 */
+  var reach = Math.min(W, H) / 2 - 34;
+  var mx, my, tries = 0;
+  do {
+    mx = 60 + rng() * (W - 120);
+    my = 60 + rng() * (H - 120);
+    tries++;
+  } while (tries < 60 && (tooCloseToObstacle(mx, my, 40) || Math.hypot(mx - W / 2, my - H / 2) > reach));
+  if (Math.hypot(mx - W / 2, my - H / 2) > reach){ mx = W / 2; my = H / 2 - 60; }
+  var a = rng() * Math.PI * 2;
+  moth = {x:mx, y:my, vx:Math.cos(a)*14, vy:Math.sin(a)*14, t:rng()*10, glow:0, flutter:0};
+}
+
+function tooCloseToObstacle(x, y, pad){
+  for (var i = 0; i < obstacles.length; i++){
+    var o = obstacles[i];
+    if (Math.hypot(x-o.x, y-o.y) < o.r + pad) return true;
+  }
+  return false;
+}
+
+/* ================= 蝙蝠（玩家） ================= */
+var bat = {x: W/2, y: H/2, vx:0, vy:0, wing:0, tx: W/2, ty: H/2};
+
+function updateBat(dt){
+  var dx = bat.tx - bat.x, dy = bat.ty - bat.y;
+  var d = Math.hypot(dx, dy);
+  var follow = 5.2; // 缓动跟随
+  bat.vx += (dx * follow - bat.vx) * Math.min(1, dt * 3.2);
+  bat.vy += (dy * follow - bat.vy) * Math.min(1, dt * 3.2);
+  var sp = Math.hypot(bat.vx, bat.vy), maxSp = 260;
+  if (sp > maxSp){ bat.vx *= maxSp/sp; bat.vy *= maxSp/sp; }
+  var nx = bat.x + bat.vx * dt, ny = bat.y + bat.vy * dt;
+  /* 撞墙/障碍：弹开 + 闷声，不惩罚 */
+  var hit = collideBat(nx, ny);
+  if (hit){
+    bat.vx *= -0.4; bat.vy *= -0.4;
+    playThud();
+    showCaption('撞了一下。再叫一声看看路。', 2000);
+  } else {
+    bat.x = nx; bat.y = ny;
+  }
+  bat.wing += dt * (6 + Math.min(sp/40, 8));
+}
+
+function collideBat(x, y){
+  var R = 7;
+  for (var i = 0; i < obstacles.length; i++){
+    var o = obstacles[i];
+    if (Math.hypot(x-o.x, y-o.y) < o.r + R) return true;
+  }
+  /* 洞壁：点是否越过边界多边形（简化为离中心太远） */
+  var cx = W/2, cy = H/2;
+  if (Math.hypot(x-cx, y-cy) > Math.min(W,H)/2 - 4) return true;
+  return false;
+}
+
+/* ================= 声波（叫声） ================= */
+var pulses = []; // {x,y,t0} t0=发出时刻(秒,performance clock)
+var lastCallT = -10;
+var COOLDOWN = 0.6;
+var WAVE_SPEED = 300; // px/s
+var clock = 0; // 累积模拟时间（秒），用于波前推进与冷却判定
+
+function tryCall(){
+  if (clock - lastCallT < COOLDOWN) return false;
+  lastCallT = clock;
+  pulses.push({x: bat.x, y: bat.y, t0: clock});
+  hudCalls++;
+  document.getElementById('hudCalls').textContent = hudCalls;
+  playChirp();
+  scheduleEchoes(bat.x, bat.y, clock);
+  return true;
+}
+
+function scheduleEchoes(sx, sy, t0){
+  /* 波前每碰到一块障碍/洞壁/飞蛾，按「距离/300px每秒」的真实延迟播回声，
+     调度用 AudioContext 采样钟一次排好，不用 setTimeout。 */
+  if (!actx) return;
+  var baseT = actx.currentTime;
+  var items = [];
+  for (var i = 0; i < obstacles.length; i++){
+    var o = obstacles[i];
+    var d = Math.hypot(o.x-sx, o.y-sy) - o.r;
+    if (d < 0) d = 0;
+    items.push({d:d, x:o.x, y:o.y, kind:'wall'});
+  }
+  for (var w = 0; w < wallSegs.length; w++){
+    var seg = wallSegs[w];
+    var mx = (seg.x1+seg.x2)/2, my = (seg.y1+seg.y2)/2;
+    var d2 = pointSegDist(sx, sy, seg.x1, seg.y1, seg.x2, seg.y2);
+    items.push({d:d2, x:mx, y:my, kind:'wall'});
+  }
+  if (moth){
+    var dm = Math.hypot(moth.x-sx, moth.y-sy);
+    items.push({d:dm, x:moth.x, y:moth.y, kind:'moth'});
+  }
+  /* 只保留每个方向最近的若干个，避免密集回声炸耳朵：按距离取最近 10 个 */
+  items.sort(function(a,b){ return a.d - b.d; });
+  items = items.slice(0, 10);
+  for (var k = 0; k < items.length; k++){
+    var it = items[k];
+    var delay = (it.d * 2) / WAVE_SPEED; // 去 + 回
+    var pan = Math.max(-1, Math.min(1, (it.x - sx) / (W/2)));
+    var amp = Math.max(0, 1 - it.d / 920); // 920≈画布对角线，洞穴里任何地方的回声都还听得见
+    if (amp <= 0.02) continue;
+    playEcho(baseT + delay, pan, amp, it.kind === 'moth');
+  }
+}
+
+function pointSegDist(px, py, x1, y1, x2, y2){
+  var dx = x2-x1, dy = y2-y1;
+  var len2 = dx*dx+dy*dy;
+  var t = len2 > 0 ? ((px-x1)*dx + (py-y1)*dy) / len2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  var cx = x1 + dx*t, cy = y1 + dy*t;
+  return Math.hypot(px-cx, py-cy);
+}
+
+/* 波前显影：每帧检测波前圆是否首次扫过某障碍/墙段/飞蛾，扫到则把它的 glow 打满，之后自然衰减 */
+function updatePulses(dt){
+  for (var p = pulses.length - 1; p >= 0; p--){
+    var pl = pulses[p];
+    var age = clock - pl.t0;
+    var radius = age * WAVE_SPEED;
+    if (radius > Math.hypot(W,H) + 40){ pulses.splice(p,1); continue; }
+
+    for (var i = 0; i < obstacles.length; i++){
+      var o = obstacles[i];
+      var d = Math.hypot(o.x-pl.x, o.y-pl.y) - o.r;
+      if (!pl.hitO) pl.hitO = {};
+      if (!pl.hitO[i] && radius >= d && d >= 0){
+        pl.hitO[i] = true;
+        o.glow = 1;
+      }
+    }
+    for (var w = 0; w < wallSegs.length; w++){
+      var seg = wallSegs[w];
+      var mx = (seg.x1+seg.x2)/2, my = (seg.y1+seg.y2)/2;
+      var dw = Math.hypot(mx-pl.x, my-pl.y);
+      if (!pl.hitW) pl.hitW = {};
+      if (!pl.hitW[w] && radius >= dw){
+        pl.hitW[w] = true;
+        seg.glow = 1;
+      }
+    }
+    if (moth){
+      var dm = Math.hypot(moth.x-pl.x, moth.y-pl.y);
+      if (!pl.hitM && radius >= dm){
+        pl.hitM = true;
+        moth.glow = 1;
+      }
+    }
+  }
+  /* 亮度衰减：1.5~2.5 秒内淡回黑暗 */
+  var fadeRate = 1 / 2.0;
+  for (var oi = 0; oi < obstacles.length; oi++){
+    obstacles[oi].glow = Math.max(0, obstacles[oi].glow - fadeRate * dt);
+  }
+  for (var wi = 0; wi < wallSegs.length; wi++){
+    wallSegs[wi].glow = Math.max(0, wallSegs[wi].glow - fadeRate * dt);
+  }
+  if (moth) moth.glow = Math.max(0, moth.glow - (1/1.5) * dt);
+}
+
+/* ================= 飞蛾行为 + 捕获 ================= */
+var hudCalls = 0, hudCatch = 0;
+
+function updateMoth(dt){
+  if (!moth) return;
+  moth.t += dt;
+  moth.flutter += dt * 9;
+  var wobble = Math.sin(moth.t * 1.7) * 30;
+  moth.vx += (Math.cos(moth.t*0.6)*20 - moth.vx) * dt * 0.6;
+  moth.vy += (Math.sin(moth.t*0.5)*20 + wobble*0.02 - moth.vy) * dt * 0.6;
+  var nx = moth.x + moth.vx*dt, ny = moth.y + moth.vy*dt;
+  if (!tooCloseToObstacle(nx, ny, 26) && Math.hypot(nx-W/2, ny-H/2) < Math.min(W,H)/2 - 20){
+    moth.x = nx; moth.y = ny;
+  } else {
+    moth.vx *= -1; moth.vy *= -1;
+  }
+  var dCatch = Math.hypot(moth.x - bat.x, moth.y - bat.y);
+  if (dCatch < 20){
+    hudCatch++;
+    document.getElementById('hudCatch').textContent = hudCatch;
+    playCatch();
+    showCaption('晚餐到手。全程你没有看见过任何东西，你听见了一切。', 2600);
+    spawnMoth();
+  }
+}
+
+/* ================= 人类的眼睛开关 ================= */
+var eyesOn = false;
+document.getElementById('chkEyes').addEventListener('change', function(e){
+  eyesOn = e.target.checked;
+  showCaption(eyesOn ? '' : '现在，把眼睛还回去。', eyesOn ? 0 : 2400);
+});
+
+/* ================= 渲染 ================= */
+var noiseDots = [];
+(function initNoise(){
+  for (var i = 0; i < 140; i++){
+    noiseDots.push({x: Math.random()*W, y: Math.random()*H, a: 0.02 + Math.random()*0.03});
+  }
+})();
+
+function draw(){
+  ctx.fillStyle = '#050403';
+  ctx.fillRect(0, 0, W, H);
+
+  /* 极淡噪点底，证明这不是纯黑的空白 */
+  for (var i = 0; i < noiseDots.length; i++){
+    var nd = noiseDots[i];
+    ctx.fillStyle = 'rgba(150,140,120,' + nd.a + ')';
+    ctx.fillRect(nd.x, nd.y, 1, 1);
+  }
+
+  if (eyesOn){
+    /* 常亮模式：整个洞穴可见，趣味归趣味 */
+    ctx.strokeStyle = 'rgba(150,160,175,.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var w = 0; w < wallSegs.length; w++){
+      var seg = wallSegs[w];
+      if (w === 0) ctx.moveTo(seg.x1, seg.y1);
+      ctx.lineTo(seg.x2, seg.y2);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    for (var o = 0; o < obstacles.length; o++){
+      drawStalagmite(obstacles[o], 0.55);
+    }
+    if (moth) drawMoth(1);
+  } else {
+    /* 黑暗模式：只画被回声点亮的部分 */
+    ctx.lineWidth = 2.2;
+    for (var w2 = 0; w2 < wallSegs.length; w2++){
+      var seg2 = wallSegs[w2];
+      if (seg2.glow > 0.01){
+        ctx.strokeStyle = 'rgba(190,205,225,' + Math.min(0.9, seg2.glow) + ')';
+        ctx.beginPath();
+        ctx.moveTo(seg2.x1, seg2.y1);
+        ctx.lineTo(seg2.x2, seg2.y2);
+        ctx.stroke();
+      }
+    }
+    for (var o2 = 0; o2 < obstacles.length; o2++){
+      var ob = obstacles[o2];
+      if (ob.glow > 0.01) drawStalagmite(ob, ob.glow);
+    }
+    if (moth && moth.glow > 0.01) drawMoth(moth.glow);
+  }
+
+  /* 波前：细亮环 */
+  ctx.lineWidth = 1.4;
+  for (var p = 0; p < pulses.length; p++){
+    var pl = pulses[p];
+    var age = clock - pl.t0;
+    var radius = age * WAVE_SPEED;
+    var alpha = Math.max(0, 1 - age / 1.4);
+    if (alpha <= 0) continue;
+    ctx.strokeStyle = 'rgba(210,230,255,' + (alpha*0.55) + ')';
+    ctx.beginPath();
+    ctx.arc(pl.x, pl.y, radius, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  /* 蝙蝠：本体永远微微可见 */
+  drawBat();
+
+  drawVignette();
+}
+
+function drawStalagmite(o, glow){
+  ctx.fillStyle = 'rgba(180,195,210,' + (0.14 + glow*0.5) + ')';
+  ctx.beginPath();
+  var spikes = 6;
+  for (var i = 0; i <= spikes; i++){
+    var ang = (i/spikes) * Math.PI * 2;
+    var rr = o.r * (0.75 + 0.25*Math.sin(i*2.1+o.x));
+    var px = o.x + Math.cos(ang)*rr, py = o.y + Math.sin(ang)*rr;
+    if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMoth(glow){
+  ctx.save();
+  ctx.translate(moth.x, moth.y);
+  var flap = Math.sin(moth.flutter) * 0.8;
+  ctx.fillStyle = 'rgba(230,210,160,' + Math.min(1, 0.3+glow*0.8) + ')';
+  ctx.beginPath();
+  ctx.ellipse(-3, 0, 5, 2.6+flap*1.2, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(3, 0, 5, 2.6-flap*1.2, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBat(){
+  ctx.save();
+  ctx.translate(bat.x, bat.y);
+  var ang = Math.atan2(bat.vy, bat.vx);
+  ctx.rotate(ang);
+  var flap = Math.sin(bat.wing) * 6;
+  ctx.fillStyle = 'rgba(225,220,205,.5)';
+  ctx.beginPath();
+  ctx.moveTo(6, 0);
+  ctx.lineTo(-4, -8-flap);
+  ctx.lineTo(-2, 0);
+  ctx.lineTo(-4, 8+flap);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(4, 0, 3, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawVignette(){
+  var g = ctx.createRadialGradient(W/2,H/2, Math.min(W,H)*0.25, W/2,H/2, Math.max(W,H)*0.72);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+}
+
+/* ================= 音效：WebAudio 全合成 ================= */
+var actx = null;
+function ensureAudio(){
+  if (!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+
+/* 叫声：0.08秒下滑 chirp，8kHz→3kHz，音量小 */
+function playChirp(){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(8000, t0);
+  osc.frequency.exponentialRampToValueAtTime(3000, t0 + 0.08);
+  gain.gain.setValueAtTime(0.05, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + 0.1);
+}
+
+/* 回声 pip：立体声按方位 pan，音量随距离衰减 */
+function playEcho(when, pan, amp, isMoth){
+  if (!actx) return;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  var panner = actx.createStereoPanner ? actx.createStereoPanner() : null;
+  osc.type = isMoth ? 'triangle' : 'sine';
+  var f0 = isMoth ? 5200 : 4200;
+  osc.frequency.setValueAtTime(f0, when);
+  osc.frequency.exponentialRampToValueAtTime(f0*0.7, when + 0.05);
+  var vol = 0.09 * amp;
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.linearRampToValueAtTime(vol, when + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.07);
+  if (panner){
+    panner.pan.setValueAtTime(pan, when);
+    osc.connect(gain); gain.connect(panner); panner.connect(actx.destination);
+  } else {
+    osc.connect(gain); gain.connect(actx.destination);
+  }
+  osc.start(when); osc.stop(when + 0.08);
+}
+
+function playThud(){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(120, t0);
+  osc.frequency.exponentialRampToValueAtTime(50, t0 + 0.12);
+  gain.gain.setValueAtTime(0.1, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0 + 0.15);
+}
+
+function playCatch(){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  [0,0.07,0.14].forEach(function(dt, i){
+    var osc = actx.createOscillator();
+    var gain = actx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(500 + i*220, t0+dt);
+    gain.gain.setValueAtTime(0.08, t0+dt);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0+dt+0.12);
+    osc.connect(gain); gain.connect(actx.destination);
+    osc.start(t0+dt); osc.stop(t0+dt+0.13);
+  });
+}
+
+/* ================= 字幕 ================= */
+var capEl = document.getElementById('caption');
+var capTimer = null;
+function showCaption(text, ms){
+  if (capTimer){ clearTimeout(capTimer); capTimer = null; }
+  if (!text){ capEl.classList.remove('show'); return; }
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  if (ms > 0){
+    capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms);
+  }
+}
+
+/* ================= 主循环：rAF 真实时间补帧 ================= */
+var lastT = null;
+var MAX_FRAME = 0.1;
+function frame(now){
+  if (lastT === null) lastT = now;
+  var dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > MAX_FRAME) dt = MAX_FRAME;
+  clock += dt;
+
+  updateBat(dt);
+  updateMoth(dt);
+  updatePulses(dt);
+  draw();
+
+  requestAnimationFrame(frame);
+}
+
+/* ================= 交互 ================= */
+function toCanvas(e){
+  var r = cv.getBoundingClientRect();
+  var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  return { x: cx * (W / r.width), y: cy * (H / r.height) };
+}
+
+var pointerDown = false;
+cv.addEventListener('mousemove', function(e){
+  var p = toCanvas(e);
+  bat.tx = p.x; bat.ty = p.y;
+});
+cv.addEventListener('mousedown', function(e){
+  ensureAudio();
+  tryCall();
+});
+cv.addEventListener('touchstart', function(e){
+  e.preventDefault();
+  ensureAudio();
+  var p = toCanvas(e);
+  bat.tx = p.x; bat.ty = p.y;
+  tryCall();
+}, {passive:false});
+cv.addEventListener('touchmove', function(e){
+  e.preventDefault();
+  var p = toCanvas(e);
+  bat.tx = p.x; bat.ty = p.y;
+}, {passive:false});
+
+document.addEventListener('keydown', function(e){
+  if (e.code === 'Space'){
+    e.preventDefault();
+    ensureAudio();
+    tryCall();
+  }
+});
+
+document.getElementById('btnRegen').addEventListener('click', function(){
+  ensureAudio();
+  genCave();
+  showCaption('洞穴变了一副样子，全部忘掉重新摸索。', 2200);
+});
+
+genCave();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
