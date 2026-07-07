@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冰刀下面的那层水 · 感觉博物馆</title>
+<meta name="description" content="课本说是压力把冰压化了。认真一算，差了两个数量级。钢丝复冰实验与溜冰场摩擦之谜，两幕看完冰到底为什么滑。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:22px;animation:rise .8s ease both;}
+  h1{font-size:clamp(28px,6vw,42px);letter-spacing:.2em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.06em;}
+
+  /* ---- 分幕开关 ---- */
+  .actrow{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:18px;}
+  .actbtn{
+    font-family:var(--serif);font-size:14px;letter-spacing:.05em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--line);
+    border-radius:10px;padding:11px 18px;cursor:pointer;text-align:center;
+    transition:transform .15s, border-color .15s, box-shadow .15s;
+  }
+  .actbtn .n{display:block;}
+  .actbtn .g{display:block;font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .actbtn:hover{transform:translateY(-2px);border-color:var(--seal);}
+  .actbtn.on{
+    background:var(--seal);color:#fdf6ee;border-color:var(--seal);
+    box-shadow:0 8px 18px rgba(181,64,44,.18);transform:translateY(-2px);
+  }
+  .actbtn.on .g{color:#f3d9d0;}
+
+  /* ---- 舞台 ---- */
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#dfe7ea;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;touch-action:none;}
+  .hud{
+    position:absolute;top:10px;left:12px;right:12px;
+    display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 14px;
+    font-size:11.5px;letter-spacing:.04em;color:#2c3436;
+    pointer-events:none;
+  }
+  .hud .chip{
+    background:rgba(251,247,236,.86);border:1px solid rgba(42,37,33,.16);
+    border-radius:7px;padding:4px 9px;
+  }
+  .hud b{color:var(--seal);font-weight:normal;}
+  .caption{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:10px 16px;font-size:13.5px;line-height:1.7;text-align:center;
+    color:rgba(250,246,236,.97);background:rgba(30,26,22,.74);
+    opacity:0;transform:translateY(6px);transition:opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+  }
+  .caption.show{opacity:1;transform:none;}
+
+  /* ---- 控制区 ---- */
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hint{text-align:center;font-size:12.5px;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:12px;}
+  .row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center;margin-bottom:14px;}
+  .row:last-child{margin-bottom:0;}
+  .slwrap{display:flex;flex-direction:column;gap:5px;min-width:220px;flex:1;max-width:340px;}
+  .slwrap label{font-size:13px;color:#453e30;letter-spacing:.03em;display:flex;justify-content:space-between;}
+  .slwrap label b{color:var(--seal);font-weight:normal;}
+  .slwrap input[type=range]{width:100%;accent-color:var(--seal);}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;color:#453e30;letter-spacing:.03em;}
+  .switch input{accent-color:var(--seal);width:16px;height:16px;}
+
+  /* ---- 三嫌疑人仪表 ---- */
+  .suspects{margin-top:4px;}
+  .sline{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:12.5px;color:#453e30;}
+  .sline:last-child{margin-bottom:0;}
+  .sname{width:96px;flex-shrink:0;letter-spacing:.03em;}
+  .sbar{flex:1;height:10px;border-radius:5px;background:#eadfc7;border:1px solid var(--line);overflow:hidden;position:relative;}
+  .sbar i{display:block;height:100%;background:var(--seal);border-radius:5px 0 0 5px;transition:width .12s linear;}
+  .sval{width:66px;text-align:right;flex-shrink:0;color:var(--ink-soft);font-size:11.5px;}
+  .verdict{
+    margin-top:10px;font-size:12.5px;line-height:1.8;color:#5a4632;
+    background:#f3e9d3;border:1px dashed var(--line);border-radius:8px;padding:8px 12px;
+  }
+  .verdict b{color:var(--seal);}
+
+  .note{font-size:11.5px;color:var(--ink-soft);line-height:1.8;margin-top:10px;letter-spacing:.02em;}
+
+  /* ---- 说明牌 ---- */
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:var(--ink);
+    padding-top:14px;margin-top:4px;border-top:1px dashed var(--line);
+  }
+  .quote b{color:var(--seal);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){header,.stage,.ctrls,.plaque{animation:none!important;}}
+  @media(max-width:640px){
+    .slwrap{min-width:0;max-width:none;flex-basis:100%;}
+    .sname{width:76px;font-size:11.5px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №033</span>
+  </div>
+
+  <header>
+    <h1>冰刀下面的那层水</h1>
+    <div class="en">THE WATER BENEATH THE BLADE</div>
+    <p class="sub">课本说是压力把冰压化了。认真一算，差了两个数量级。</p>
+  </header>
+
+  <div class="actrow">
+    <div class="actbtn on" id="actBtn1" data-act="1">
+      <span class="n">① 钢丝切冰</span>
+      <span class="g">复冰现象</span>
+    </div>
+    <div class="actbtn" id="actBtn2" data-act="2">
+      <span class="n">② 溜冰场之谜</span>
+      <span class="g">破除课本神话</span>
+    </div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="460"></canvas>
+    <div class="hud" id="hud1">
+      <span class="chip">下沉速度　<b id="hSink">0</b> 毫米/分钟</span>
+      <span class="chip">砝码　<b id="hWeight">8</b> 千克</span>
+    </div>
+    <div class="hud" id="hud2" style="display:none;">
+      <span class="chip">冰面温度　<b id="hTemp2">−7</b> ℃</span>
+      <span class="chip">摩擦系数　<b id="hMu">0.0045</b></span>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="ctrls" id="ctrls1">
+    <p class="hint">调砝码、换线材，看钢丝怎么把冰砖切穿又不留下切口</p>
+    <div class="row">
+      <div class="slwrap">
+        <label>砝码重量　<b id="wVal">8 千克</b></label>
+        <input type="range" id="wireWeight" min="2" max="20" value="8" step="1">
+      </div>
+      <button class="btn on" id="btnCopper">🔶 铜丝</button>
+      <button class="btn" id="btnNylon">🧵 尼龙线</button>
+      <button class="btn" id="btnReset1">↺ 重置冰砖</button>
+    </div>
+    <p class="note">原理：钢丝底下的冰被压强压得熔点下降，化成水；水绕到钢丝上方，压强恢复，重新冻上；冻结时放出的热顺着钢丝传回下面，接着化下一层。铜导热好，所以快；尼龙不导热，所以几乎切不动。</p>
+  </div>
+
+  <div class="ctrls" id="ctrls2" style="display:none;">
+    <p class="hint">点一下冰面（或按空格）＝小人蹬一下，拖三根滑杆看三个嫌疑人的份额怎么变</p>
+    <div class="row">
+      <div class="slwrap">
+        <label>冰面温度　<b id="tVal">−7 ℃</b></label>
+        <input type="range" id="temp2" min="-40" max="0" value="-7" step="1">
+      </div>
+      <div class="slwrap">
+        <label>体重　<b id="mVal">70 千克</b></label>
+        <input type="range" id="mass2" min="30" max="120" value="70" step="1">
+      </div>
+      <div class="slwrap">
+        <label>滑速　<b id="vVal">4 米/秒</b></label>
+        <input type="range" id="speed2" min="1" max="10" value="4" step="0.5">
+      </div>
+      <label class="switch"><input type="checkbox" id="chkSound"> 🔈 滑冰声</label>
+    </div>
+    <div class="suspects">
+      <div class="sline">
+        <span class="sname">① 压力融冰</span>
+        <span class="sbar"><i id="barPressure" style="width:2%"></i></span>
+        <span class="sval" id="valPressure">0.25℃</span>
+      </div>
+      <div class="sline">
+        <span class="sname">② 摩擦生热</span>
+        <span class="sbar"><i id="barFriction" style="width:40%"></i></span>
+        <span class="sval" id="valFriction">中等</span>
+      </div>
+      <div class="sline">
+        <span class="sname">③ 预融层</span>
+        <span class="sbar"><i id="barPremelt" style="width:80%"></i></span>
+        <span class="sval" id="valPremelt">较厚</span>
+      </div>
+    </div>
+    <div class="verdict" id="verdict">压强算下来约 <b>3.4 兆帕</b>，只够把熔点压低约 <b>0.25 度</b>。温度低于约 −0.3 度它就无能为力，可北方室外的冰是 −20 度。<b>课本的答案，两个数量级的亏空。</b></div>
+    <p class="note">摩擦系数在约 −7℃ 最低（速滑馆把冰面维持在这附近），往 0℃ 走水膜太厚反而变粘，往 −40℃ 走预融层消失，摩擦飙升，几乎蹬不动。</p>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 冰面最外层的分子</div>
+    <div class="pb">一八五零年代法拉第就猜到了，冰的表面盖着一层永远冻不上的水。可后来的课本走了一百多年弯路，至今还在讲压力，说冰刀把冰压化了。把体重全压在冰刀上认真算一遍，熔点只降低零点二五度左右，而北方室外零下二十度的冰照样滑。</div>
+    <div class="pb">真正的答案有两个。冰面最外层的分子上不着天下不着地，凑不齐把自己锁进晶格的邻居，永远保持着半液体的骚动，这层预融水膜一直存在到零下三十几度。再加上冰刀擦过的瞬间摩擦生热，当场造出一层新鲜的润滑水。速滑馆把冰面维持在零下七度上下，那是冰最滑的温度。到了零下四五十度的南极，雪踩上去吱吱作响，队员们说像走在沙子上。</div>
+    <div class="quote">冰最外面那一层，<b>从来没有学会怎么当冰。</b></div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №033 · Max 造<br>
+    <a href="../helium/">下一个展厅：吸了氦气的声带 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var CW = 780, CH = 460; // 逻辑画布尺寸（CSS 像素），实际绘制分辨率按 DPR 放大
+var DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+
+function fitCanvas(){
+  var rect = cv.getBoundingClientRect();
+  var cssW = rect.width || CW;
+  var cssH = cssW * (CH / CW);
+  cv.style.height = cssH + 'px';
+  cv.width = Math.round(cssW * DPR);
+  cv.height = Math.round(cssH * DPR);
+  var scale = (cssW / CW) * DPR;
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+}
+window.addEventListener('resize', function(){
+  fitCanvas();
+  if (act === 2) computeInsetBy();
+});
+
+/* ================= 当前幕 ================= */
+var act = 1;
+
+var actBtn1 = document.getElementById('actBtn1');
+var actBtn2 = document.getElementById('actBtn2');
+var hud1 = document.getElementById('hud1');
+var hud2 = document.getElementById('hud2');
+var ctrls1 = document.getElementById('ctrls1');
+var ctrls2 = document.getElementById('ctrls2');
+
+/* 窄屏下 HUD 芯片会换行变高，而画布等比缩小，写死的小窗顶距会被芯片压住。
+   按 HUD 真实渲染高度换算回逻辑坐标，给两个内嵌小窗动态让位 */
+var insetBy = 56;
+function computeInsetBy(){
+  var hr = hud2.getBoundingClientRect();
+  var cr = cv.getBoundingClientRect();
+  if (!hr.height || !cr.width) return;
+  insetBy = Math.max(56, Math.round((hr.bottom - cr.top + 8) * (CW / cr.width)));
+}
+
+function setAct(n){
+  act = n;
+  actBtn1.classList.toggle('on', n === 1);
+  actBtn2.classList.toggle('on', n === 2);
+  hud1.style.display = n === 1 ? 'flex' : 'none';
+  hud2.style.display = n === 2 ? 'flex' : 'none';
+  ctrls1.style.display = n === 1 ? 'block' : 'none';
+  ctrls2.style.display = n === 2 ? 'block' : 'none';
+  showCaption('', 0);
+  if (n === 2) computeInsetBy();
+}
+actBtn1.addEventListener('click', function(){ setAct(1); });
+actBtn2.addEventListener('click', function(){ setAct(2); });
+
+/* ================= 物理：压力融冰（第一幕/第二幕仪表①共用） ================= */
+// 接触面积：2毫米 x 100毫米 = 0.0002 平方米
+var CONTACT_AREA_M2 = 0.002 * 0.1;
+function pressureMPa(weightKg, areaM2){
+  return (weightKg * 9.8 / areaM2) / 1e6;
+}
+function meltingDropC(weightKg, areaM2){
+  return pressureMPa(weightKg, areaM2) * 0.073; // 每兆帕降约 0.073 度
+}
+
+/* ================= 物理：摩擦系数曲线（谷值在 −7℃） ================= */
+function frictionMu(tempC){
+  var t0 = -7, base = 0.0045;
+  if (tempC >= t0){
+    var d = tempC - t0;
+    return base + 0.00045 * d * d;
+  } else {
+    var d2 = t0 - tempC;
+    return base + 0.00030 * d2 * d2 + (tempC <= -33 ? 0.0009 * Math.pow(-33 - tempC, 1.6) : 0);
+  }
+}
+
+/* ================= 物理：预融层厚度（0 度最厚，−33 趋近 0） ================= */
+function premeltThickness(tempC){
+  var minT = -33;
+  if (tempC >= 0) return 1;
+  if (tempC <= minT) return 0;
+  var x = 1 - Math.abs(tempC) / Math.abs(minT);
+  return Math.pow(Math.max(0, x), 1.5);
+}
+
+/* ============================================================
+   第一幕：钢丝切冰
+   ============================================================ */
+var act1 = {
+  weightKg: 8,
+  material: 'copper', // copper | nylon
+  sinkPx: 0,          // 钢丝当前下沉深度（画布像素，演示时间尺度）
+  scarPx: [],         // 已经冻结的疤痕线位置数组（钢丝走过的历史深度）
+  done: false,
+  doneT: 0,
+  iceTop: 90, iceBottom: 330, iceLeft: 230, iceRight: 550,
+};
+
+function act1SinkSpeed(){
+  // 演示用的下沉速度（毫米/分钟量级），铜丝比尼龙线快十倍上下
+  // 速度正比于砝码重量（压强越大，局部熔点降幅越大，化得越快）
+  var w = act1.weightKg;
+  var base = act1.material === 'copper' ? 5.2 : 0.42; // 毫米/分钟基准（w=8kg 时）
+  var factor = w / 8;
+  return base * factor;
+}
+
+function act1Reset(){
+  act1.sinkPx = 0;
+  act1.scarPx = [];
+  act1.done = false;
+  act1.doneT = 0;
+}
+
+function updateAct1(dt){
+  if (act1.done){
+    act1.doneT += dt;
+    if (act1.doneT > 2.2){ /* 保留最终画面，等用户手动重置或切幕 */ }
+    return;
+  }
+  var speedMMmin = act1SinkSpeed();
+  // 演示时间尺度：把「毫米/分钟」映射成画布上「像素/秒」，压缩到几秒内看完全程
+  // 冰砖高度 240px 对应真实约 10 厘米冰砖，铜丝在默认 8kg 下约 8~10 秒切完，尼龙线明显更慢但仍在可演示范围
+  var pxPerSecond = (speedMMmin / 5.2) * 26; // 铜丝基准约 26px/s
+  act1.sinkPx += pxPerSecond * dt;
+  var iceH = act1.iceBottom - act1.iceTop;
+  if (act1.sinkPx >= iceH){
+    act1.sinkPx = iceH;
+    if (!act1.done){
+      act1.done = true;
+      act1.doneT = 0;
+      showCaption('钢丝穿过去了，冰砖还是一整块。', 4200);
+      playThunk();
+    }
+  }
+  document.getElementById('hSink').textContent = speedMMmin.toFixed(1);
+  document.getElementById('hWeight').textContent = act1.weightKg;
+}
+
+function drawAct1(){
+  ctx.fillStyle = '#dfe7ea';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // 两个支点（简化为两个方形台座）
+  var standY = act1.iceBottom + 6, standH = 34;
+  ctx.fillStyle = '#8a7f6d';
+  ctx.fillRect(act1.iceLeft - 46, standY, 30, standH);
+  ctx.fillRect(act1.iceRight + 16, standY, 30, standH);
+
+  // 冰砖：半透明蓝灰，带一点内部纹理
+  var iceY = act1.iceTop;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(act1.iceLeft, iceY, act1.iceRight - act1.iceLeft, act1.iceBottom - iceY);
+  ctx.clip();
+  var g = ctx.createLinearGradient(0, iceY, 0, act1.iceBottom);
+  g.addColorStop(0, 'rgba(210,230,236,.92)');
+  g.addColorStop(1, 'rgba(178,205,214,.92)');
+  ctx.fillStyle = g;
+  ctx.fillRect(act1.iceLeft, iceY, act1.iceRight - act1.iceLeft, act1.iceBottom - iceY);
+  // 冰内部裂纹装饰线（静态，营造质感）
+  ctx.strokeStyle = 'rgba(255,255,255,.35)';
+  ctx.lineWidth = 1;
+  for (var i = 0; i < 5; i++){
+    ctx.beginPath();
+    var sx = act1.iceLeft + 20 + i * 62;
+    ctx.moveTo(sx, iceY + 8);
+    ctx.lineTo(sx + 14, act1.iceBottom - 10);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.strokeStyle = '#6d8890';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(act1.iceLeft, iceY, act1.iceRight - act1.iceLeft, act1.iceBottom - iceY);
+
+  var wireY = iceY + act1.sinkPx;
+  var cx1 = act1.iceLeft, cx2 = act1.iceRight;
+
+  // 疤痕线：钢丝走过的历史轨迹，越早的越淡（代表更早冻结、颜色略深回归冰色）
+  ctx.strokeStyle = 'rgba(150,178,190,.55)';
+  ctx.lineWidth = 1.4;
+  var step = 6;
+  for (var yy = iceY + 2; yy < wireY - 2; yy += step){
+    ctx.beginPath();
+    ctx.moveTo(cx1 + 4, yy);
+    ctx.lineTo(cx2 - 4, yy);
+    ctx.stroke();
+  }
+
+  // 钢丝正下方：极细水线（受压熔化）
+  if (!act1.done){
+    ctx.strokeStyle = 'rgba(70,150,190,.85)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(cx1 + 2, wireY + 3);
+    ctx.lineTo(cx2 - 2, wireY + 3);
+    ctx.stroke();
+  }
+
+  // 钢丝上方紧邻处：重新冻结的淡疤痕（比周围冰更亮一丝丝）
+  ctx.strokeStyle = 'rgba(255,255,255,.5)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cx1 + 2, wireY - 4);
+  ctx.lineTo(cx2 - 2, wireY - 4);
+  ctx.stroke();
+
+  // 钢丝本体 + 两端砝码
+  if (!act1.done){
+    ctx.strokeStyle = act1.material === 'copper' ? '#c07a3e' : '#e8e3d0';
+    ctx.lineWidth = act1.material === 'copper' ? 2.6 : 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx1 - 40, wireY - 46);
+    ctx.lineTo(cx1, wireY);
+    ctx.lineTo(cx2, wireY);
+    ctx.lineTo(cx2 + 40, wireY - 46);
+    ctx.stroke();
+
+    // 砝码（两端方块，大小随重量变化）
+    var wsize = 14 + Math.min(20, act1.weightKg) * 0.9;
+    drawWeightBlock(cx1 - 40, wireY - 46, wsize);
+    drawWeightBlock(cx2 + 40, wireY - 46, wsize);
+  } else {
+    // 切穿完成：砝码落地，钢丝消失
+    ctx.fillStyle = 'rgba(120,110,95,.7)';
+    var wsize2 = 14 + Math.min(20, act1.weightKg) * 0.9;
+    ctx.fillRect(cx1 - 40 - wsize2/2, standY + standH - wsize2, wsize2, wsize2);
+    ctx.fillRect(cx2 + 40 - wsize2/2, standY + standH - wsize2, wsize2, wsize2);
+  }
+
+  // 材质与重量标签
+  ctx.fillStyle = '#2a2521';
+  ctx.font = '12px "Noto Serif SC","Songti SC",serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(act1.material === 'copper' ? '铜丝' : '尼龙线', (cx1+cx2)/2, iceY - 14);
+}
+
+function drawWeightBlock(cx, cy, size){
+  ctx.fillStyle = '#57503f';
+  ctx.fillRect(cx - size/2, cy, size, size);
+  ctx.strokeStyle = '#2a2521';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(cx - size/2, cy, size, size);
+}
+
+/* ============================================================
+   第二幕：溜冰场之谜
+   ============================================================ */
+var act2 = {
+  tempC: -7,
+  massKg: 70,
+  speedMS: 4,
+  skaterX: 120,
+  skaterVX: 0,
+  glideT: 0,
+  strideTimer: 0,
+};
+
+function act2Metrics(){
+  var mu = frictionMu(act2.tempC);
+  var drop = meltingDropC(act2.massKg, CONTACT_AREA_M2);
+  var pMPa = pressureMPa(act2.massKg, CONTACT_AREA_M2);
+  var premelt = premeltThickness(act2.tempC);
+  // 摩擦生热份额：随滑速增长（速度越快现场熔出的水膜越厚）
+  var frictionHeatShare = Math.min(1, act2.speedMS / 10);
+  return { mu: mu, dropC: drop, pMPa: pMPa, premelt: premelt, frictionHeatShare: frictionHeatShare };
+}
+
+function updateAct2(dt){
+  var m = act2Metrics();
+  // 小人滑行：蹬一下获得初速度，之后按当前 mu 摩擦减速，循环演示
+  var decel = m.mu * 9.8 * 40; // 放大到画面可感知的减速度（演示尺度，非真实 1:1）
+  act2.skaterVX -= decel * dt;
+  if (act2.skaterVX < 0) act2.skaterVX = 0;
+  act2.skaterX += act2.skaterVX * dt;
+  if (act2.skaterX > 700){ act2.skaterX = 60; }
+  if (act2.skaterVX < 6 && act2.strideTimer <= 0){
+    act2.skaterVX = 40 + act2.speedMS * 14;
+    act2.strideTimer = 0.15;
+  }
+  if (act2.strideTimer > 0) act2.strideTimer -= dt;
+  act2.glideT += dt;
+
+  document.getElementById('hTemp2').textContent = act2.tempC;
+  document.getElementById('hMu').textContent = m.mu.toFixed(4);
+
+  // 三嫌疑人条：归一化展示份额（不是同一物理量的直接相加，仅作直观对比）
+  var pressureShare = Math.min(1, m.dropC / 0.3); // 0.25 度封顶参照，压满条约等于零上区间
+  var frictionShare = m.frictionHeatShare;
+  var premeltShare = m.premelt;
+  document.getElementById('barPressure').style.width = (pressureShare*100).toFixed(0) + '%';
+  document.getElementById('barFriction').style.width = (frictionShare*100).toFixed(0) + '%';
+  document.getElementById('barPremelt').style.width = (premeltShare*100).toFixed(0) + '%';
+  document.getElementById('valPressure').textContent = m.dropC.toFixed(2) + '℃';
+  document.getElementById('valFriction').textContent = frictionShare > 0.66 ? '很厚' : (frictionShare > 0.33 ? '中等' : '较薄');
+  document.getElementById('valPremelt').textContent = premeltShare > 0.66 ? '较厚' : (premeltShare > 0.2 ? '变薄' : '基本消失');
+
+  var verdictEl = document.getElementById('verdict');
+  verdictEl.innerHTML = '压强算下来约 <b>' + m.pMPa.toFixed(1) + ' 兆帕</b>，只够把熔点压低约 <b>' + m.dropC.toFixed(2) + ' 度</b>。温度低于约 −0.3 度它就无能为力，可北方室外的冰是 −20 度。<b>课本的答案，两个数量级的亏空。</b>';
+}
+
+function drawAct2(){
+  ctx.fillStyle = '#dfe7ea';
+  ctx.fillRect(0, 0, CW, CH);
+
+  var iceLine = 340;
+  // 冰场地面
+  var g = ctx.createLinearGradient(0, iceLine-4, 0, CH);
+  g.addColorStop(0, 'rgba(220,235,240,.95)');
+  g.addColorStop(1, 'rgba(190,215,222,.95)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, iceLine, CW, CH - iceLine);
+  ctx.strokeStyle = '#6d8890';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, iceLine);
+  ctx.lineTo(CW, iceLine);
+  ctx.stroke();
+
+  // 冰面纹理：随温度变化的细纹（温度越低纹理越干涩密集，示意"像沙子"）
+  var m = act2Metrics();
+  var dryness = Math.min(1, Math.max(0, (-7 - act2.tempC) / 33));
+  ctx.strokeStyle = 'rgba(140,165,175,' + (0.15 + dryness*0.25) + ')';
+  ctx.lineWidth = 1;
+  var n = Math.floor(10 + dryness*40);
+  for (var i = 0; i < n; i++){
+    var xx = (i * 997) % CW;
+    var yy = iceLine + 8 + ((i * 613) % (CH - iceLine - 16));
+    ctx.beginPath();
+    ctx.moveTo(xx, yy);
+    ctx.lineTo(xx + 5 + dryness*4, yy + 1);
+    ctx.stroke();
+  }
+
+  // 滑冰小人（侧视简笔）
+  drawSkater(act2.skaterX, iceLine, act2.glideT, act2.skaterVX);
+
+  // 滑行水膜尾迹：速度越快尾迹越亮越长
+  var trailLen = 18 + act2.speedMS * 6;
+  var trailA = Math.min(0.55, 0.12 + m.frictionHeatShare * 0.5);
+  ctx.strokeStyle = 'rgba(120,190,220,' + trailA + ')';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(act2.skaterX - trailLen, iceLine - 1);
+  ctx.lineTo(act2.skaterX - 4, iceLine - 1);
+  ctx.stroke();
+
+  drawMolecularInset(act2.tempC);
+  drawMuCurve();
+}
+
+function drawSkater(x, groundY, t, vx){
+  var bob = Math.sin(t * 10) * 1.5;
+  var y = groundY - 40 + bob;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = '#2a2521';
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  // 身体
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(0, 22);
+  ctx.stroke();
+  // 头
+  ctx.beginPath();
+  ctx.arc(0, -7, 6, 0, Math.PI*2);
+  ctx.fillStyle = '#57503f';
+  ctx.fill();
+  // 腿：交替摆动，速度越快摆幅越大
+  var swing = Math.sin(t * 9) * (6 + Math.min(vx/12, 10));
+  ctx.beginPath();
+  ctx.moveTo(0, 22); ctx.lineTo(swing, 38);
+  ctx.moveTo(0, 22); ctx.lineTo(-swing*0.6, 38);
+  ctx.stroke();
+  // 手臂
+  ctx.beginPath();
+  ctx.moveTo(0, 6); ctx.lineTo(10, 14);
+  ctx.moveTo(0, 6); ctx.lineTo(-10, 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* 分子内嵌小窗：放大镜视图，最顶排分子抖动幅度随温度联动 */
+function drawMolecularInset(tempC){
+  var bx = CW - 176, by = insetBy, bw = 158, bh = 118;
+  ctx.save();
+  ctx.fillStyle = 'rgba(251,247,236,.92)';
+  ctx.strokeStyle = 'rgba(42,37,33,.5)';
+  ctx.lineWidth = 1.5;
+  roundRect(bx, by, bw, bh, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#2a2521';
+  ctx.font = '10.5px "Noto Serif SC","Songti SC",serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('表面这排分子，上不着天下不着地', bx + 8, by + 14);
+
+  var rows = 4, cols = 7;
+  var padX = 14, padY = 26;
+  var cellW = (bw - padX*2) / (cols - 1);
+  var cellH = (bh - padY - 12) / (rows - 1);
+  // 抖动幅度：温度越高抖动越大，−35℃以下顶排也安分（几乎不抖）
+  var topJitter = Math.max(0, Math.min(1, (tempC + 35) / 35)) * 3.2;
+  var now = performance.now() / 1000;
+  for (var r = 0; r < rows; r++){
+    var isTop = (r === 0);
+    for (var c = 0; c < cols; c++){
+      var gx = bx + padX + c * cellW;
+      var gy = by + padY + r * cellH;
+      var jitter = isTop ? topJitter : 0.4;
+      var jx = Math.sin(now * (3 + c*0.4) + r*1.7) * jitter;
+      var jy = Math.cos(now * (2.6 + c*0.3) + r*1.3) * jitter;
+      ctx.beginPath();
+      ctx.arc(gx + jx, gy + jy, isTop ? 3.4 : 3, 0, Math.PI*2);
+      ctx.fillStyle = isTop ? 'rgba(181,64,44,.75)' : 'rgba(90,120,140,.7)';
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function drawMuCurve(){
+  var bx = 16, by = insetBy, bw = 168, bh = 90;
+  ctx.save();
+  ctx.fillStyle = 'rgba(251,247,236,.92)';
+  ctx.strokeStyle = 'rgba(42,37,33,.5)';
+  ctx.lineWidth = 1.5;
+  roundRect(bx, by, bw, bh, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = '#2a2521';
+  ctx.font = '10.5px "Noto Serif SC","Songti SC",serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('摩擦系数 μ 随温度', bx + 8, by + 14);
+
+  var plotX = bx + 10, plotY = by + 22, plotW = bw - 20, plotH = bh - 34;
+  var tMin = -40, tMax = 0;
+  var muMin = frictionMu(-7), muMax = Math.max(frictionMu(-40), frictionMu(0));
+  ctx.strokeStyle = 'rgba(181,64,44,.85)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  for (var i = 0; i <= 40; i++){
+    var t = tMin + (tMax - tMin) * (i/40);
+    var mu = frictionMu(t);
+    var nx = plotX + (t - tMin) / (tMax - tMin) * plotW;
+    var ny = plotY + plotH - (mu - muMin) / (muMax - muMin) * plotH;
+    if (i === 0) ctx.moveTo(nx, ny); else ctx.lineTo(nx, ny);
+  }
+  ctx.stroke();
+
+  // 当前温度标记点
+  var curT = act2.tempC;
+  var curMu = frictionMu(curT);
+  var curX = plotX + (curT - tMin) / (tMax - tMin) * plotW;
+  var curY = plotY + plotH - (curMu - muMin) / (muMax - muMin) * plotH;
+  ctx.fillStyle = '#2a2521';
+  ctx.beginPath();
+  ctx.arc(curX, curY, 3, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(42,37,33,.6)';
+  ctx.font = '9px "Noto Serif SC","Songti SC",serif';
+  ctx.fillText('−7℃最滑', plotX + plotW*0.32, plotY + plotH + 11);
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+/* ================= 字幕 ================= */
+var capEl = document.getElementById('caption');
+var capTimer = null;
+function showCaption(text, ms){
+  if (capTimer){ clearTimeout(capTimer); capTimer = null; }
+  if (!text){ capEl.classList.remove('show'); return; }
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  if (ms > 0){
+    capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms);
+  }
+}
+
+/* ================= 音效：WebAudio 全合成（可选加分项） ================= */
+var actx = null;
+var noiseNode = null, noiseGain = null, noiseFilter = null;
+function ensureAudio(){
+  if (!actx){
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+  if (actx && !noiseNode) setupGlideNoise();
+}
+
+function setupGlideNoise(){
+  var bufSize = actx.sampleRate * 2;
+  var buf = actx.createBuffer(1, bufSize, actx.sampleRate);
+  var data = buf.getChannelData(0);
+  for (var i = 0; i < bufSize; i++){ data[i] = Math.random()*2-1; }
+  noiseNode = actx.createBufferSource();
+  noiseNode.buffer = buf;
+  noiseNode.loop = true;
+  noiseFilter = actx.createBiquadFilter();
+  noiseFilter.type = 'bandpass';
+  noiseFilter.frequency.value = 900;
+  noiseFilter.Q.value = 0.8;
+  noiseGain = actx.createGain();
+  noiseGain.gain.value = 0;
+  noiseNode.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(actx.destination);
+  noiseNode.start();
+}
+
+function updateGlideSound(){
+  if (!actx || !noiseGain) return;
+  if (!soundOn){ noiseGain.gain.setTargetAtTime(0, actx.currentTime, 0.05); return; }
+  var vx = act2.skaterVX;
+  var moving = vx > 4;
+  var target = moving ? Math.min(0.045, 0.012 + vx/2400) : 0;
+  // 温度很低时变成颗粒感：调低 Q、抖动频率制造咯吱声质感
+  var dryness = Math.min(1, Math.max(0, (-7 - act2.tempC) / 33));
+  noiseFilter.Q.setTargetAtTime(0.8 + dryness*3.5, actx.currentTime, 0.1);
+  noiseFilter.frequency.setTargetAtTime(900 + Math.sin(performance.now()/1000*(2+dryness*14))*dryness*220, actx.currentTime, 0.03);
+  noiseGain.gain.setTargetAtTime(target, actx.currentTime, 0.08);
+}
+
+function playThunk(){
+  if (!actx) return;
+  var t0 = actx.currentTime;
+  var osc = actx.createOscillator();
+  var gain = actx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(180, t0);
+  osc.frequency.exponentialRampToValueAtTime(60, t0+0.25);
+  gain.gain.setValueAtTime(0.12, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0+0.3);
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.start(t0); osc.stop(t0+0.32);
+}
+
+var soundOn = false;
+document.getElementById('chkSound').addEventListener('change', function(e){
+  soundOn = e.target.checked;
+  if (soundOn) ensureAudio();
+});
+
+/* ================= 主循环：rAF 驱动，dt 设上限＋固定子步 ================= */
+var lastT = null;
+var MAX_FRAME = 0.1;
+var STEP = 1/60;
+function frame(now){
+  if (lastT === null) lastT = now;
+  var dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > MAX_FRAME) dt = MAX_FRAME;
+
+  var acc = dt;
+  while (acc > 0){
+    var sub = Math.min(STEP, acc);
+    if (act === 1) updateAct1(sub); else updateAct2(sub);
+    acc -= sub;
+  }
+
+  if (act === 1) drawAct1(); else drawAct2();
+  updateGlideSound();
+
+  requestAnimationFrame(frame);
+}
+
+/* ================= 交互：第一幕控件 ================= */
+var wireWeightEl = document.getElementById('wireWeight');
+wireWeightEl.addEventListener('input', function(){
+  act1.weightKg = parseInt(wireWeightEl.value, 10);
+  document.getElementById('wVal').textContent = act1.weightKg + ' 千克';
+});
+document.getElementById('btnCopper').addEventListener('click', function(){
+  act1.material = 'copper';
+  document.getElementById('btnCopper').classList.add('on');
+  document.getElementById('btnNylon').classList.remove('on');
+  act1Reset();
+});
+document.getElementById('btnNylon').addEventListener('click', function(){
+  act1.material = 'nylon';
+  document.getElementById('btnNylon').classList.add('on');
+  document.getElementById('btnCopper').classList.remove('on');
+  act1Reset();
+});
+document.getElementById('btnReset1').addEventListener('click', function(){
+  act1Reset();
+  showCaption('冰砖重新架好，钢丝归位。', 1800);
+});
+
+/* ================= 交互：第二幕控件 ================= */
+var temp2El = document.getElementById('temp2');
+var mass2El = document.getElementById('mass2');
+var speed2El = document.getElementById('speed2');
+temp2El.addEventListener('input', function(){
+  act2.tempC = parseInt(temp2El.value, 10);
+  document.getElementById('tVal').textContent = act2.tempC + ' ℃';
+});
+mass2El.addEventListener('input', function(){
+  act2.massKg = parseInt(mass2El.value, 10);
+  document.getElementById('mVal').textContent = act2.massKg + ' 千克';
+});
+speed2El.addEventListener('input', function(){
+  act2.speedMS = parseFloat(speed2El.value);
+  document.getElementById('vVal').textContent = act2.speedMS + ' 米/秒';
+});
+
+function strideKick(){
+  ensureAudio();
+  act2.skaterVX = 40 + act2.speedMS * 14;
+}
+cv.addEventListener('pointerdown', function(e){
+  ensureAudio();
+  if (act === 2) strideKick();
+});
+document.addEventListener('keydown', function(e){
+  if (e.code === 'Space'){
+    e.preventDefault();
+    ensureAudio();
+    if (act === 2) strideKick();
+  }
+});
+
+/* ================= 初始化 ================= */
+fitCanvas();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

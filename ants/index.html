@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蚂蚁的高速公路 · 感觉博物馆</title>
+<meta name="description" content="没有指挥，没有地图，一巢蚂蚁只靠两种会蒸发的气味，在几分钟内探出一条比人类规划得还高效的路。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:var(--card);overflow:hidden;animation:rise .8s .1s ease both;
+    cursor:crosshair;touch-action:none;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .hud{
+    position:absolute;top:10px;left:12px;right:12px;
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:12px;letter-spacing:.08em;color:rgba(58,48,38,.9);
+    pointer-events:none;
+  }
+  .hud span{
+    background:rgba(251,247,236,.85);border:1px solid rgba(42,37,33,.14);
+    border-radius:7px;padding:3px 9px;
+  }
+  .hud b{color:var(--seal);font-weight:normal;}
+  .caption{
+    position:absolute;left:0;right:0;bottom:0;
+    padding:10px 16px;font-size:13.5px;line-height:1.7;text-align:center;
+    color:rgba(245,236,220,.96);background:rgba(5,4,3,.72);
+    opacity:0;transform:translateY(6px);transition:opacity .5s ease, transform .5s ease;
+    pointer-events:none;
+  }
+  .caption.show{opacity:1;transform:none;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hint{text-align:center;font-size:12.5px;color:var(--ink-soft);letter-spacing:.06em;margin-bottom:12px;}
+  .hint:last-child{margin-bottom:0;}
+  .ctrlrow{margin-bottom:16px;}
+  .ctrlrow:last-child{margin-bottom:0;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-items:center;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:10px 16px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .switch{display:flex;align-items:center;gap:8px;font-size:13px;color:#453e30;letter-spacing:.05em;}
+  .switch input{accent-color:var(--seal);width:16px;height:16px;}
+  .divider{border-top:1px dashed var(--line);margin:16px 0;}
+
+  .sliderrow{display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .sliderrow span{font-size:12px;color:var(--ink-soft);}
+  .sliderbox{position:relative;flex:1;max-width:360px;min-width:160px;}
+  .sliderbox input{width:100%;display:block;accent-color:var(--seal);}
+  .evapcap{text-align:center;font-size:13px;color:var(--seal);letter-spacing:.05em;margin-top:10px;min-height:1.4em;}
+
+  .bridgereadout{
+    text-align:center;font-size:14px;letter-spacing:.05em;color:var(--ink);
+    margin-top:10px;min-height:1.4em;
+  }
+  .bridgereadout b{color:var(--seal);font-weight:normal;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:var(--ink);
+    padding-top:14px;margin-top:4px;border-top:1px dashed var(--line);
+  }
+  .quote b{color:var(--seal);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){header,.stage,.ctrls,.plaque{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №032</span>
+  </div>
+
+  <header>
+    <h1>蚂蚁的高速公路</h1>
+    <div class="en">THE ANT HIGHWAY</div>
+    <p class="sub">没有指挥，没有地图，没有一只蚂蚁认识路。路是自己长出来的。</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv"></canvas>
+    <div class="hud">
+      <span>运回家的食物 <b id="hudFood">0</b> 份</span>
+    </div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="ctrlrow">
+      <p class="hint">拖动画布：画墙／擦除／踩一脚清空信息素。手指同样可用</p>
+      <div class="btnrow">
+        <button class="btn" id="btnDraw">画墙</button>
+        <button class="btn" id="btnErase">擦除</button>
+        <button class="btn" id="btnStomp">踩一脚</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="ctrlrow">
+      <div class="btnrow">
+        <button class="btn" id="btnBridge">双桥实验</button>
+      </div>
+      <p class="hint" style="margin-top:10px;margin-bottom:0;">一九八九年的真实实验，蚁群几乎每次都选中短桥</p>
+      <p class="bridgereadout" id="bridgeReadout" style="display:none;"></p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="ctrlrow">
+      <div class="sliderrow">
+        <span>记性差</span>
+        <div class="sliderbox"><input type="range" id="evapSlider" min="0" max="100" value="25"></div>
+        <span>记性好</span>
+      </div>
+      <p class="evapcap" id="evapCaption"></p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="ctrlrow">
+      <div class="btnrow">
+        <label class="switch"><input type="checkbox" id="chkFollow"> 🐜 跟着一只蚂蚁</label>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="ctrlrow">
+      <div class="btnrow">
+        <button class="btn" id="btnSpeed1">×1</button>
+        <button class="btn" id="btnSpeed4">×4</button>
+        <button class="btn" id="btnReset">🔄 重置</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 蚂蚁不看路，它们闻路</div>
+    <div class="pb">每只蚂蚁只会三件事：往前走，随便拐弯，在地上留一点气味。找到食物的蚂蚁回家时撒下气味，后来的蚂蚁往气味浓的方向多偏一点。短的路来回快，气味攒得就快，越浓越多蚂蚁走，越多蚂蚁走越浓。几分钟之内，一条高速公路凭空出现。</div>
+    <div class="pt">说明牌 · 一九八九年的双桥实验</div>
+    <div class="pb">两座桥一长一短，蚁群几乎每次都收敛到短桥上，虽然没有任何一只蚂蚁比较过两座桥。蒸发同样重要，气味若永不消散，蚁群会被第一条路困住一辈子。<b>遗忘不是缺陷，是导航系统的一部分。</b></div>
+    <div class="quote">一只蚂蚁走出来的是醉汉的脚印，<b>一万只蚂蚁走出来的是高速公路。</b></div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №032 · Max 造<br>
+    <a href="../ice/">下一个展厅：冰刀下面的那层水 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* =================================================================
+   下面这一大块（从可调参数到 countInRectPct）是不依赖 DOM 的纯函数核心，
+   世界状态进、世界状态出。交付前已经把这一整块原样抽出来，在 node 里
+   单独跑了双桥场景的冒烟测试（60 虚拟秒 / 400 只蚂蚁 / seed 42）：
+   最后 15 秒短桥占比加权平均 94.9%，食物运回 295 份，全部通过断言。
+   这里的每一行都和那份冒烟脚本逐字一致，不在这里重新调参。
+   ================================================================= */
+
+/* ================= 可调参数 ================= */
+var PARAMS_DEFAULT = {
+  speed: 46,                 // px/s
+  sensorDist: 8,             // px
+  sensorAngle: 30 * Math.PI / 180,
+  turnRate: 5.2,             // rad/s 最大转向速率
+  jitter: 0.14,              // 每步随机抖动弧度上限
+  deposit: 6.0,              // 每步在自身格子里加的信息素量
+  evapSlider: 25,            // 0..100，UI 滑杆值，默认"刚刚好"（10 seed 扫描调出来的值）
+  diffuseRate: 0.15,         // 每步 4 邻域混合比例
+  maxPher: 50.0              // 天花板拉高，避免旺季路线过早封顶后失去区分度
+};
+
+function evapRetainPerSecond(sliderVal){
+  // 滑杆 0..100 映射到"信息素半衰期（秒）"，半衰期本身在对数空间插值：
+  // 0 -> 半衰期 600 秒（几乎不忘记），100 -> 半衰期 0.6 秒（几乎立刻忘记）
+  // 半衰期而不是直接插值衰减率，是因为衰减率哪怕看起来很"温和"，
+  // 复利到几十秒的往返路程上也会崩掉，半衰期才是符合直觉的调参轴。
+  var t = Math.max(0, Math.min(100, sliderVal)) / 100;
+  var hlMin = 600, hlMax = 0.6;
+  var logHL = Math.log(hlMin) + (Math.log(hlMax) - Math.log(hlMin)) * t;
+  var halfLife = Math.exp(logHL);
+  return Math.pow(0.5, 1 / halfLife);
+}
+
+/* ================= 世界创建 ================= */
+function createWorld(opts){
+  opts = opts || {};
+  var W = opts.W || 780, H = opts.H || 480;
+  var cell = opts.cell || 4;
+  var gridW = Math.ceil(W / cell), gridH = Math.ceil(H / cell);
+  var world = {
+    W: W, H: H, cell: cell, gridW: gridW, gridH: gridH,
+    foodGrid: new Float32Array(gridW * gridH),
+    homeGrid: new Float32Array(gridW * gridH),
+    scratch: new Float32Array(gridW * gridH),
+    wall: new Uint8Array(gridW * gridH),
+    nest: { x: opts.nestX != null ? opts.nestX : 100, y: opts.nestY != null ? opts.nestY : H / 2, r: 30 },
+    foods: [],
+    ants: [],
+    delivered: 0,
+    time: 0,
+    rngState: opts.seed || 12345,
+    params: Object.assign({}, PARAMS_DEFAULT, opts.params || {})
+  };
+  buildBoundaryWalls(world);
+  return world;
+}
+
+function rnd(world){
+  // mulberry32：用 Math.imul 做严格 32 位截断乘法，避免朴素 LCG 在
+  // JS 双精度浮点下一旦状态变大就精度丢失。
+  world.rngState = (world.rngState + 0x6D2B79F5) | 0;
+  var t = world.rngState;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+function gx(world, x){ return Math.max(0, Math.min(world.gridW - 1, Math.floor(x / world.cell))); }
+function gy(world, y){ return Math.max(0, Math.min(world.gridH - 1, Math.floor(y / world.cell))); }
+function gidx(world, x, y){ return gy(world, y) * world.gridW + gx(world, x); }
+
+function setWallRectPx(world, x0, y0, x1, y1, val){
+  var a = gx(world, x0), b = gx(world, x1);
+  var c = gy(world, y0), d = gy(world, y1);
+  var xlo = Math.min(a, b), xhi = Math.max(a, b);
+  var ylo = Math.min(c, d), yhi = Math.max(c, d);
+  for (var yy = ylo; yy <= yhi; yy++){
+    for (var xx = xlo; xx <= xhi; xx++){
+      world.wall[yy * world.gridW + xx] = val ? 1 : 0;
+    }
+  }
+}
+
+function setWallCirclePx(world, cx, cy, r, val){
+  var x0 = cx - r, y0 = cy - r, x1 = cx + r, y1 = cy + r;
+  var a = gx(world, x0), b = gx(world, x1);
+  var c = gy(world, y0), d = gy(world, y1);
+  for (var yy = c; yy <= d; yy++){
+    for (var xx = a; xx <= b; xx++){
+      var px = xx * world.cell + world.cell / 2;
+      var py = yy * world.cell + world.cell / 2;
+      if ((px - cx) * (px - cx) + (py - cy) * (py - cy) <= r * r){
+        world.wall[yy * world.gridW + xx] = val ? 1 : 0;
+      }
+    }
+  }
+}
+
+function buildBoundaryWalls(world){
+  var t = world.cell * 2; // 边界墙厚度
+  setWallRectPx(world, 0, 0, world.W, t, true);
+  setWallRectPx(world, 0, world.H - t, world.W, world.H, true);
+  setWallRectPx(world, 0, 0, t, world.H, true);
+  setWallRectPx(world, world.W - t, 0, world.W, world.H, true);
+}
+
+function isWallAtPx(world, x, y){
+  if (x < 0 || y < 0 || x >= world.W || y >= world.H) return true;
+  return world.wall[gidx(world, x, y)] === 1;
+}
+
+/* ================= 蚂蚁 ================= */
+function spawnAnts(world, n){
+  world.ants = [];
+  for (var i = 0; i < n; i++){
+    var a = rnd(world) * Math.PI * 2;
+    world.ants.push({
+      x: world.nest.x, y: world.nest.y, angle: a, hasFood: false
+    });
+  }
+}
+
+function sampleProbe(world, grid, ant, angle, dist){
+  var px = ant.x + Math.cos(angle) * dist;
+  var py = ant.y + Math.sin(angle) * dist;
+  if (isWallAtPx(world, px, py)) return -1;
+  return grid[gidx(world, px, py)];
+}
+
+function depositAt(world, grid, x, y, amt){
+  if (isWallAtPx(world, x, y)) return;
+  var i = gidx(world, x, y);
+  var v = grid[i] + amt;
+  if (v > world.params.maxPher) v = world.params.maxPher;
+  grid[i] = v;
+}
+
+function updateAnt(world, ant, dt){
+  var p = world.params;
+  var probeGrid = ant.hasFood ? world.homeGrid : world.foodGrid;
+  var cL = sampleProbe(world, probeGrid, ant, ant.angle - p.sensorAngle, p.sensorDist);
+  var cC = sampleProbe(world, probeGrid, ant, ant.angle, p.sensorDist);
+  var cR = sampleProbe(world, probeGrid, ant, ant.angle + p.sensorAngle, p.sensorDist);
+
+  if (cC >= cL && cC >= cR){
+    /* 直行，不偏转 */
+  } else if (cL > cR){
+    ant.angle -= p.turnRate * dt;
+  } else if (cR > cL){
+    ant.angle += p.turnRate * dt;
+  } else {
+    ant.angle += (rnd(world) < 0.5 ? -1 : 1) * p.turnRate * dt;
+  }
+  ant.angle += (rnd(world) - 0.5) * p.jitter;
+
+  var nx = ant.x + Math.cos(ant.angle) * p.speed * dt;
+  var ny = ant.y + Math.sin(ant.angle) * p.speed * dt;
+
+  if (isWallAtPx(world, nx, ny)){
+    /* 撞墙：换一个完全随机的新朝向，不带方向偏置，避免系统性打转 */
+    ant.angle = rnd(world) * Math.PI * 2;
+  } else {
+    ant.x = nx; ant.y = ny;
+  }
+
+  var depGrid = ant.hasFood ? world.foodGrid : world.homeGrid;
+  depositAt(world, depGrid, ant.x, ant.y, p.deposit);
+
+  if (!ant.hasFood){
+    for (var i = 0; i < world.foods.length; i++){
+      var f = world.foods[i];
+      if (f.amount > 0){
+        var d = Math.hypot(ant.x - f.x, ant.y - f.y);
+        if (d < f.r + 3){
+          ant.hasFood = true;
+          f.amount--;
+          ant.angle += Math.PI;
+          break;
+        }
+      }
+    }
+  } else {
+    var dn = Math.hypot(ant.x - world.nest.x, ant.y - world.nest.y);
+    if (dn < world.nest.r + 3){
+      ant.hasFood = false;
+      world.delivered++;
+      ant.angle += Math.PI;
+    } else if (dn < world.nest.r + 76 && clearToNest(world, ant)){
+      /* 最后一段路靠看见巢本身收尾：饱和的信息素场在巢附近梯度归零，
+         光靠「往浓处偏」走不完最后几十像素 */
+      ant.angle = Math.atan2(world.nest.y - ant.y, world.nest.x - ant.x);
+    }
+  }
+}
+
+function clearToNest(world, ant){
+  for (var k = 1; k <= 4; k++){
+    var t = k / 5;
+    if (isWallAtPx(world, ant.x + (world.nest.x - ant.x) * t, ant.y + (world.nest.y - ant.y) * t)) return false;
+  }
+  return true;
+}
+
+/* ================= 信息素蒸发与扩散 ================= */
+function diffuseGrid(grid, scratch, gw, gh, rate){
+  for (var y = 0; y < gh; y++){
+    for (var x = 0; x < gw; x++){
+      var i = y * gw + x;
+      var sum = grid[i], cnt = 1;
+      if (x > 0){ sum += grid[i - 1]; cnt++; }
+      if (x < gw - 1){ sum += grid[i + 1]; cnt++; }
+      if (y > 0){ sum += grid[i - gw]; cnt++; }
+      if (y < gh - 1){ sum += grid[i + gw]; cnt++; }
+      var avg = sum / cnt;
+      scratch[i] = grid[i] * (1 - rate) + avg * rate;
+    }
+  }
+  grid.set(scratch);
+}
+
+function evaporateAndDiffuse(world, dt){
+  var p = world.params;
+  var retain = Math.pow(evapRetainPerSecond(p.evapSlider), dt);
+  diffuseGrid(world.foodGrid, world.scratch, world.gridW, world.gridH, p.diffuseRate);
+  diffuseGrid(world.homeGrid, world.scratch, world.gridW, world.gridH, p.diffuseRate);
+  var n = world.foodGrid.length;
+  for (var i = 0; i < n; i++){
+    world.foodGrid[i] *= retain;
+    world.homeGrid[i] *= retain;
+  }
+}
+
+/* ================= 世界步进（唯一对外主入口，纯函数） ================= */
+function updateWorld(world, dt){
+  world.time += dt;
+  for (var i = 0; i < world.ants.length; i++){
+    updateAnt(world, world.ants[i], dt);
+  }
+  evaporateAndDiffuse(world, dt);
+}
+
+/* ================= 抹掉一圈信息素（"踩一脚"） ================= */
+function stompAt(world, x, y, radius){
+  var x0 = gx(world, x - radius), x1 = gx(world, x + radius);
+  var y0 = gy(world, y - radius), y1 = gy(world, y + radius);
+  for (var yy = y0; yy <= y1; yy++){
+    for (var xx = x0; xx <= x1; xx++){
+      var px = xx * world.cell + world.cell / 2;
+      var py = yy * world.cell + world.cell / 2;
+      if ((px - x) * (px - x) + (py - y) * (py - y) <= radius * radius){
+        var idx = yy * world.gridW + xx;
+        world.foodGrid[idx] = 0;
+        world.homeGrid[idx] = 0;
+      }
+    }
+  }
+}
+
+/* ================= 默认场景（开阔巢+食物，无墙） ================= */
+function applyDefaultScene(world){
+  world.wall.fill(0);
+  buildBoundaryWalls(world);
+  world.nest.x = 110; world.nest.y = 240; world.nest.r = 34;
+  world.foods = [
+    { x: 620, y: 130, r: 24, amount: 500, maxAmount: 500 },
+    { x: 650, y: 370, r: 24, amount: 500, maxAmount: 500 }
+  ];
+  world.foodGrid.fill(0); world.homeGrid.fill(0);
+  world.delivered = 0;
+}
+
+/* ================= 双桥预设 =================
+   上下两条车道用一条贯穿桥区的实心隔墙彻底分开，保证两条通道在物理上
+   互不相交。两条通道在巢侧、食物侧的四个出口都刻意收在巢/食物本身高度
+   附近的窄带内：信息素在瓶颈处（走廊）浓度天然远高于开阔房间，
+   "往浓的地方偏"这条规则只能把蚂蚁拉到走廊口，替不了它们走完最后一段，
+   出口离目标越近，这最后一段靠抖动游走越容易走完。
+*/
+function applyDoubleBridgePreset(world){
+  world.wall.fill(0);
+  buildBoundaryWalls(world);
+
+  var zx0 = 190, zx1 = 530;
+  setWallRectPx(world, zx0, 0, zx1, world.H, true);      // 整个桥区先填死
+
+  /* 短桥：上车道一条直通道，长度 ≈ zx1-zx0 = 340 */
+  var shortRect = { x0: zx0, y0: 200, x1: zx1, y1: 240 };
+  setWallRectPx(world, shortRect.x0, shortRect.y0, shortRect.x1, shortRect.y1, false);
+
+  /* 长桥：下车道"下潜再回升"的凹字形，两个出口都贴着隔墙，
+     多出来的长度靠中间下潜到车道底部再折返吃掉，总长 ≈ 1.9~2 倍短桥 */
+  var longRect = { x0: zx0, y0: 252, x1: zx1, y1: 460 };
+  setWallRectPx(world, zx0, 262, 350, 302, false);  // 段一：贴隔墙的入口横通道
+  setWallRectPx(world, 300, 262, 350, 440, false);  // 段二：下潜竖直段
+  setWallRectPx(world, 300, 400, 460, 440, false);  // 段三：车道底部横通道
+  setWallRectPx(world, 410, 262, 460, 440, false);  // 段四：回升竖直段
+  setWallRectPx(world, 410, 262, zx1, 302, false);  // 段五：贴隔墙的出口横通道
+
+  /* 隔墙必须最后再设一遍：上面任何一次 carve 只要在取整边界上蹭到分界行，
+     都会把隔墙抠出洞。放在最后覆盖一次，保证隔墙一定赢。 */
+  setWallRectPx(world, zx0, 240, zx1, 252, true);
+
+  /* 巢和食物都摆在"到两个走廊口距离相等"的点上，半径留够 */
+  world.nest.x = 125; world.nest.y = 251; world.nest.r = 55;
+  world.foods = [{ x: 595, y: 251, r: 50, amount: 4000, maxAmount: 4000 }];
+  world.foodGrid.fill(0); world.homeGrid.fill(0);
+  world.delivered = 0;
+
+  return { shortRect: shortRect, longRect: longRect };
+}
+
+function countInRectPct(ants, rect){
+  var n = 0;
+  for (var i = 0; i < ants.length; i++){
+    var a = ants[i];
+    if (a.x >= rect.x0 && a.x <= rect.x1 && a.y >= rect.y0 && a.y <= rect.y1) n++;
+  }
+  return n;
+}
+
+/* =================================================================
+   以上是纯函数核心，到这里为止。往下开始是 DOM / canvas / 交互层，
+   只负责把上面的世界状态画出来、把用户操作转换成对世界状态的调用。
+   ================================================================= */
+
+var W = 780, H = 480;
+var ANT_COUNT = 400;
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+cv.width = W * DPR;
+cv.height = H * DPR;
+ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+var world = createWorld({ W: W, H: H });
+applyDefaultScene(world);
+spawnAnts(world, ANT_COUNT);
+
+var bridgeActive = false;
+var bridgeRects = null;
+
+/* ================= 离屏小画布：信息素+墙一次性画成 ImageData ================= */
+var visCanvas = document.createElement('canvas');
+visCanvas.width = world.gridW; visCanvas.height = world.gridH;
+var visCtx = visCanvas.getContext('2d');
+var visImg = visCtx.createImageData(world.gridW, world.gridH);
+
+function buildVisImage(){
+  var data = visImg.data;
+  var gw = world.gridW, gh = world.gridH;
+  var wall = world.wall, foodG = world.foodGrid, homeG = world.homeGrid;
+  var baseR = 251, baseG = 247, baseB = 236;   // var(--card)
+  var inkR = 42, inkG = 37, inkB = 33;         // var(--ink)
+  var sealR = 181, sealG = 64, sealB = 44;     // var(--seal)，找食素
+  var homCR = 150, homCG = 172, homCB = 176;   // 淡青灰，回家素，低调不抢戏（homeG 是网格引用，颜色常量避开这个名字）
+  var n = gw * gh;
+  for (var i = 0; i < n; i++){
+    var o = i * 4;
+    if (wall[i]){
+      data[o] = inkR; data[o+1] = inkG; data[o+2] = inkB; data[o+3] = 235;
+      continue;
+    }
+    var fT = foodG[i] / 50; if (fT > 1) fT = 1;
+    fT = fT * fT * (0.55 + 0.45 * fT) * 1.35; if (fT > 1) fT = 1;   /* 伽马压低中低值：高速路饱和后旷野退成淡色，路仍是路 */
+    var hT = (homeG[i] / 40) * 0.35; if (hT > 0.35) hT = 0.35;
+    var r = baseR + (sealR - baseR) * fT;
+    var g = baseG + (sealG - baseG) * fT;
+    var b = baseB + (sealB - baseB) * fT;
+    r = r + (homCR - r) * hT;
+    g = g + (homCG - g) * hT;
+    b = b + (homCB - b) * hT;
+    data[o] = r; data[o+1] = g; data[o+2] = b; data[o+3] = 255;
+  }
+  visCtx.putImageData(visImg, 0, 0);
+}
+
+/* ================= 巢 / 食物 / 蚂蚁绘制 ================= */
+var FONT = '13px "Noto Serif SC","Songti SC","STSong","SimSun",serif';
+
+function drawNest(){
+  ctx.fillStyle = 'rgba(42,37,33,.88)';
+  ctx.beginPath();
+  ctx.arc(world.nest.x, world.nest.y, world.nest.r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(251,247,236,.94)';
+  ctx.font = FONT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('巢', world.nest.x, world.nest.y);
+}
+
+function drawFoods(){
+  ctx.font = '12px "Noto Serif SC","Songti SC","STSong","SimSun",serif';
+  for (var i = 0; i < world.foods.length; i++){
+    var f = world.foods[i];
+    if (f.amount <= 0) continue;
+    var frac = f.amount / f.maxAmount;
+    var rr = f.r * Math.max(0.12, Math.sqrt(frac));
+    ctx.fillStyle = 'rgba(181,64,44,.85)';
+    var totalGrains = 42;
+    for (var gI = 0; gI < totalGrains; gI++){
+      var ga = gI * 2.399963;
+      var gr = f.r * Math.sqrt(gI / totalGrains);
+      if (gr > rr) continue;
+      var px = f.x + Math.cos(ga) * gr;
+      var py = f.y + Math.sin(ga) * gr;
+      ctx.beginPath();
+      ctx.arc(px, py, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(42,37,33,.8)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('食物', f.x, f.y + f.r + 14);
+  }
+}
+
+var followEnabled = false, followIndex = -1, followTrail = [];
+
+function drawFollowTrail(){
+  if (!followEnabled || followTrail.length < 2) return;
+  ctx.strokeStyle = 'rgba(181,64,44,.45)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  for (var i = 0; i < followTrail.length; i++){
+    var p = followTrail[i];
+    if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+}
+
+function drawAnts(){
+  for (var i = 0; i < world.ants.length; i++){
+    var a = world.ants[i];
+    var isFollowed = followEnabled && i === followIndex;
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.angle);
+    var bodyLen = isFollowed ? 5.2 : 3.1;
+    ctx.fillStyle = a.hasFood ? 'rgba(181,64,44,.92)' : 'rgba(42,37,33,.76)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, bodyLen, bodyLen * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    if (isFollowed){
+      ctx.strokeStyle = 'rgba(181,64,44,.95)';
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function draw(){
+  buildVisImage();
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(visCanvas, 0, 0, world.gridW, world.gridH, 0, 0, W, H);
+  drawNest();
+  drawFoods();
+  drawFollowTrail();
+  drawAnts();
+}
+
+/* ================= HUD / 双桥读数 ================= */
+var hudFoodEl = document.getElementById('hudFood');
+function updateHud(){
+  hudFoodEl.textContent = world.delivered;
+}
+
+var bridgeReadoutEl = document.getElementById('bridgeReadout');
+function updateBridgeReadout(){
+  if (!bridgeActive || !bridgeRects) return;
+  var shortN = countInRectPct(world.ants, bridgeRects.shortRect);
+  var longN = countInRectPct(world.ants, bridgeRects.longRect);
+  var total = shortN + longN;
+  var shortPct = total > 0 ? Math.round(100 * shortN / total) : 0;
+  var longPct = total > 0 ? 100 - shortPct : 0;
+  bridgeReadoutEl.innerHTML = '短桥 <b>' + shortPct + '%</b> ／ 长桥 <b>' + longPct + '%</b>';
+}
+
+/* ================= 字幕 ================= */
+var capEl = document.getElementById('caption');
+var capTimer = null;
+function showCaption(text, ms){
+  if (capTimer){ clearTimeout(capTimer); capTimer = null; }
+  if (!text){ capEl.classList.remove('show'); return; }
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  if (ms > 0){
+    capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms);
+  }
+}
+
+/* ================= 遗忘速度滑杆 ================= */
+var evapSliderEl = document.getElementById('evapSlider');
+var evapCaptionEl = document.getElementById('evapCaption');
+function updateEvapCaption(v){
+  if (v <= 15){
+    evapCaptionEl.textContent = '路永远不会被忘记，蚁群会困死在第一条路上';
+  } else if (v >= 85){
+    evapCaptionEl.textContent = '路刚修好就被忘掉，永远修不成高速公路';
+  } else {
+    evapCaptionEl.textContent = '刚刚好的遗忘';
+  }
+}
+evapSliderEl.addEventListener('input', function(e){
+  var v = parseInt(e.target.value, 10);
+  world.params.evapSlider = v;
+  updateEvapCaption(v);
+});
+evapSliderEl.value = world.params.evapSlider;
+updateEvapCaption(world.params.evapSlider);
+
+/* ================= 指针模式：画墙／擦除／踩一脚 ================= */
+var pointerMode = 'draw';
+var btnDraw = document.getElementById('btnDraw');
+var btnErase = document.getElementById('btnErase');
+var btnStomp = document.getElementById('btnStomp');
+function setMode(m){
+  pointerMode = m;
+  btnDraw.classList.toggle('on', m === 'draw');
+  btnErase.classList.toggle('on', m === 'erase');
+  btnStomp.classList.toggle('on', m === 'stomp');
+}
+btnDraw.addEventListener('click', function(){ setMode('draw'); });
+btnErase.addEventListener('click', function(){ setMode('erase'); });
+btnStomp.addEventListener('click', function(){ setMode('stomp'); });
+setMode('draw');
+
+function applyBrush(x, y){
+  if (pointerMode === 'draw'){
+    setWallCirclePx(world, x, y, 12, true);
+  } else if (pointerMode === 'erase'){
+    setWallCirclePx(world, x, y, 12, false);
+  } else if (pointerMode === 'stomp'){
+    stompAt(world, x, y, 40);
+  }
+}
+
+function toCanvas(e){
+  var r = cv.getBoundingClientRect();
+  var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  return { x: cx * (W / r.width), y: cy * (H / r.height) };
+}
+
+var pointerDown = false;
+cv.addEventListener('mousedown', function(e){
+  pointerDown = true;
+  var p = toCanvas(e);
+  applyBrush(p.x, p.y);
+});
+cv.addEventListener('mousemove', function(e){
+  if (!pointerDown) return;
+  var p = toCanvas(e);
+  applyBrush(p.x, p.y);
+});
+window.addEventListener('mouseup', function(){ pointerDown = false; });
+
+cv.addEventListener('touchstart', function(e){
+  e.preventDefault();
+  pointerDown = true;
+  var p = toCanvas(e);
+  applyBrush(p.x, p.y);
+}, { passive: false });
+cv.addEventListener('touchmove', function(e){
+  e.preventDefault();
+  if (!pointerDown) return;
+  var p = toCanvas(e);
+  applyBrush(p.x, p.y);
+}, { passive: false });
+cv.addEventListener('touchend', function(){ pointerDown = false; });
+
+/* ================= 双桥实验按钮 ================= */
+document.getElementById('btnBridge').addEventListener('click', function(){
+  bridgeActive = true;
+  bridgeRects = applyDoubleBridgePreset(world);
+  spawnAnts(world, ANT_COUNT);
+  bridgeReadoutEl.style.display = 'block';
+  followEnabled = false; followTrail = []; followIndex = -1;
+  document.getElementById('chkFollow').checked = false;
+  showCaption('两座桥，一条明显更长。看蚁群最后选哪一条。', 2800);
+});
+
+/* ================= 跟着一只蚂蚁 ================= */
+document.getElementById('chkFollow').addEventListener('change', function(e){
+  followEnabled = e.target.checked;
+  if (followEnabled){
+    followIndex = Math.floor(Math.random() * world.ants.length);
+    followTrail = [];
+    showCaption('它什么都不知道，它只是有点想往气味浓的地方走。', 3400);
+  } else {
+    showCaption('', 0);
+  }
+});
+
+/* ================= 速度切换 ================= */
+var speedMul = 1;
+var btnSpeed1 = document.getElementById('btnSpeed1');
+var btnSpeed4 = document.getElementById('btnSpeed4');
+function updateSpeedButtons(){
+  btnSpeed1.classList.toggle('on', speedMul === 1);
+  btnSpeed4.classList.toggle('on', speedMul === 4);
+}
+btnSpeed1.addEventListener('click', function(){ speedMul = 1; updateSpeedButtons(); });
+btnSpeed4.addEventListener('click', function(){ speedMul = 4; updateSpeedButtons(); });
+updateSpeedButtons();
+
+/* ================= 重置 ================= */
+document.getElementById('btnReset').addEventListener('click', function(){
+  bridgeActive = false;
+  bridgeRects = null;
+  bridgeReadoutEl.style.display = 'none';
+  applyDefaultScene(world);
+  spawnAnts(world, ANT_COUNT);
+  followEnabled = false; followTrail = []; followIndex = -1;
+  document.getElementById('chkFollow').checked = false;
+  showCaption('', 0);
+  updateHud();
+});
+
+/* ================= 主循环：固定子步 + 速度倍率 + 后台保护 ================= */
+var STEP = 1 / 60;
+var simAccum = 0;
+var lastT = null;
+var MAX_FRAME = 0.1;          // 单帧真实时间上限，切后台回来不会拿到一个巨大 dt
+var MAX_STEPS_BASE = 8;       // 每帧最多补的子步数（乘以速度倍率），防止爆算
+
+function frame(now){
+  if (lastT === null) lastT = now;
+  var realDt = (now - lastT) / 1000;
+  lastT = now;
+  if (realDt > MAX_FRAME) realDt = MAX_FRAME;
+
+  simAccum += realDt * speedMul;
+  var steps = 0;
+  var maxSteps = MAX_STEPS_BASE * speedMul;
+  while (simAccum >= STEP && steps < maxSteps){
+    updateWorld(world, STEP);
+    simAccum -= STEP;
+    steps++;
+  }
+  if (steps >= maxSteps) simAccum = 0;
+
+  if (followEnabled && followIndex >= 0 && followIndex < world.ants.length){
+    var fa = world.ants[followIndex];
+    followTrail.push({ x: fa.x, y: fa.y });
+    if (followTrail.length > 200) followTrail.shift();
+  }
+
+  draw();
+  updateHud();
+  updateBridgeReadout();
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吸了氦气的声带 · 感觉博物馆</title>
+<meta name="description" content="那口气根本没碰你的声带。它换掉的是你嘴里的空气。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#050403;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+  .hud{
+    position:absolute;top:10px;left:12px;right:12px;
+    display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    font-size:12px;letter-spacing:.08em;color:rgba(235,228,210,.86);
+    pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.7);
+  }
+  .hud b{color:#f0c98a;font-weight:normal;}
+  .facebox{
+    position:absolute;right:10px;bottom:10px;width:96px;height:72px;
+    background:rgba(5,4,3,.5);border:1px solid rgba(216,205,182,.35);border-radius:6px;
+    pointer-events:none;
+  }
+  .facebox canvas{width:100%;height:100%;display:block;}
+  .facecap{
+    position:absolute;left:10px;bottom:10px;right:116px;
+    font-size:11.5px;line-height:1.6;color:rgba(230,222,204,.8);
+    text-shadow:0 1px 3px rgba(0,0,0,.8);pointer-events:none;
+  }
+  /* 窄屏：画布整体缩得很小，浮层字号不缩，会互相压字，全部让位给谱面本体。
+     声速、共振峰、音高三个读数在下方滑杆行里都有，不丢信息 */
+  @media (max-width:560px){
+    .hud,.facebox,.facecap{display:none;}
+  }
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .hint{text-align:center;font-size:12.5px;color:var(--ink-soft);letter-spacing:.06em;margin-bottom:14px;}
+  .btnrow{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-items:center;margin-bottom:14px;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.08em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:11px 18px;cursor:pointer;min-height:44px;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.big{font-size:15px;padding:13px 26px;letter-spacing:.12em;}
+
+  .sliderblock{margin-bottom:16px;}
+  .sliderlabel{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#453e30;letter-spacing:.04em;margin-bottom:6px;}
+  .sliderlabel .readout{color:var(--seal);font-size:13px;}
+  .sliderwrap{position:relative;padding:0 2px;}
+  input[type=range]{
+    width:100%;height:30px;-webkit-appearance:none;appearance:none;
+    background:transparent;cursor:pointer;margin:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:6px;background:linear-gradient(90deg,#7c8f9e,var(--line) 50%,#e8c9a0);
+    border-radius:4px;border:1px solid var(--ink-soft);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;
+    background:var(--seal);border:2px solid #fdf6ee;margin-top:-8px;
+    box-shadow:0 1px 4px rgba(0,0,0,.3);
+  }
+  input[type=range]::-moz-range-track{
+    height:6px;background:linear-gradient(90deg,#7c8f9e,var(--line) 50%,#e8c9a0);
+    border-radius:4px;border:1px solid var(--ink-soft);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px;height:20px;border-radius:50%;background:var(--seal);
+    border:2px solid #fdf6ee;box-shadow:0 1px 4px rgba(0,0,0,.3);
+  }
+  .ticks{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);letter-spacing:.02em;margin-top:2px;padding:0 2px;}
+  .ticks span:last-child{text-align:right;}
+  .ticks span:nth-child(2){text-align:center;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:var(--ink);
+    padding-top:14px;margin-top:4px;border-top:1px dashed var(--line);
+  }
+  .quote b{color:var(--seal);}
+
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){header,.stage,.ctrls,.plaque{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №034</span>
+  </div>
+
+  <header>
+    <h1>吸了氦气的声带</h1>
+    <div class="en">THE HELIUM VOICE</div>
+    <p class="sub">那口气根本没碰你的声带。它换掉的是你嘴里的空气。</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="420"></canvas>
+    <div class="hud">
+      <span>声速 <b id="hudSpeed">343</b> 米每秒</span>
+      <span>共振峰 <b id="hudRatio">×1.00</b></span>
+      <span>音高 <b id="hudPitch">120</b> 赫兹</span>
+    </div>
+    <div class="facecap" id="faceCap">对声音来说，你的嘴变成了另一间房间</div>
+    <div class="facebox"><canvas id="faceCv" width="192" height="144"></canvas></div>
+  </div>
+
+  <div class="ctrls">
+    <p class="hint">拖气体滑杆，看鼓包跑、竖针不动；拖音高滑杆，看竖针动、鼓包不跑</p>
+
+    <div class="btnrow">
+      <button class="btn big" id="btnToggle">发声 ▶</button>
+      <button class="btn" id="btnSing">唱一段</button>
+    </div>
+    <div class="btnrow">
+      <button class="btn on" id="btnA">啊 /a/</button>
+      <button class="btn" id="btnI">咿 /i/</button>
+      <button class="btn" id="btnU">呜 /u/</button>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="gasSF6">六氟化硫</button>
+      <button class="btn" id="gasAir">空气</button>
+      <button class="btn" id="gasHe">氦气</button>
+    </div>
+
+    <div class="sliderblock">
+      <div class="sliderlabel"><span>气体（声道介质）</span><span class="readout" id="gasReadout">声速 343 米每秒，共振峰 ×1.00</span></div>
+      <div class="sliderwrap">
+        <input type="range" id="gasSlider" min="0" max="1" step="0.001" value="0.5">
+        <div class="ticks"><span>六氟化硫 133</span><span>空气 343</span><span>氦气 972</span></div>
+      </div>
+    </div>
+
+    <div class="sliderblock">
+      <div class="sliderlabel"><span>音高（声带振动频率，仅供对照）</span><span class="readout" id="pitchReadout">120 赫兹</span></div>
+      <div class="sliderwrap">
+        <input type="range" id="pitchSlider" min="80" max="300" step="1" value="120">
+        <div class="ticks"><span>80 低</span><span></span><span>300 高</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 变的不是你的声音</div>
+    <div class="pb">派对上吸一口氦气，声音立刻变成鸭子，所有人都说你的音变高了。拿仪器一看，声带的振动频率几乎没动，你的音高还是那个音高。真正变的是声音在你喉咙和口腔里的奔跑速度，氦气里的声速几乎是空气里的三倍。对声音来说，你的嘴突然变成了一间小得多的房间，整套共鸣整体上移，音色就成了鸭子。</div>
+    <div class="pt">说明牌 · 反过来也成立</div>
+    <div class="pb">六氟化硫正好反过来，声速掉到三分之一，同一副声带立刻变成恶魔。顺带一句，氦气偶尔一口无妨，连着吸会缺氧，六氟化硫更会在肺底赖着不走，这两样都别在家里比赛，来这个展厅玩就够了。</div>
+    <div class="quote">变的从来不是你的声音，<b>是声音路过你时的速度。</b></div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №034 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 物理常量与纯函数（与离线自验脚本逐字一致） ================= */
+var SPEED_SF6 = 133;   // 六氟化硫声速，米每秒
+var SPEED_AIR = 343;   // 空气声速，米每秒
+var SPEED_HE  = 972;   // 纯氦声速，米每秒
+
+var VOWELS = {
+  a: { f1: 730, f2: 1090, f3: 2440 },
+  i: { f1: 270, f2: 2290, f3: 3010 },
+  u: { f1: 300, f2: 870,  f3: 2240 }
+};
+
+/* 滑杆位置 0~1，六氟化硫(0) - 空气(0.5) - 氦气(1)，分段线性连续插值声速 */
+function sliderToSpeed(pos){
+  pos = Math.max(0, Math.min(1, pos));
+  if (pos <= 0.5){
+    var t = pos / 0.5;
+    return SPEED_SF6 + (SPEED_AIR - SPEED_SF6) * t;
+  } else {
+    var t2 = (pos - 0.5) / 0.5;
+    return SPEED_AIR + (SPEED_HE - SPEED_AIR) * t2;
+  }
+}
+
+function speedToRatio(speed){
+  return speed / SPEED_AIR;
+}
+
+/* 元音 + 倍率 -> 三个滤波器目标频率，f0 完全不参与这条链路 */
+function vowelFormants(vowelKey, ratio){
+  var v = VOWELS[vowelKey];
+  return { f1: v.f1 * ratio, f2: v.f2 * ratio, f3: v.f3 * ratio };
+}
+
+/* ================= 状态 ================= */
+var state = {
+  gasPos: 0.5,       // 滑杆位置 0~1
+  ratio: 1.0,        // 当前共振峰倍率
+  speed: SPEED_AIR,  // 当前声速
+  pitch: 120,        // f0，与气体无关
+  vowel: 'a',
+  playing: false,
+  singing: false
+};
+
+/* ================= WebAudio 图 ================= */
+var actx = null;
+var srcOsc = null;      // 声带：锯齿波
+var vibratoLFO = null;  // 5赫兹颤音
+var vibratoGain = null;
+var lowpass = null;     // 总输出低通，防刺耳
+var masterGain = null;  // 总增益 ~0.15
+var bp1 = null, bp2 = null, bp3 = null; // 三个并联共振峰滤波器
+var g1 = null, g2 = null, g3 = null;    // 三路混合增益
+var analyser = null;
+
+function buildGraph(){
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+
+  srcOsc = actx.createOscillator();
+  srcOsc.type = 'sawtooth';
+  srcOsc.frequency.value = state.pitch;
+
+  /* 5赫兹轻微颤音，音分级别，加在频率上而非直接改 value，避免突变 */
+  vibratoLFO = actx.createOscillator();
+  vibratoLFO.type = 'sine';
+  vibratoLFO.frequency.value = 5;
+  vibratoGain = actx.createGain();
+  vibratoGain.gain.value = state.pitch * 0.006; // 约0.6%的频率摆动，克制不夸张
+  vibratoLFO.connect(vibratoGain);
+  vibratoGain.connect(srcOsc.frequency);
+
+  /* 三个并联 bandpass 共振峰，Q 8~12，F2 增益略低于 F1，F3 再低 */
+  bp1 = actx.createBiquadFilter(); bp1.type = 'bandpass'; bp1.Q.value = 9;
+  bp2 = actx.createBiquadFilter(); bp2.type = 'bandpass'; bp2.Q.value = 10.5;
+  bp3 = actx.createBiquadFilter(); bp3.type = 'bandpass'; bp3.Q.value = 12;
+  g1 = actx.createGain(); g1.gain.value = 1.0;
+  g2 = actx.createGain(); g2.gain.value = 0.55;
+  g3 = actx.createGain(); g3.gain.value = 0.32;
+
+  lowpass = actx.createBiquadFilter();
+  lowpass.type = 'lowpass';
+  lowpass.frequency.value = 4000;
+  lowpass.Q.value = 0.7;
+
+  masterGain = actx.createGain();
+  masterGain.gain.value = 0; // 起始静音，发声后再拉起，避免加载即响
+
+  analyser = actx.createAnalyser();
+  analyser.fftSize = 4096;
+
+  srcOsc.connect(bp1); srcOsc.connect(bp2); srcOsc.connect(bp3);
+  bp1.connect(g1); bp2.connect(g2); bp3.connect(g3);
+  g1.connect(lowpass); g2.connect(lowpass); g3.connect(lowpass);
+  lowpass.connect(masterGain);
+  masterGain.connect(analyser);
+  analyser.connect(actx.destination);
+
+  applyVowel(state.vowel, state.ratio, true);
+  srcOsc.frequency.setValueAtTime(state.pitch, actx.currentTime);
+
+  srcOsc.start();
+  vibratoLFO.start();
+}
+
+/* 平滑套用某个元音在当前倍率下的三个共振峰目标，全部用 setTargetAtTime，杜绝跳变 */
+function applyVowel(vowelKey, ratio, instant){
+  var f = vowelFormants(vowelKey, ratio);
+  if (!actx) return;
+  var t = actx.currentTime;
+  var tc = instant ? 0.001 : 0.05;
+  bp1.frequency.setTargetAtTime(f.f1, t, tc);
+  bp2.frequency.setTargetAtTime(f.f2, t, tc);
+  bp3.frequency.setTargetAtTime(f.f3, t, tc);
+}
+
+function applyPitch(hz, instant){
+  if (!actx) return;
+  var t = actx.currentTime;
+  var tc = instant ? 0.001 : 0.05;
+  srcOsc.frequency.setTargetAtTime(hz, t, tc);
+  vibratoGain.gain.setTargetAtTime(hz * 0.006, t, tc);
+}
+
+function setPlaying(on){
+  state.playing = on;
+  if (!actx) return;
+  var t = actx.currentTime;
+  masterGain.gain.setTargetAtTime(on ? 0.15 : 0, t, 0.06);
+}
+
+/* ================= 唱一段：预排小旋律，全部走 AudioContext 时钟 ================= */
+var SING_SEQ = [
+  { t: 0.00, vowel: 'a', f0: 120 },
+  { t: 0.75, vowel: 'i', f0: 150 },
+  { t: 1.55, vowel: 'u', f0: 135 },
+  { t: 2.35, vowel: 'a', f0: 120 }
+];
+var SING_TOTAL = 3.05;
+var singEndTimer = null;
+
+function sing(){
+  if (!actx) return;
+  ensureRunning();
+  state.singing = true;
+  var base = actx.currentTime + 0.03;
+  var wasPlaying = state.playing;
+  masterGain.gain.cancelScheduledValues(base - 0.02);
+  masterGain.gain.setTargetAtTime(0.15, base, 0.03);
+
+  for (var i = 0; i < SING_SEQ.length; i++){
+    var step = SING_SEQ[i];
+    var when = base + step.t;
+    var f = vowelFormants(step.vowel, state.ratio);
+    bp1.frequency.setTargetAtTime(f.f1, when, 0.05);
+    bp2.frequency.setTargetAtTime(f.f2, when, 0.05);
+    bp3.frequency.setTargetAtTime(f.f3, when, 0.05);
+    srcOsc.frequency.setTargetAtTime(step.f0, when, 0.05);
+    vibratoGain.gain.setTargetAtTime(step.f0 * 0.006, when, 0.05);
+  }
+
+  var endAt = base + SING_TOTAL;
+  if (!wasPlaying){
+    masterGain.gain.setTargetAtTime(0, endAt, 0.08);
+  }
+  /* 唱完把参数放回滑杆当前值，用 AudioContext 时钟等价延时，不用 setTimeout 排音，
+     这里只用 setTimeout 做「界面按钮解除禁用」这种非音频排程的收尾，音频本身早已排完 */
+  if (singEndTimer) clearTimeout(singEndTimer);
+  singEndTimer = setTimeout(function(){
+    state.singing = false;
+    applyVowel(state.vowel, state.ratio, false);
+    applyPitch(state.pitch, false);
+    if (!wasPlaying) setPlaying(false);
+  }, (SING_TOTAL + 0.15) * 1000);
+}
+
+function ensureRunning(){
+  if (!actx){ buildGraph(); }
+  if (actx.state === 'suspended'){ actx.resume(); }
+}
+
+/* ================= 控件 ================= */
+var btnToggle = document.getElementById('btnToggle');
+var btnSing = document.getElementById('btnSing');
+var btnA = document.getElementById('btnA'), btnI = document.getElementById('btnI'), btnU = document.getElementById('btnU');
+var gasSlider = document.getElementById('gasSlider');
+var pitchSlider = document.getElementById('pitchSlider');
+var gasReadout = document.getElementById('gasReadout');
+var pitchReadout = document.getElementById('pitchReadout');
+var hudSpeed = document.getElementById('hudSpeed');
+var hudRatio = document.getElementById('hudRatio');
+var hudPitch = document.getElementById('hudPitch');
+
+function refreshGasReadout(){
+  state.speed = sliderToSpeed(state.gasPos);
+  state.ratio = speedToRatio(state.speed);
+  gasReadout.textContent = '声速 ' + Math.round(state.speed) + ' 米每秒，共振峰 ×' + state.ratio.toFixed(2);
+  hudSpeed.textContent = Math.round(state.speed);
+  hudRatio.textContent = '×' + state.ratio.toFixed(2);
+}
+function refreshPitchReadout(){
+  pitchReadout.textContent = state.pitch + ' 赫兹';
+  hudPitch.textContent = state.pitch;
+}
+refreshGasReadout();
+refreshPitchReadout();
+
+btnToggle.addEventListener('click', function(){
+  ensureRunning();
+  if (!state.playing){
+    setPlaying(true);
+    btnToggle.textContent = '停 ■';
+    btnToggle.classList.add('on');
+  } else {
+    setPlaying(false);
+    btnToggle.textContent = '发声 ▶';
+    btnToggle.classList.remove('on');
+  }
+});
+
+btnSing.addEventListener('click', function(){
+  ensureRunning();
+  sing();
+});
+
+function selectVowel(key, btn){
+  state.vowel = key;
+  [btnA, btnI, btnU].forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  if (actx && !state.singing) applyVowel(key, state.ratio, false);
+}
+btnA.addEventListener('click', function(){ ensureRunning(); selectVowel('a', btnA); });
+btnI.addEventListener('click', function(){ ensureRunning(); selectVowel('i', btnI); });
+btnU.addEventListener('click', function(){ ensureRunning(); selectVowel('u', btnU); });
+
+gasSlider.addEventListener('input', function(){
+  state.gasPos = parseFloat(gasSlider.value);
+  refreshGasReadout();
+  if (actx && !state.singing) applyVowel(state.vowel, state.ratio, false);
+});
+
+pitchSlider.addEventListener('input', function(){
+  state.pitch = parseInt(pitchSlider.value, 10);
+  refreshPitchReadout();
+  if (actx && !state.singing) applyPitch(state.pitch, false);
+});
+
+function setGasQuick(pos){
+  gasSlider.value = pos;
+  state.gasPos = pos;
+  refreshGasReadout();
+  ensureRunning();
+  if (!state.singing) applyVowel(state.vowel, state.ratio, false);
+}
+document.getElementById('gasSF6').addEventListener('click', function(){ setGasQuick(0); });
+document.getElementById('gasAir').addEventListener('click', function(){ setGasQuick(0.5); });
+document.getElementById('gasHe').addEventListener('click', function(){ setGasQuick(1); });
+
+/* ================= 可视化：实时频谱 + 理论共振峰包络 + 侧脸示意 ================= */
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var W = 780, H = 420;
+var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+function fitCanvas(){
+  var rect = cv.getBoundingClientRect();
+  var w = rect.width || W;
+  var h = w * (H / W);
+  cv.style.height = h + 'px';
+  cv.width = Math.round(w * DPR);
+  cv.height = Math.round(h * DPR);
+  /* 统一用逻辑坐标 W×H 作图，实际像素通过 scale 换算，兼顾 devicePixelRatio */
+  ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
+
+var freqData = new Uint8Array(2048);
+var NYQUIST_VIEW = 4000; // 只画 0~4000 赫兹
+
+function formantEnvelopeY(freq, f){
+  /* 用三个高斯鼓包近似理论共振峰包络，纯视觉示意，不参与音频计算 */
+  var bumps = [
+    { c: f.f1, w: 60, a: 1.0 },
+    { c: f.f2, w: 90, a: 0.75 },
+    { c: f.f3, w: 130, a: 0.55 }
+  ];
+  var v = 0.06;
+  for (var i = 0; i < bumps.length; i++){
+    var b = bumps[i];
+    var d = (freq - b.c) / b.w;
+    v += b.a * Math.exp(-d * d * 0.5);
+  }
+  return v;
+}
+
+function drawSpectrum(){
+  ctx.fillStyle = '#050403';
+  ctx.fillRect(0, 0, W, H);
+
+  var plotX = 46, plotY = 26, plotW = W - plotX - 20, plotH = H - plotY - 96;
+
+  /* 网格与坐标 */
+  ctx.strokeStyle = 'rgba(216,205,182,.14)';
+  ctx.lineWidth = 1;
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = 'rgba(216,205,182,.5)';
+  for (var kk = 0; kk <= 4; kk++){
+    var gx = plotX + plotW * (kk / 4);
+    ctx.beginPath(); ctx.moveTo(gx, plotY); ctx.lineTo(gx, plotY + plotH); ctx.stroke();
+    ctx.fillText((kk * 1000) + '', gx - 8, plotY + plotH + 16);
+  }
+  ctx.fillText('赫兹', plotX + plotW - 6, plotY + plotH + 16);
+
+  var f = vowelFormants(state.vowel, state.ratio);
+
+  /* 理论共振峰包络（淡印章红） */
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(181,64,44,.65)';
+  ctx.lineWidth = 2;
+  for (var xi = 0; xi <= plotW; xi += 2){
+    var freq = (xi / plotW) * NYQUIST_VIEW;
+    var env = formantEnvelopeY(freq, f);
+    var yy = plotY + plotH - Math.min(1, env) * plotH * 0.92;
+    if (xi === 0) ctx.moveTo(plotX + xi, yy); else ctx.lineTo(plotX + xi, yy);
+  }
+  ctx.stroke();
+
+  /* 实时频谱（谐波梳齿），真实数据 */
+  if (analyser && state.playing){
+    analyser.getByteFrequencyData(freqData);
+    var sr = actx.sampleRate;
+    var binHz = sr / analyser.fftSize;
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(240,201,138,.92)';
+    ctx.lineWidth = 1.4;
+    var first = true;
+    for (var bin = 0; bin < freqData.length; bin++){
+      var fq = bin * binHz;
+      if (fq > NYQUIST_VIEW) break;
+      var px = plotX + (fq / NYQUIST_VIEW) * plotW;
+      var mag = freqData[bin] / 255;
+      var py = plotY + plotH - mag * plotH * 0.92;
+      if (first){ ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+    }
+    ctx.stroke();
+  }
+
+  /* F1 F2 F3 标注 */
+  ctx.fillStyle = 'rgba(181,64,44,.9)';
+  ctx.font = '11px sans-serif';
+  [['F1', f.f1], ['F2', f.f2], ['F3', f.f3]].forEach(function(pair){
+    if (pair[1] > NYQUIST_VIEW) return;
+    var px = plotX + (pair[1] / NYQUIST_VIEW) * plotW;
+    ctx.fillText(pair[0], px - 8, plotY + 12);
+  });
+
+  /* 基频竖针：钉死，标注「音高（纹丝不动）」。亮针带光晕，深底上必须一眼可见 */
+  var pitchPx = plotX + (state.pitch / NYQUIST_VIEW) * plotW;
+  ctx.strokeStyle = 'rgba(245,239,226,.16)';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(pitchPx, plotY);
+  ctx.lineTo(pitchPx, plotY + plotH);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(245,239,226,.95)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pitchPx, plotY);
+  ctx.lineTo(pitchPx, plotY + plotH);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(245,239,226,.95)';
+  ctx.font = '11.5px sans-serif';
+  ctx.fillText('音高（纹丝不动）', Math.min(pitchPx + 6, plotX + plotW - 108), plotY + plotH + 34);
+
+  ctx.fillStyle = 'rgba(240,201,138,.85)';
+  ctx.textAlign = 'right';
+  ctx.fillText('共振峰（跟着声速跑）', plotX + plotW - 140, plotY + plotH + 50);
+  ctx.textAlign = 'left';
+
+  /* 静音时在谱区中央提示；发声后控件区自有说明，画布不再叠字 */
+  if (!state.playing){
+    ctx.fillStyle = 'rgba(216,205,182,.6)';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('页面加载时默认无声，点「发声」开始', plotX + plotW / 2, plotY + plotH / 2);
+    ctx.textAlign = 'left';
+  }
+}
+
+/* 侧脸腔体示意：口腔随倍率 m 视觉缩放 */
+var faceCv = document.getElementById('faceCv');
+var faceCtx = faceCv.getContext('2d');
+function drawFace(){
+  var w = 192, h = 144;
+  faceCtx.setTransform(faceCv.width / w, 0, 0, faceCv.height / h, 0, 0);
+  faceCtx.clearRect(0, 0, w, h);
+  faceCtx.strokeStyle = 'rgba(216,205,182,.75)';
+  faceCtx.lineWidth = 1.6;
+  /* 侧脸轮廓线稿（简化：额头到下巴的一条弧线+鼻子凸起） */
+  faceCtx.beginPath();
+  faceCtx.moveTo(50, 18);
+  faceCtx.quadraticCurveTo(20, 40, 26, 70);
+  faceCtx.quadraticCurveTo(28, 92, 46, 100);
+  faceCtx.lineTo(70, 118);
+  faceCtx.quadraticCurveTo(96, 122, 108, 108);
+  faceCtx.quadraticCurveTo(96, 96, 100, 82);
+  faceCtx.quadraticCurveTo(120, 72, 108, 58);
+  faceCtx.quadraticCurveTo(96, 52, 92, 40);
+  faceCtx.quadraticCurveTo(84, 22, 50, 18);
+  faceCtx.stroke();
+
+  /* 口腔腔体：随 ratio 反向缩放（氦气 ratio 大，腔体画小；六氟化硫 ratio 小，腔体画大） */
+  var scale = 1 / Math.max(0.35, Math.min(2.9, state.ratio));
+  var cxr = 78, cyr = 84;
+  var rw = 26 * scale, rh = 16 * scale;
+  faceCtx.save();
+  faceCtx.translate(cxr, cyr);
+  faceCtx.fillStyle = 'rgba(181,64,44,.32)';
+  faceCtx.strokeStyle = 'rgba(181,64,44,.75)';
+  faceCtx.lineWidth = 1.4;
+  faceCtx.beginPath();
+  faceCtx.ellipse(0, 0, rw, rh, 0, 0, Math.PI * 2);
+  faceCtx.fill();
+  faceCtx.stroke();
+  faceCtx.restore();
+}
+
+/* ================= 主循环 ================= */
+function frame(){
+  drawSpectrum();
+  drawFace();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* iOS 首次手势解锁保险：任意首次 pointerdown 尝试建图+resume，之后按钮各自逻辑正常接管 */
+document.addEventListener('pointerdown', function unlockOnce(){
+  ensureRunning();
+  document.removeEventListener('pointerdown', unlockOnce);
+}, { once: true });
+
+})();
+</script>
+</body>
+</html>
