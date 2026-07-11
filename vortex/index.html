@@ -157,9 +157,9 @@
     <div class="pt">说明牌 · 科里奥利力弱到可以忽略</div>
     <div class="pb">科里奥利力确实存在，尺度对了它真管用：台风、洋流，几百公里宽、转一圈要几天，那个尺度上它说了算，方向和半球死死对应。可一个直径几十厘米的浴缸，水几十秒就流干，你随手一搅的力道，比地球自转能在这么小的水面上施加的力大出好几个数量级。谁的贡献大，谁定方向，跟纬度没关系。</div>
     <div class="pt">说明牌 · 真做过这个实验的人</div>
-    <div class="pb">1962 年，MIT 的 Ascher Shapiro 真的量过。他用一个近两米宽的圆盘水池，灌满水后让它静置一整天，等所有搅动的余波彻底停下来，才敢拔掉塞子——这时候科里奥利力才有机会露头，转向真的和纬度对上了。少了这一整天的"静置"，随手一次搅动就能把这一点点效应盖得干干净净。</div>
+    <div class="pb">1962 年，MIT 的 Ascher Shapiro 真的量过。他用一个近两米宽的圆盘水池，灌满水后让它静置一整天，等所有搅动的余波彻底停下来，才敢拔掉塞子。这时候科里奥利力才有机会露头，转向真的和纬度对上了。少了这一整天的"静置"，随手一次搅动就能把这一点点效应盖得干干净净。</div>
     <div class="pt">说明牌 · 你的浴缸不是实验室</div>
-    <div class="pb">你家的浴缸从装水那一刻就带着看不见的余流，放水前伸手探探水温，就是一场搅动。这些扰动比科里奥利力大出几个数量级，谁先动手，谁定方向。选哪个半球，在这个尺度上根本插不上话——上面的两根进度条，就是照实际强度画出来的对比。</div>
+    <div class="pb">你家的浴缸从装水那一刻就带着看不见的余流，放水前伸手探探水温，就是一场搅动。这些扰动比科里奥利力大出几个数量级，谁先动手，谁定方向。选哪个半球，在这个尺度上根本插不上话。上面的两根进度条，就是照实际强度画出来的对比。</div>
     <div class="quote">台风听地球自转的，<b>浴缸只听你的手</b>。</div>
   </div>
 
@@ -202,6 +202,7 @@ var TUB_R = 235, DRAIN_R = 15;
 
 /* ---------- 常量 ---------- */
 var CORIOLIS_BASE = 0.012; // 换算到本模拟尺度的"真实强度"切向加速度基准
+var CORI_ACCEL_CAP = 24; // 夸张挡限幅：防止 10 万倍把粒子甩上缸壁失控/困在排水口打转出不去，仍比 1000 倍档明显更强
 var DRAIN_PULL = 46;
 var DAMP = 0.55;
 var STIR_RADIUS = 46;
@@ -275,6 +276,7 @@ document.getElementById('btnRefill').addEventListener('click', function(){
   stirAccum = 0; coriAccum = 0;
   btnDrain.textContent = '🚰 放水';
   btnDrain.classList.remove('on');
+  mythShown = false; introShown = false; drainedShown = false;
   showCaption('重新放满一缸水，带着一点新的余流。', 2400);
 });
 
@@ -327,8 +329,11 @@ function showCaption(text, ms){
 
 /* ================= 物理步进 ================= */
 function step(dt){
-  var coriSign = hemisphere==='N' ? 1 : (hemisphere==='S' ? -1 : 0);
-  var ac = CORIOLIS_BASE * exaggeration * coriSign;
+  // 画面坐标 y 朝下，x*vy-y*vx 算出的 omega 为正=画面顺时针（见 updateHUD）。
+  // 真实科里奥利力：北半球逆时针、南半球顺时针，所以北半球要把 omega 往负的方向推。
+  var coriSign = hemisphere==='N' ? -1 : (hemisphere==='S' ? 1 : 0);
+  var acRaw = CORIOLIS_BASE * exaggeration * coriSign;
+  var ac = Math.sign(acRaw) * Math.min(Math.abs(acRaw), CORI_ACCEL_CAP);
 
   for (var i=0;i<N;i++){
     if (!alive[i]) continue;
@@ -386,7 +391,8 @@ function updateHUD(){
   if (Math.abs(omega) < 0.006 || (!drainOpen && aliveCount===N)){
     dirEl.textContent = drainOpen ? '看不出方向' : '静止';
   } else {
-    dirEl.textContent = omega > 0 ? '逆时针' : '顺时针';
+    // omega>0 = 画面顺时针（见 step() 里的坐标说明）
+    dirEl.textContent = omega > 0 ? '顺时针' : '逆时针';
   }
 
   var maxBar = Math.max(stirAccum, coriAccum, 0.001);
@@ -489,21 +495,23 @@ function drawDirArrow(){
   if (!drainOpen) return;
   var omega = computeNetOmega();
   if (Math.abs(omega) < 0.006) return;
-  var cw = omega < 0;
+  var cw = omega > 0; // 画面顺时针
   var ar = TUB_R + 30;
   ctx.save();
   ctx.translate(CX, CY-4);
   ctx.strokeStyle = 'rgba(181,64,44,.85)';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
-  var a0 = -Math.PI*0.62, a1 = Math.PI*0.18;
-  if (cw){ var tmp=a0; a0=Math.PI-a1; a1=Math.PI-tmp; }
+  var a0 = -Math.PI*0.62, span = Math.PI*0.8;
+  var a1 = cw ? a0+span : a0-span;
   ctx.beginPath();
-  ctx.arc(0,0,ar,a0,a1,false);
+  // canvas 角度增大=画面顺时针，所以顺时针时按增大方向画（anticlockwise=false），
+  // 逆时针时按减小方向画（anticlockwise=true），这样箭头卷向才跟真实转向一致。
+  ctx.arc(0,0,ar,a0,a1,!cw);
   ctx.stroke();
   var endAng = a1;
   var ex = Math.cos(endAng)*ar, ey = Math.sin(endAng)*ar;
-  var tangent = endAng + Math.PI/2;
+  var tangent = endAng + (cw ? Math.PI/2 : -Math.PI/2);
   ctx.fillStyle = 'rgba(181,64,44,.85)';
   ctx.beginPath();
   ctx.moveTo(ex+Math.cos(tangent)*10, ey+Math.sin(tangent)*10);
@@ -515,7 +523,7 @@ function drawDirArrow(){
 }
 
 /* ================= 主循环 ================= */
-var lastT = null, introShown=false, mythShown=false;
+var lastT = null, introShown=false, mythShown=false, drainedShown=false;
 function frame(now){
   if (lastT===null) lastT = now;
   var dt = Math.min(0.05, (now-lastT)/1000);
@@ -534,6 +542,11 @@ function frame(now){
       mythShown = true;
       showCaption('这次几乎没人搅，放大 10 万倍的科里奥利力才有机会露头。', 4200);
     }
+  }
+
+  if (drainOpen && !drainedShown && aliveCount<=4){
+    drainedShown = true;
+    showCaption('水放完了，这把的方向已经定局，想再赌一次就点"重新放水"。', 4000);
   }
 
   if (!introShown){ introShown=true; showCaption('先在水面上拖一拖搅一把，再点"放水"看它转向哪边。', 3400); }

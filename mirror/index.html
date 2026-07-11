@@ -35,7 +35,7 @@
   .stage canvas{display:block;width:100%;height:auto;}
 
   .hud{
-    position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+    position:absolute;top:2.3%;left:1.5%;right:1.5%;display:flex;justify-content:space-between;
     gap:10px;pointer-events:none;flex-wrap:wrap;
   }
   .hud .chip{
@@ -45,7 +45,7 @@
   .hud .chip b{color:var(--seal);}
 
   .cap{
-    position:absolute;left:0;right:0;bottom:10px;text-align:center;pointer-events:none;
+    position:absolute;left:0;right:0;bottom:6%;text-align:center;pointer-events:none;
   }
   .cap span{
     display:inline-block;background:rgba(30,26,22,.84);color:#f5efe2;font-size:13px;
@@ -53,6 +53,10 @@
     max-width:88%;line-height:1.6;
   }
   .cap span.show{opacity:1;}
+  /* 窄屏下画布被压得很矮，字幕的固定像素高度会盖住人物：挪到画布外面，走正常文档流 */
+  @media (max-width:480px){
+    .cap{position:static;margin-top:10px;padding:0 4px;}
+  }
 
   .ctrls{
     background:var(--card);border:1px solid var(--ink);
@@ -120,7 +124,7 @@
   <div class="ctrls">
     <div class="row1">
       <button class="btn on" id="btnWall">🪞 墙上的镜子</button>
-      <button class="btn" id="btnFloor">🚰 地上的镜子</button>
+      <button class="btn" id="btnFloor">💧 地上的镜子</button>
     </div>
 
     <div id="wallCtrls">
@@ -288,6 +292,26 @@ window.addEventListener('mousemove', function(e){
   syncReadout();
 });
 window.addEventListener('mouseup', function(){ draggingYou = false; });
+
+cv.addEventListener('touchstart', function(e){
+  if (mode !== 'wall') return;
+  var p = toCanvas(e);
+  if (Math.abs(p.x - (YOU_BASE_X + youOffsetX)) < 34 && Math.abs(p.y - YOU_Y) < 40){
+    draggingYou = true;
+    e.preventDefault(); // 只在真的抓住人物时挡住滚动，别的触摸照常滚页面
+  }
+}, {passive:false});
+cv.addEventListener('touchmove', function(e){
+  if (!draggingYou) return;
+  e.preventDefault();
+  var p = toCanvas(e);
+  var off = Math.max(-160, Math.min(160, p.x - YOU_BASE_X));
+  youOffsetX = off;
+  youSlider.value = Math.round(off);
+  document.getElementById('youXVal').textContent = Math.round(off) === 0 ? '居中' : (off > 0 ? '偏右 ' + Math.round(off) + 'px' : '偏左 ' + Math.round(-off) + 'px');
+  syncReadout();
+}, {passive:false});
+cv.addEventListener('touchend', function(){ draggingYou = false; });
 
 /* ================= 读数 ================= */
 function syncReadout(){
