@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>镜子的左右 · 感觉博物馆</title>
+<meta name="description" content="镜子唯一动过的，是前后。左右和上下从没挪窝，动的是你脑子里那个想象出来转身的人。亲手转一转，抓个现行。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#e7e2d3;overflow:hidden;animation:rise .8s .1s ease both;
+  }
+  .stage canvas{display:block;width:100%;height:auto;}
+
+  .hud{
+    position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+    gap:10px;pointer-events:none;flex-wrap:wrap;
+  }
+  .hud .chip{
+    background:rgba(251,247,236,.92);border:1px solid rgba(42,37,33,.3);border-radius:9px;
+    padding:7px 12px;font-size:12px;letter-spacing:.03em;color:#453e30;line-height:1.6;max-width:230px;
+  }
+  .hud .chip b{color:var(--seal);}
+
+  .cap{
+    position:absolute;left:0;right:0;bottom:10px;text-align:center;pointer-events:none;
+  }
+  .cap span{
+    display:inline-block;background:rgba(30,26,22,.84);color:#f5efe2;font-size:13px;
+    letter-spacing:.04em;padding:8px 16px;border-radius:9px;opacity:0;transition:opacity .5s;
+    max-width:88%;line-height:1.6;
+  }
+  .cap span.show{opacity:1;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .row1{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:14px;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.06em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 15px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  .sliderbox{max-width:640px;margin:0 auto 10px;}
+  .sliderbox label{display:flex;justify-content:space-between;font-size:13px;color:#453e30;letter-spacing:.04em;margin-bottom:5px;}
+  .sliderbox label b{color:var(--seal);}
+  .sliderbox input{width:100%;accent-color:var(--seal);}
+  .sliderbox:last-child{margin-bottom:0;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:#453e30;
+    padding-top:8px;border-top:1px dashed var(--line);margin-top:4px;
+  }
+  .quote b{color:var(--seal);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №035</span>
+  </div>
+
+  <header>
+    <h1>镜子的左右</h1>
+    <div class="en">MIRROR SYMMETRY</div>
+    <p class="sub">颠倒的从来不是左右，是前后</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="780" height="520"></canvas>
+    <div class="hud">
+      <div class="chip" id="chipLeft">你的右手 x = <b id="hYouX">—</b><br>镜中的右手 x = <b id="hReflX">—</b></div>
+      <div class="chip" id="chipRight">朋友转身 <b id="hAngle">0°</b><br>右手现在在 <b id="hSide">东侧</b></div>
+    </div>
+    <div class="cap"><span id="capSpan"></span></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="row1">
+      <button class="btn on" id="btnWall">🪞 墙上的镜子</button>
+      <button class="btn" id="btnFloor">🚰 地上的镜子</button>
+    </div>
+
+    <div id="wallCtrls">
+      <div class="sliderbox">
+        <label>拖一拖，你站的位置 <b id="youXVal">居中</b></label>
+        <input type="range" id="youSlider" min="-160" max="160" value="0" step="1">
+      </div>
+      <div class="sliderbox">
+        <label>让朋友转身，看手换不换边 <b id="angleVal">0°（正对镜子）</b></label>
+        <input type="range" id="angleSlider" min="0" max="180" value="0" step="1">
+      </div>
+    </div>
+
+    <div id="floorCtrls" style="display:none;">
+      <div class="sliderbox">
+        <label>蹲下 ↔ 站直 <b id="heightVal">中等身高</b></label>
+        <input type="range" id="heightSlider" min="60" max="160" value="110" step="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 一个问了两百年的怪问题</div>
+    <div class="pb">镜子把字写反了，把你举起的右手变成对面那个人的左手。可它从没把星星挪到反方向的天上，也没让你的头和脚换过位置。同样是一块玻璃，为什么偏偏对左右下手，放过了上下？</div>
+    <div class="pt">说明牌 · 真相：只有一根轴被翻了</div>
+    <div class="pb">镜子做的事其实很单一：只把垂直于镜面的那根轴反过来，像把一页纸对折。挂在墙上的镜子，那根轴是<b>前后</b>，也就是离镜子的远近。你往前站一步，镜子里的你也往前"走"一步。你的左右坐标、你的上下坐标，一分未动。</div>
+    <div class="pt">说明牌 · 错觉从哪来</div>
+    <div class="pb">镜子里的你正对着你，就像有个人转过身来面对你。可镜子从没让谁转身，它只是把前后拉直了。你脑子里习惯把"面对我"翻译成"Ta转了半圈"，而转半圈，才是真正会让左右换边的动作。拖右边的滑杆让朋友转身试试，红点真的会从一侧摆到另一侧。左边镜子里的红点呢，你拖它的主人挪动，它跟着挪，却从没跳到对面去过，读数上写得明明白白。</div>
+    <div class="pt">说明牌 · 地上的镜子最老实</div>
+    <div class="pb">把镜子放平，变成地板或者一滩水，垂直于镜面的那根轴就变成了上下。这回你不会认错人，倒影头朝下脚朝上，明明白白摆在那儿。没人会说"这滩水把左右搞反了"，因为这次翻的东西，你亲眼看见了。</div>
+    <div class="quote">镜子唯一动过的，是前后。左右和上下一直原地不动，<b>动的是你脑子里那个想象出来转身的人</b>。</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №035 · Max 造<br>
+    <a href="../bubble/">下一个展厅：肥皂泡的颜色 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 物理设计 =================
+   墙上镜子（俯视图）：镜面是一条水平线 y=MIRROR_Y。反射对世界坐标做
+   (x,y) → (x, 2·MIRROR_Y − y)：x 分毫不动，y 关于镜面对称。这就是
+   "镜子只翻前后"的全部数学。
+   朋友转身：绕自身中心做纯旋转，局部偏移量不变，只是旋转角度改变——
+   与反射是两种完全不同的几何操作，前者会让标记点掠过身体中线，
+   后者永远不会。
+   地上镜子（侧视图）：镜面变成地面 y=GROUND_Y，同一条反射公式，这回
+   垂直轴是真实的上下，反射就是肉眼可见的倒挂。
+================================================== */
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var CSS_W = 780, CSS_H = 520;
+var DPR = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+cv.width = CSS_W * DPR; cv.height = CSS_H * DPR;
+ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+var W = CSS_W, H = CSS_H;
+
+var COL_INK = '#2a2521', COL_SOFT = '#8a8071', COL_SEAL = '#b5402c', COL_LINE = '#d8cdb6', COL_CARD = '#fbf7ec';
+
+/* ---------- 向量工具 ---------- */
+function rot(v, deg){
+  var r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  return { x: v.x*c - v.y*s, y: v.x*s + v.y*c };
+}
+function add(a,b){ return {x:a.x+b.x, y:a.y+b.y}; }
+function reflectAcrossY(p, lineY){ return { x:p.x, y: 2*lineY - p.y }; }
+
+/* ---------- 模式 ---------- */
+var mode = 'wall'; // 'wall' | 'floor'
+
+/* ---------- 墙上镜子状态 ---------- */
+var MIRROR_Y = 230;
+var YOU_Y = 410;
+var YOU_DIST = YOU_Y - MIRROR_Y;
+var youOffsetX = 0;   // 滑杆：-160..160，相对基准位置
+var YOU_BASE_X = 240;
+var FRIEND_X = 560;
+var friendAngle = 0;  // 0..180
+var LOCAL_ARM = { x: 22, y: -6 };
+var LOCAL_NOSE = { x: 0, y: -24 };
+var HEAD_R = 17;
+
+/* ---------- 地上镜子状态 ---------- */
+var GROUND_Y = 330;
+var PERSON_X = 390;
+var standHeight = 110; // 60..160
+var bobT = 0;
+
+/* ================= 交互绑定 ================= */
+var youSlider = document.getElementById('youSlider');
+var angleSlider = document.getElementById('angleSlider');
+var heightSlider = document.getElementById('heightSlider');
+var btnWall = document.getElementById('btnWall');
+var btnFloor = document.getElementById('btnFloor');
+var wallCtrls = document.getElementById('wallCtrls');
+var floorCtrls = document.getElementById('floorCtrls');
+
+youSlider.addEventListener('input', function(){
+  youOffsetX = +this.value;
+  document.getElementById('youXVal').textContent = youOffsetX === 0 ? '居中' : (youOffsetX > 0 ? '偏右 ' + youOffsetX + 'px' : '偏左 ' + (-youOffsetX) + 'px');
+  syncReadout();
+});
+angleSlider.addEventListener('input', function(){
+  friendAngle = +this.value;
+  updateAngleLabel();
+  syncReadout();
+  if (friendAngle >= 179){
+    showCaption('朋友转到 180°，右手真换到另一侧了。镜子里的右手，从头到尾都没挪窝。', 4200);
+  }
+});
+heightSlider.addEventListener('input', function(){
+  standHeight = +this.value;
+  document.getElementById('heightVal').textContent = standHeight < 90 ? '蹲着' : (standHeight > 130 ? '踮脚站直' : '中等身高');
+});
+
+function updateAngleLabel(){
+  var txt = friendAngle + '°';
+  if (friendAngle < 10) txt += '（正对镜子）';
+  else if (friendAngle > 170) txt += '（正对着你）';
+  document.getElementById('angleVal').textContent = txt;
+}
+
+btnWall.addEventListener('click', function(){ setMode('wall'); });
+btnFloor.addEventListener('click', function(){ setMode('floor'); });
+
+function setMode(m){
+  mode = m;
+  btnWall.classList.toggle('on', m === 'wall');
+  btnFloor.classList.toggle('on', m === 'floor');
+  wallCtrls.style.display = m === 'wall' ? '' : 'none';
+  floorCtrls.style.display = m === 'floor' ? '' : 'none';
+  document.getElementById('chipLeft').style.display = m === 'wall' ? '' : 'none';
+  document.getElementById('chipRight').style.display = m === 'wall' ? '' : 'none';
+  if (m === 'floor'){
+    showCaption('这次翻的是上下。倒影头朝下脚朝上，没人会认错。', 3600);
+  } else {
+    showCaption('拖动下面两根滑杆，亲手抓一次现行。', 3200);
+  }
+}
+
+/* ---------- 拖拽你的位置（直接在画布上拖） ---------- */
+var draggingYou = false;
+function toCanvas(e){
+  var r = cv.getBoundingClientRect();
+  var t = e.touches ? e.touches[0] : e;
+  return { x: (t.clientX - r.left) * (W / r.width), y: (t.clientY - r.top) * (H / r.height) };
+}
+cv.addEventListener('mousedown', function(e){
+  if (mode !== 'wall') return;
+  var p = toCanvas(e);
+  if (Math.abs(p.x - (YOU_BASE_X + youOffsetX)) < 34 && Math.abs(p.y - YOU_Y) < 40) draggingYou = true;
+});
+window.addEventListener('mousemove', function(e){
+  if (!draggingYou) return;
+  var p = toCanvas(e);
+  var off = Math.max(-160, Math.min(160, p.x - YOU_BASE_X));
+  youOffsetX = off;
+  youSlider.value = Math.round(off);
+  document.getElementById('youXVal').textContent = Math.round(off) === 0 ? '居中' : (off > 0 ? '偏右 ' + Math.round(off) + 'px' : '偏左 ' + Math.round(-off) + 'px');
+  syncReadout();
+});
+window.addEventListener('mouseup', function(){ draggingYou = false; });
+
+/* ================= 读数 ================= */
+function syncReadout(){
+  var youCenter = { x: YOU_BASE_X + youOffsetX, y: YOU_Y };
+  var youArm = add(youCenter, LOCAL_ARM);
+  var reflArm = reflectAcrossY(youArm, MIRROR_Y);
+  document.getElementById('hYouX').textContent = Math.round(youArm.x);
+  document.getElementById('hReflX').textContent = Math.round(reflArm.x);
+
+  var friendCenter = { x: FRIEND_X, y: YOU_Y };
+  var friendArm = add(friendCenter, rot(LOCAL_ARM, friendAngle));
+  document.getElementById('hAngle').textContent = Math.round(friendAngle) + '°';
+  document.getElementById('hSide').textContent = friendArm.x >= friendCenter.x ? '东侧' : '西侧';
+}
+
+/* ================= 字幕 ================= */
+var capEl = document.getElementById('capSpan');
+var capTimer = null;
+function showCaption(text, ms){
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  clearTimeout(capTimer);
+  capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms || 3600);
+}
+
+/* ================= 绘制：墙上镜子（俯视图） ================= */
+function drawFigure(center, nose, armTip, opts){
+  opts = opts || {};
+  var alpha = opts.alpha === undefined ? 1 : opts.alpha;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // 手臂
+  ctx.strokeStyle = COL_INK;
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(center.x, center.y);
+  ctx.lineTo(armTip.x, armTip.y);
+  ctx.stroke();
+  ctx.fillStyle = COL_SEAL;
+  ctx.beginPath();
+  ctx.arc(armTip.x, armTip.y, 6.5, 0, Math.PI*2);
+  ctx.fill();
+
+  // 身体（俯视：圆形躯干 + 鼻子朝向三角）
+  ctx.fillStyle = COL_CARD;
+  ctx.strokeStyle = COL_INK;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, HEAD_R, 0, Math.PI*2);
+  ctx.fill(); ctx.stroke();
+
+  var dx = nose.x - center.x, dy = nose.y - center.y;
+  var len = Math.sqrt(dx*dx+dy*dy) || 1;
+  var ux = dx/len, uy = dy/len;
+  var px = -uy, py = ux;
+  ctx.fillStyle = COL_INK;
+  ctx.beginPath();
+  ctx.moveTo(nose.x, nose.y);
+  ctx.lineTo(center.x + px*8, center.y + py*8);
+  ctx.lineTo(center.x - px*8, center.y - py*8);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawLabel(text, x, y, color){
+  ctx.fillStyle = color || COL_INK;
+  ctx.font = '13px "Noto Serif SC",serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, x, y);
+}
+
+function drawMirrorBar(y, x0, x1){
+  var grad = ctx.createLinearGradient(0, y-9, 0, y+9);
+  grad.addColorStop(0, 'rgba(255,255,255,.15)');
+  grad.addColorStop(0.5, 'rgba(120,140,150,.55)');
+  grad.addColorStop(1, 'rgba(255,255,255,.1)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x0, y-9, x1-x0, 18);
+  ctx.strokeStyle = 'rgba(42,37,33,.5)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x0+0.5, y-9+0.5, x1-x0-1, 17);
+  // 高光斜线
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x0, y-9, x1-x0, 18);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,.35)';
+  ctx.lineWidth = 3;
+  for (var i=0; i<10; i++){
+    var sx = x0 + i*((x1-x0)/9);
+    ctx.beginPath();
+    ctx.moveTo(sx, y-9);
+    ctx.lineTo(sx+14, y+9);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGuide(x, yTop, yBot, color){
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4,5]);
+  ctx.beginPath();
+  ctx.moveTo(x, yTop);
+  ctx.lineTo(x, yBot);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawWall(){
+  // 背景
+  ctx.fillStyle = '#e7e2d3';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = 'rgba(90,84,72,.05)';
+  for (var gy=40; gy<H; gy+=40) ctx.fillRect(0,gy,W,1);
+
+  drawMirrorBar(MIRROR_Y, 60, W-60);
+  drawLabel('镜面', (60+W-60)/2, MIRROR_Y-16, COL_SOFT);
+
+  var youCenter = { x: YOU_BASE_X + youOffsetX, y: YOU_Y };
+  var youNose = { x: youCenter.x, y: youCenter.y - 24 };
+  var youArm = add(youCenter, LOCAL_ARM);
+
+  var reflCenter = reflectAcrossY(youCenter, MIRROR_Y);
+  var reflNose = reflectAcrossY(youNose, MIRROR_Y);
+  var reflArm = reflectAcrossY(youArm, MIRROR_Y);
+
+  drawGuide(youArm.x, 30, H-40, 'rgba(181,64,44,.35)');
+  drawFigure(reflCenter, reflNose, reflArm, {alpha:.62});
+  drawFigure(youCenter, youNose, youArm, {});
+  drawLabel('你', youCenter.x, youCenter.y + HEAD_R + 20, COL_INK);
+  drawLabel('镜中的你', reflCenter.x, reflCenter.y - HEAD_R - 12, COL_SOFT);
+
+  var friendCenter = { x: FRIEND_X, y: YOU_Y };
+  var friendNoseLocal = rot(LOCAL_NOSE, friendAngle);
+  var friendArmLocal = rot(LOCAL_ARM, friendAngle);
+  var friendNose = add(friendCenter, friendNoseLocal);
+  var friendArm = add(friendCenter, friendArmLocal);
+
+  drawGuide(friendArm.x, 30, H-40, 'rgba(138,128,113,.45)');
+  drawFigure(friendCenter, friendNose, friendArm, {});
+  drawLabel('朋友', friendCenter.x, friendCenter.y + HEAD_R + 20, COL_INK);
+
+  // 底部标尺
+  ctx.strokeStyle = 'rgba(42,37,33,.25)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(40, H-30); ctx.lineTo(W-40, H-30);
+  ctx.stroke();
+  drawLabel('西', 60, H-14, COL_SOFT);
+  drawLabel('东', W-60, H-14, COL_SOFT);
+}
+
+/* ================= 绘制：地上镜子（侧视图） ================= */
+function drawFloor(){
+  ctx.fillStyle = '#dfe6ea';
+  ctx.fillRect(0,0,W,GROUND_Y);
+  var water = ctx.createLinearGradient(0,GROUND_Y,0,H);
+  water.addColorStop(0,'#9fb6bd');
+  water.addColorStop(1,'#7f99a2');
+  ctx.fillStyle = water;
+  ctx.fillRect(0,GROUND_Y,W,H-GROUND_Y);
+  ctx.strokeStyle = 'rgba(42,37,33,.4)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0,GROUND_Y+0.5); ctx.lineTo(W,GROUND_Y+0.5); ctx.stroke();
+  // 水纹
+  ctx.strokeStyle = 'rgba(255,255,255,.18)';
+  ctx.lineWidth = 1;
+  for (var i=0;i<6;i++){
+    var wy = GROUND_Y + 26 + i*30 + Math.sin(bobT*1.2+i)*3;
+    ctx.beginPath();
+    ctx.moveTo(30, wy);
+    for (var x=30;x<W-30;x+=20){
+      ctx.lineTo(x, wy + Math.sin(x*0.05+bobT+i)*2);
+    }
+    ctx.stroke();
+  }
+
+  var bob = Math.sin(bobT) * 3;
+  var h = standHeight + bob;
+  var headY = GROUND_Y - h;
+  var footY = GROUND_Y;
+
+  function stick(headY, footY, alpha, flip){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = COL_INK;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    var bodyTop = headY + (flip? -14 : 14);
+    ctx.beginPath();
+    ctx.moveTo(PERSON_X, bodyTop);
+    ctx.lineTo(PERSON_X, footY - (flip? -6 : 6));
+    ctx.stroke();
+    // 手臂
+    ctx.beginPath();
+    ctx.moveTo(PERSON_X, headY + (flip?-18:18));
+    ctx.lineTo(PERSON_X-18, headY + (flip?-32:32));
+    ctx.moveTo(PERSON_X, headY + (flip?-18:18));
+    ctx.lineTo(PERSON_X+18, headY + (flip?-32:32));
+    ctx.stroke();
+    // 腿
+    ctx.beginPath();
+    ctx.moveTo(PERSON_X, footY - (flip?-6:6));
+    ctx.lineTo(PERSON_X-12, footY);
+    ctx.moveTo(PERSON_X, footY - (flip?-6:6));
+    ctx.lineTo(PERSON_X+12, footY);
+    ctx.stroke();
+    // 头
+    ctx.fillStyle = alpha < 1 ? 'rgba(181,64,44,.55)' : COL_SEAL;
+    ctx.beginPath();
+    ctx.arc(PERSON_X, headY, 14, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = COL_INK;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  var reflHeadY = GROUND_Y + h;
+  stick(reflHeadY, GROUND_Y, 0.55, true);
+  stick(headY, footY, 1, false);
+
+  drawLabel('你', PERSON_X + 46, headY, COL_INK);
+  drawLabel('倒影', PERSON_X + 52, reflHeadY, COL_SOFT);
+}
+
+/* ================= 主循环 ================= */
+var introShown = false;
+function frame(t){
+  bobT = (t||0) / 900;
+  if (mode === 'wall') drawWall(); else drawFloor();
+  if (!introShown){
+    introShown = true;
+    showCaption('拖动下面两根滑杆，亲手抓一次现行。', 3200);
+  }
+  requestAnimationFrame(frame);
+}
+
+updateAngleLabel();
+syncReadout();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

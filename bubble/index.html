@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>肥皂泡的颜色 · 感觉博物馆</title>
+<meta name="description" content="肥皂泡没有颜料，颜色是两束光赛跑跑出来的。膜越薄颜色越换越快，顶上先变黑，那是它快要破了。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#dce3e6;overflow:hidden;animation:rise .8s .1s ease both;touch-action:none;
+  }
+  .stage canvas{display:block;width:100%;height:auto;cursor:grab;}
+  .stage canvas:active{cursor:grabbing;}
+
+  .hud{
+    position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+    gap:10px;pointer-events:none;flex-wrap:wrap;
+  }
+  .hud .chip{
+    background:rgba(251,247,236,.92);border:1px solid rgba(42,37,33,.3);border-radius:9px;
+    padding:7px 12px;font-size:12px;letter-spacing:.03em;color:#453e30;line-height:1.6;
+  }
+  .hud .chip b{color:var(--seal);}
+  .hud .chip .sw{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.25);}
+
+  .cap{
+    position:absolute;left:0;right:0;bottom:10px;text-align:center;pointer-events:none;
+  }
+  .cap span{
+    display:inline-block;background:rgba(30,26,22,.84);color:#f5efe2;font-size:13px;
+    letter-spacing:.04em;padding:8px 16px;border-radius:9px;opacity:0;transition:opacity .5s;
+    max-width:88%;line-height:1.6;
+  }
+  .cap span.show{opacity:1;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .row1{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:14px;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.06em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 15px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+
+  .sliderbox{max-width:640px;margin:0 auto 4px;}
+  .sliderbox label{display:flex;justify-content:space-between;font-size:13px;color:#453e30;letter-spacing:.04em;margin-bottom:5px;}
+  .sliderbox label b{color:var(--seal);}
+  .sliderbox input{width:100%;accent-color:var(--seal);}
+
+  .fingerprint{max-width:640px;margin:12px auto 2px;}
+  .fpbar{height:16px;border-radius:5px;border:1px solid rgba(42,37,33,.35);position:relative;overflow:hidden;}
+  .fplabels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-soft);margin-top:4px;letter-spacing:.02em;}
+  .fpmark{position:absolute;top:-3px;width:2px;height:22px;background:var(--ink);}
+
+  .hint{text-align:center;font-size:12px;color:var(--ink-soft);letter-spacing:.04em;margin-top:12px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:#453e30;
+    padding-top:8px;border-top:1px dashed var(--line);margin-top:4px;
+  }
+  .quote b{color:var(--seal);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №036</span>
+  </div>
+
+  <header>
+    <h1>肥皂泡的颜色</h1>
+    <div class="en">THIN-FILM INTERFERENCE</div>
+    <p class="sub">泡泡没有颜料，颜色是两束光跑出来的</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="760" height="560"></canvas>
+    <div class="hud">
+      <div class="chip">顶部膜厚 <b id="hTop">—</b> nm<br>底部膜厚 <b id="hBot">—</b> nm</div>
+      <div class="chip" id="chipState"><span class="sw" id="swState" style="background:#fff"></span><b id="hState">正常</b></div>
+    </div>
+    <div class="cap"><span id="capSpan"></span></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="row1">
+      <button class="btn on" id="btnDrain">▶ 开始变薄</button>
+      <button class="btn" id="btnBlow">🌬 吹一个新泡</button>
+    </div>
+    <div class="sliderbox">
+      <label>顶部起始膜厚 <b id="thickVal">700 nm</b></label>
+      <input type="range" id="thickSlider" min="0" max="1000" value="700" step="2">
+    </div>
+
+    <div class="fingerprint">
+      <canvas id="fpCanvas" width="600" height="16" class="fpbar"></canvas>
+      <div class="fplabels"><span>0nm 黑膜</span><span>250</span><span>500</span><span>750</span><span>1000nm 泛白</span></div>
+    </div>
+    <p class="hint">在泡泡上拖一拖，搅出流动的花纹；膜会自己慢慢变薄，顶上先见黑</p>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 泡泡为什么会有颜色</div>
+    <div class="pb">肥皂泡本身没有颜色，吹泡泡的水也没有颜色。你看到的每一圈彩虹，都是那张薄膜自己算出来的一场光的加减法。</div>
+    <div class="pt">说明牌 · 两束光，一步之差</div>
+    <div class="pb">光碰到泡泡，一部分立刻从外表面弹回你的眼睛，另一部分先钻进膜里，撞到内表面才弹回来，比第一束晚一步追上来。这一先一后的两束光会不会叠加放大，取决于膜有多厚：厚一点点，某个颜色被留下来；再厚一点点，换另一个颜色顶上。膜的厚度每差几十纳米，颜色就悄悄换一轮，这块面板上的数字都是照真实公式算出来的，不是配色盘上现挑的。</div>
+    <div class="pt">说明牌 · 顶上为什么先变黑</div>
+    <div class="pb">重力会把肥皂水往下拉，泡泡顶上的膜越拉越薄，薄到只剩几纳米，比可见光的波长还短一大截。这时候两束反射光刚好完全抵消，什么颜色都反不出来，你看到的就是一小片黑。这片黑不是脏了，是这张膜快要没有厚度了，泡泡撑不了多久。</div>
+    <div class="pt">说明牌 · 同一张配方表</div>
+    <div class="pb">水面上的油膜、CD 背面的七彩、蝴蝶翅膀上那种怎么洗都洗不掉的蓝，用的是同一套算法。厚度决定颜色，颜色被"印"在薄膜表面，换个角度看还会变，因为光到你眼睛的路程差跟着角度一起变了。</div>
+    <div class="quote">泡泡从没往自己身上抹过颜料，它只是让两束光赛跑，<b>输赢写成了你看到的彩虹</b>。</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №036 · Max 造<br>
+    <a href="../vortex/">下一个展厅：浴缸漩涡 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 物理设计 =================
+   单层薄膜双光束干涉（法向入射近似）：
+   外表面反射 (空气→皂液，光疏到光密) 带半波损失；
+   内表面反射 (皂液→空气，光密到光疏) 不带。
+   两束反射光振幅相减叠加，强度 I(λ,t) ∝ 1 − cos(4πnt/λ)。
+   t→0 时 I→0（各波长同时熄灭 = 黑膜），这正是牛顿黑膜的成因，
+   不是额外拍脑袋加的规则，是这条公式自己给出来的边界情况。
+   把 380~700nm 分段用 Bruton 算法转成 RGB，按反射强度加权求和，
+   得到该厚度下"眼睛会看到的"混合色——泡泡表面每一点的颜色，
+   都是这样从厚度实时算出来的，不是贴图。
+================================================== */
+
+var N_FILM = 1.33; // 皂液膜折射率，取水的近似值
+
+function reflectance(t_nm, lambda_nm){
+  var delta = (4 * Math.PI * N_FILM * t_nm) / lambda_nm;
+  return (1 - Math.cos(delta)) / 2; // 0..1
+}
+
+/* ---------- 波长→RGB（Bruton 算法，公有领域近似公式） ---------- */
+function wavelengthToRGB(l){
+  var r=0,g=0,b=0;
+  if (l>=380 && l<440){ r=-(l-440)/(440-380); g=0; b=1; }
+  else if (l<490){ r=0; g=(l-440)/(490-440); b=1; }
+  else if (l<510){ r=0; g=1; b=-(l-510)/(510-490); }
+  else if (l<580){ r=(l-510)/(580-510); g=1; b=0; }
+  else if (l<645){ r=1; g=-(l-645)/(645-580); b=0; }
+  else { r=1; g=0; b=0; }
+  var factor;
+  if (l<420) factor = 0.3+0.7*(l-380)/(420-380);
+  else if (l<701) factor = 1.0;
+  else factor = 0.3+0.7*(780-l)/(780-700);
+  return { r:r*factor, g:g*factor, b:b*factor };
+}
+
+/* ---------- 预计算：厚度(2nm 步进) → 颜色 查找表 ---------- */
+var LUT_STEP = 2, LUT_MAX = 1500;
+var LUT = new Array(Math.ceil(LUT_MAX/LUT_STEP)+1);
+(function buildLUT(){
+  var wSamples = [];
+  for (var l=380; l<=700; l+=8) wSamples.push(l);
+  var rgbCache = wSamples.map(wavelengthToRGB);
+  for (var i=0;i<LUT.length;i++){
+    var t = i*LUT_STEP;
+    var sr=0,sg=0,sb=0;
+    for (var k=0;k<wSamples.length;k++){
+      var R = reflectance(t, wSamples[k]);
+      sr += R*rgbCache[k].r; sg += R*rgbCache[k].g; sb += R*rgbCache[k].b;
+    }
+    var n = wSamples.length;
+    var scale = 2.5;
+    var rr = Math.min(1, Math.pow((sr/n)*scale, 0.82));
+    var gg = Math.min(1, Math.pow((sg/n)*scale, 0.82));
+    var bb = Math.min(1, Math.pow((sb/n)*scale, 0.82));
+    LUT[i] = [Math.round(rr*255), Math.round(gg*255), Math.round(bb*255)];
+  }
+})();
+function colorAt(t_nm){
+  var i = Math.round(t_nm / LUT_STEP);
+  if (i<0) i=0; if (i>=LUT.length) i=LUT.length-1;
+  return LUT[i];
+}
+function cssAt(t_nm){ var c = colorAt(t_nm); return 'rgb('+c[0]+','+c[1]+','+c[2]+')'; }
+
+/* ================= 画布 ================= */
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var CSS_W = 760, CSS_H = 560;
+var DPR = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+cv.width = CSS_W*DPR; cv.height = CSS_H*DPR;
+ctx.setTransform(DPR,0,0,DPR,0,0);
+var W = CSS_W, H = CSS_H;
+
+var CX = W/2, CY = H/2 + 16, BR = 190; // 泡泡圆心、半径
+
+/* ================= 状态 ================= */
+var baseThickness = 700; // 顶部起始膜厚 nm，滑杆控制
+var draining = false;
+var DRAIN_RATE = 5.5; // nm/s
+var popped = false;
+var popT = 0;
+var blackHoldT = 0; // 顶部持续处于黑膜状态的秒数
+var swirls = []; // {x,y,strength,speed,seed,phase}
+var simT = 0;
+
+function thicknessAt(lx, ly){
+  var v = ly / BR; // -1(顶) .. +1(底)
+  var heightFactor = 0.22 + 0.9 * ((v+1)/2);
+  var swirl = 0;
+  for (var i=0;i<swirls.length;i++){
+    var s = swirls[i];
+    var dx = lx-s.x, dy = ly-s.y;
+    var d = Math.sqrt(dx*dx+dy*dy) + 1;
+    swirl += s.strength * Math.sin(d*0.048 - simT*s.speed + s.seed) * Math.exp(-d/150);
+  }
+  var wave = 0.05*Math.sin(lx*0.021 + simT*0.35) + 0.045*Math.cos(ly*0.018 - simT*0.27 + 1.4);
+  var th = baseThickness * heightFactor * (1 + swirl + wave);
+  return Math.max(0, th);
+}
+
+/* ================= 控件 ================= */
+var thickSlider = document.getElementById('thickSlider');
+var btnDrain = document.getElementById('btnDrain');
+var btnBlow = document.getElementById('btnBlow');
+
+thickSlider.addEventListener('input', function(){
+  baseThickness = +this.value;
+  document.getElementById('thickVal').textContent = Math.round(baseThickness) + ' nm';
+  updateFPMark();
+});
+btnDrain.addEventListener('click', function(){
+  draining = !draining;
+  btnDrain.textContent = draining ? '⏸ 暂停变薄' : '▶ 开始变薄';
+  btnDrain.classList.toggle('on', draining);
+  if (draining) showCaption('膜在自己变薄，重力把水往下拉。', 2600);
+});
+btnBlow.addEventListener('click', function(){
+  baseThickness = 700 + Math.random()*200;
+  thickSlider.value = Math.round(baseThickness);
+  document.getElementById('thickVal').textContent = Math.round(baseThickness) + ' nm';
+  swirls = [];
+  popped = false; popT = 0; blackHoldT = 0;
+  draining = true;
+  btnDrain.textContent = '⏸ 暂停变薄';
+  btnDrain.classList.add('on');
+  showCaption('吹起一个新泡，700 多纳米厚，正在慢慢变薄。', 2800);
+  updateFPMark();
+});
+
+/* ---------- 拖拽搅动 ---------- */
+function toCanvas(e){
+  var r = cv.getBoundingClientRect();
+  var t = e.touches ? e.touches[0] : e;
+  return { x:(t.clientX-r.left)*(W/r.width), y:(t.clientY-r.top)*(H/r.height) };
+}
+var dragging = false, lastDrag = null;
+cv.addEventListener('mousedown', function(e){ dragging = true; lastDrag = toCanvas(e); });
+window.addEventListener('mousemove', function(e){
+  if (!dragging) return;
+  var p = toCanvas(e);
+  addSwirl(p);
+  lastDrag = p;
+});
+window.addEventListener('mouseup', function(){ dragging = false; });
+cv.addEventListener('touchstart', function(e){ e.preventDefault(); dragging = true; lastDrag = toCanvas(e); }, {passive:false});
+cv.addEventListener('touchmove', function(e){ e.preventDefault(); if (!dragging) return; addSwirl(toCanvas(e)); }, {passive:false});
+cv.addEventListener('touchend', function(){ dragging = false; });
+
+function addSwirl(p){
+  var lx = p.x-CX, ly = p.y-CY;
+  if (lx*lx+ly*ly > BR*BR*1.1) return;
+  if (swirls.length > 7) swirls.shift();
+  swirls.push({ x:lx, y:ly, strength:0.34+Math.random()*0.12, speed:0.9+Math.random()*0.8, seed:Math.random()*10, phase:0 });
+}
+
+/* ================= 指纹条（厚度→颜色对照） ================= */
+var fp = document.getElementById('fpCanvas');
+var fctx = fp.getContext('2d');
+(function drawFingerprint(){
+  var fw = fp.width, fh = fp.height;
+  var img = fctx.createImageData(fw, fh);
+  for (var x=0; x<fw; x++){
+    var t = (x/fw) * 1000;
+    var c = colorAt(t);
+    for (var y=0; y<fh; y++){
+      var o = (y*fw+x)*4;
+      img.data[o]=c[0]; img.data[o+1]=c[1]; img.data[o+2]=c[2]; img.data[o+3]=255;
+    }
+  }
+  fctx.putImageData(img, 0, 0);
+})();
+var fpMark = document.createElement('div');
+fpMark.className = 'fpmark';
+document.querySelector('.fingerprint').style.position = 'relative';
+document.querySelector('.fingerprint').appendChild(fpMark);
+function updateFPMark(){
+  var pct = Math.max(0, Math.min(1, baseThickness/1000));
+  fpMark.style.left = (pct*100) + '%';
+}
+
+/* ================= 字幕 ================= */
+var capEl = document.getElementById('capSpan');
+var capTimer = null;
+function showCaption(text, ms){
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  clearTimeout(capTimer);
+  capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms || 3200);
+}
+
+/* ================= 绘制 ================= */
+function drawBackground(){
+  var g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#e7ecec');
+  g.addColorStop(1,'#cfd8da');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+  // 桌面地平线
+  ctx.fillStyle = 'rgba(120,110,95,.08)';
+  ctx.fillRect(0, H-70, W, 70);
+}
+
+var CELL = 6;
+function drawBubble(){
+  var alpha = popped ? Math.max(0, 1 - popT/0.5) : 1;
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.arc(CX, CY, BR, 0, Math.PI*2);
+  ctx.clip();
+
+  var half = BR;
+  for (var ly=-half; ly<=half; ly+=CELL){
+    var rowW = Math.sqrt(Math.max(0, BR*BR - ly*ly));
+    for (var lx=-rowW; lx<=rowW; lx+=CELL){
+      var th = thicknessAt(lx, ly);
+      var c = colorAt(th);
+      ctx.fillStyle = 'rgba('+c[0]+','+c[1]+','+c[2]+',0.88)';
+      ctx.fillRect(CX+lx, CY+ly, CELL+0.6, CELL+0.6);
+    }
+  }
+  ctx.restore();
+
+  // 边缘暗环（掠射角反射增强的简化示意）
+  ctx.save();
+  var rim = ctx.createRadialGradient(CX,CY,BR*0.78,CX,CY,BR);
+  rim.addColorStop(0,'rgba(20,18,16,0)');
+  rim.addColorStop(1,'rgba(20,18,16,.28)');
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = rim;
+  ctx.beginPath(); ctx.arc(CX,CY,BR,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // 高光
+  ctx.save();
+  ctx.globalAlpha = alpha*0.75;
+  var hl = ctx.createRadialGradient(CX-BR*0.42,CY-BR*0.5,4,CX-BR*0.42,CY-BR*0.5,BR*0.42);
+  hl.addColorStop(0,'rgba(255,255,255,.85)');
+  hl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = hl;
+  ctx.beginPath(); ctx.arc(CX,CY,BR,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawPopParticles(){
+  if (!popped) return;
+  var n = 22;
+  ctx.save();
+  for (var i=0;i<n;i++){
+    var ang = (i/n)*Math.PI*2 + 0.3;
+    var dist = popT * 260 * (0.6+0.4*Math.sin(i*7.1));
+    var x = CX + Math.cos(ang)*dist, y = CY + Math.sin(ang)*dist - popT*40;
+    var a = Math.max(0, 1-popT*1.6);
+    if (a<=0) continue;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#eaf3f2';
+    ctx.beginPath();
+    ctx.arc(x, y, 3.2, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/* ================= HUD 更新 ================= */
+function updateHUD(){
+  var topTh = thicknessAt(0, -BR*0.94);
+  var botTh = thicknessAt(0, BR*0.94);
+  document.getElementById('hTop').textContent = Math.round(topTh);
+  document.getElementById('hBot').textContent = Math.round(botTh);
+  document.getElementById('swState').style.background = cssAt(topTh);
+
+  var stateEl = document.getElementById('hState');
+  if (popped){
+    stateEl.textContent = '已经破了';
+  } else if (topTh < 18){
+    stateEl.textContent = '顶上见黑，快破了';
+  } else if (topTh < 60){
+    stateEl.textContent = '膜在变薄';
+  } else {
+    stateEl.textContent = '正常';
+  }
+}
+
+/* ================= 主循环 ================= */
+var lastT = null;
+var introShown = false;
+function frame(now){
+  if (lastT===null) lastT = now;
+  var dt = Math.min(0.06, (now-lastT)/1000);
+  lastT = now;
+  simT += dt;
+
+  if (!popped){
+    if (draining){
+      baseThickness = Math.max(0, baseThickness - DRAIN_RATE*dt);
+      thickSlider.value = Math.round(baseThickness);
+      document.getElementById('thickVal').textContent = Math.round(baseThickness) + ' nm';
+      updateFPMark();
+    }
+    var topTh = thicknessAt(0, -BR*0.94);
+    if (topTh < 12){
+      blackHoldT += dt;
+      if (blackHoldT > 1.4){
+        popped = true; popT = 0;
+        showCaption('泡破了。最后一刻，顶上那圈黑膜就是信号。', 3600);
+      }
+    } else {
+      blackHoldT = Math.max(0, blackHoldT - dt*2);
+    }
+  } else {
+    popT += dt;
+    if (popT > 1.1){
+      // 自动重新吹一个，别晾着用户
+      btnBlow.click();
+    }
+  }
+
+  // swirl 强度衰减
+  for (var i=swirls.length-1;i>=0;i--){
+    swirls[i].strength *= (1 - dt*0.32);
+    if (swirls[i].strength < 0.02) swirls.splice(i,1);
+  }
+
+  drawBackground();
+  drawBubble();
+  drawPopParticles();
+  updateHUD();
+
+  if (!introShown){
+    introShown = true;
+    showCaption('拖一拖泡泡表面，搅出流动的花纹。', 3000);
+  }
+
+  requestAnimationFrame(frame);
+}
+
+updateFPMark();
+draining = true;
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浴缸漩涡 · 感觉博物馆</title>
+<meta name="description" content="北半球逆时针南半球顺时针？浴缸这么小的尺度，地球自转根本插不上话，谁先伸手搅一下，谁定方向。">
+<style>
+  :root{
+    --paper:#f5efe2; --card:#fbf7ec; --ink:#2a2521; --ink-soft:#8a8071;
+    --seal:#b5402c; --line:#d8cdb6;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    background-image:radial-gradient(rgba(140,120,90,.06) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);font-family:var(--serif);min-height:100vh;padding:30px 16px 40px;
+  }
+  .wrap{max-width:860px;margin:0 auto;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--ink-soft);letter-spacing:.15em;margin-bottom:26px;}
+  .topbar a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .topbar a:hover{color:var(--seal);border-color:var(--seal);}
+  header{text-align:center;margin-bottom:26px;animation:rise .8s ease both;}
+  h1{font-size:clamp(30px,6vw,42px);letter-spacing:.22em;margin-bottom:8px;}
+  .en{font-size:11px;letter-spacing:.5em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:12px;}
+  .sub{font-size:14.5px;color:#57503f;letter-spacing:.08em;}
+
+  .stage{
+    position:relative;border:1px solid var(--ink);
+    box-shadow:0 0 0 5px var(--card),0 0 0 6px var(--line),0 14px 30px rgba(90,70,40,.14);
+    background:#e2ddcd;overflow:hidden;animation:rise .8s .1s ease both;touch-action:none;
+  }
+  .stage canvas{display:block;width:100%;height:auto;cursor:grab;}
+  .stage canvas:active{cursor:grabbing;}
+
+  .hud{
+    position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;
+    gap:10px;pointer-events:none;flex-wrap:wrap;
+  }
+  .hud .chip{
+    background:rgba(251,247,236,.92);border:1px solid rgba(42,37,33,.3);border-radius:9px;
+    padding:7px 12px;font-size:12px;letter-spacing:.03em;color:#453e30;line-height:1.6;min-width:150px;
+  }
+  .hud .chip b{color:var(--seal);}
+  .barrow{display:flex;align-items:center;gap:5px;margin-top:3px;}
+  .barrow .lbl{width:64px;font-size:10.5px;color:var(--ink-soft);flex-shrink:0;}
+  .bartrack{flex:1;height:7px;background:rgba(42,37,33,.12);border-radius:4px;overflow:hidden;min-width:60px;}
+  .barfill{height:100%;background:var(--seal);border-radius:4px;}
+  .barfill.cori{background:#7c8f8a;}
+
+  .cap{
+    position:absolute;left:0;right:0;bottom:10px;text-align:center;pointer-events:none;
+  }
+  .cap span{
+    display:inline-block;background:rgba(30,26,22,.84);color:#f5efe2;font-size:13px;
+    letter-spacing:.04em;padding:8px 16px;border-radius:9px;opacity:0;transition:opacity .5s;
+    max-width:88%;line-height:1.6;
+  }
+  .cap span.show{opacity:1;}
+
+  .ctrls{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:16px 18px;margin-top:16px;
+  }
+  .ctrlgroup{margin-bottom:14px;}
+  .ctrlgroup:last-child{margin-bottom:0;}
+  .glabel{text-align:center;font-size:11.5px;color:var(--ink-soft);letter-spacing:.1em;margin-bottom:8px;}
+  .row1{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;}
+  .btn{
+    font-family:var(--serif);font-size:13.5px;letter-spacing:.06em;
+    background:var(--card);color:var(--ink);border:1.5px solid var(--ink);
+    border-radius:9px;padding:9px 15px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--seal);color:var(--seal);}
+  .btn.on{background:var(--seal);color:#fdf6ee;border-color:var(--seal);}
+  .btn.wide{padding:9px 20px;}
+
+  .plaque{
+    background:var(--card);border:1px solid var(--ink);
+    box-shadow:0 0 0 4px var(--card),0 0 0 5px var(--line);
+    padding:22px 24px 20px;margin-top:16px;
+  }
+  .plaque .pt{font-size:12px;letter-spacing:.25em;color:var(--seal);margin-bottom:10px;}
+  .plaque .pb{font-size:15px;line-height:2.05;color:#453e30;margin-bottom:14px;}
+  .plaque .pb:last-child{margin-bottom:0;}
+  .plaque .pb b{color:var(--ink);}
+  .quote{
+    text-align:center;font-size:16px;line-height:2.1;color:#453e30;
+    padding-top:8px;border-top:1px dashed var(--line);margin-top:4px;
+  }
+  .quote b{color:var(--seal);}
+  footer{text-align:center;margin-top:44px;color:var(--ink-soft);font-size:11.5px;letter-spacing:.18em;line-height:2.3;}
+  footer a{color:var(--ink-soft);}
+  footer a:hover{color:var(--seal);}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="../">← 感觉博物馆</a>
+    <span>展厅 №037</span>
+  </div>
+
+  <header>
+    <h1>浴缸漩涡</h1>
+    <div class="en">THE BATHTUB VORTEX</div>
+    <p class="sub">台风听地球自转的，浴缸只听你的手</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" width="740" height="600"></canvas>
+    <div class="hud">
+      <div class="chip">水量 <b id="hWater">100%</b><br>此刻转向 <b id="hDir">静止</b></div>
+      <div class="chip">
+        <div class="barrow"><span class="lbl">你搅的</span><div class="bartrack"><div class="barfill" id="barStir" style="width:0%"></div></div></div>
+        <div class="barrow"><span class="lbl">科里奥利</span><div class="bartrack"><div class="barfill cori" id="barCori" style="width:0%"></div></div></div>
+      </div>
+    </div>
+    <div class="cap"><span id="capSpan"></span></div>
+  </div>
+
+  <div class="ctrls">
+    <div class="ctrlgroup">
+      <div class="glabel">半球</div>
+      <div class="row1">
+        <button class="btn on" id="hN">🌍 北半球</button>
+        <button class="btn" id="hEq">🌐 赤道</button>
+        <button class="btn" id="hS">🌏 南半球</button>
+      </div>
+    </div>
+    <div class="ctrlgroup">
+      <div class="glabel">科里奥利力强度（真实强度几乎看不见，往右调是"演示放大"）</div>
+      <div class="row1">
+        <button class="btn on" id="eReal">真实强度</button>
+        <button class="btn" id="e1k">放大 1000 倍</button>
+        <button class="btn" id="e1m">放大 10 万倍</button>
+      </div>
+    </div>
+    <div class="ctrlgroup">
+      <div class="row1">
+        <button class="btn wide" id="btnDrain">🚰 放水</button>
+        <button class="btn wide" id="btnSettle">🕰 静置 24 小时</button>
+        <button class="btn wide" id="btnRefill">🔄 重新放水</button>
+      </div>
+    </div>
+    <p class="glabel" style="margin-top:10px;">在水面上拖一拖，先搅一把再放水</p>
+  </div>
+
+  <div class="plaque">
+    <div class="pt">说明牌 · 一个流传很广的都市传说</div>
+    <div class="pb">北半球放水永远逆时针转，南半球永远顺时针，赤道上直排不打转。这个说法传得到处都是，连科普插图都爱这么画。可你家的浴缸多大，地球又多大？</div>
+    <div class="pt">说明牌 · 科里奥利力弱到可以忽略</div>
+    <div class="pb">科里奥利力确实存在，尺度对了它真管用：台风、洋流，几百公里宽、转一圈要几天，那个尺度上它说了算，方向和半球死死对应。可一个直径几十厘米的浴缸，水几十秒就流干，你随手一搅的力道，比地球自转能在这么小的水面上施加的力大出好几个数量级。谁的贡献大，谁定方向，跟纬度没关系。</div>
+    <div class="pt">说明牌 · 真做过这个实验的人</div>
+    <div class="pb">1962 年，MIT 的 Ascher Shapiro 真的量过。他用一个近两米宽的圆盘水池，灌满水后让它静置一整天，等所有搅动的余波彻底停下来，才敢拔掉塞子——这时候科里奥利力才有机会露头，转向真的和纬度对上了。少了这一整天的"静置"，随手一次搅动就能把这一点点效应盖得干干净净。</div>
+    <div class="pt">说明牌 · 你的浴缸不是实验室</div>
+    <div class="pb">你家的浴缸从装水那一刻就带着看不见的余流，放水前伸手探探水温，就是一场搅动。这些扰动比科里奥利力大出几个数量级，谁先动手，谁定方向。选哪个半球，在这个尺度上根本插不上话——上面的两根进度条，就是照实际强度画出来的对比。</div>
+    <div class="quote">台风听地球自转的，<b>浴缸只听你的手</b>。</div>
+  </div>
+
+  <footer>
+    感觉博物馆 · 展厅 №037 · Max 造<br>
+    <a href="../eyes/">下一个展厅：眼睛商店 →</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 物理设计 =================
+   排水：给每个水粒子一个指向排水口的向心加速度（越靠近越强），
+   不产生额外力矩，角动量守恒——这正是水越靠近排水口转得越快的
+   真实成因（半径变小，切向速度按 L/r 自动变大），不是画出来的假转速。
+
+   科里奥利力：一个恒定的切向加速度，方向由半球决定（北正南负赤道零），
+   量级取真实科里奥利参数 f=2Ω sinφ（Ω≈7.29e-5 rad/s）在这个尺度上
+   换算出的典型值——"真实强度"档位下这个数字小到画面上几乎看不出，
+   这不是 bug，这就是这个展厅想说的事。放大档位纯粹是为了让你看见
+   它本来该长什么样子，说明牌里写清楚了倍数。
+
+   搅动：拖拽在附近粒子上加一个瞬时切向速度，和科里奥利力一样都会
+   改变角动量，两者在同一套物理量纲下累加，进度条对比的是同一件事
+   的两个来源，不是两种不同的度量硬凑在一起比。
+================================================== */
+
+var cv = document.getElementById('cv');
+var ctx = cv.getContext('2d');
+var CSS_W = 740, CSS_H = 600;
+var DPR = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
+cv.width = CSS_W*DPR; cv.height = CSS_H*DPR;
+ctx.setTransform(DPR,0,0,DPR,0,0);
+var W = CSS_W, H = CSS_H;
+
+var CX = W/2, CY = H/2 - 6;
+var TUB_R = 235, DRAIN_R = 15;
+
+/* ---------- 常量 ---------- */
+var CORIOLIS_BASE = 0.012; // 换算到本模拟尺度的"真实强度"切向加速度基准
+var DRAIN_PULL = 46;
+var DAMP = 0.55;
+var STIR_RADIUS = 46;
+
+var hemisphere = 'N'; // 'N' | 'EQ' | 'S'
+var exaggeration = 1;
+
+/* ---------- 粒子 ---------- */
+var N = 560;
+var px = new Float32Array(N), py = new Float32Array(N);
+var pvx = new Float32Array(N), pvy = new Float32Array(N);
+var alive = new Uint8Array(N);
+var aliveCount = N;
+
+function fill(){
+  for (var i=0;i<N;i++){
+    var a = Math.random()*Math.PI*2;
+    var r = DRAIN_R + 14 + Math.random()*(TUB_R-DRAIN_R-28);
+    px[i] = Math.cos(a)*r; py[i] = Math.sin(a)*r;
+    // 装水自带的看不见的余流：比科里奥利力大得多，比真人一搅小得多
+    var jr = a + Math.PI/2 + (Math.random()-0.5)*0.6;
+    var jmag = 2.4 + Math.random()*2.2;
+    pvx[i] = Math.cos(jr)*jmag; pvy[i] = Math.sin(jr)*jmag;
+    alive[i] = 1;
+  }
+  aliveCount = N;
+}
+fill();
+
+var drainOpen = false;
+var stirAccum = 0, coriAccum = 0;
+
+/* ================= 控件 ================= */
+function setHemi(h){
+  hemisphere = h;
+  document.getElementById('hN').classList.toggle('on', h==='N');
+  document.getElementById('hEq').classList.toggle('on', h==='EQ');
+  document.getElementById('hS').classList.toggle('on', h==='S');
+}
+document.getElementById('hN').addEventListener('click', function(){ setHemi('N'); });
+document.getElementById('hEq').addEventListener('click', function(){ setHemi('EQ'); });
+document.getElementById('hS').addEventListener('click', function(){ setHemi('S'); });
+
+function setExag(v, btnId){
+  exaggeration = v;
+  ['eReal','e1k','e1m'].forEach(function(id){ document.getElementById(id).classList.toggle('on', id===btnId); });
+  showCaption(v===1 ? '这才是真实强度，接着放水试试，几乎看不出方向。' : '放大 '+v+' 倍来演示，真实世界没有这么夸张。', 3200);
+}
+document.getElementById('eReal').addEventListener('click', function(){ setExag(1,'eReal'); });
+document.getElementById('e1k').addEventListener('click', function(){ setExag(1000,'e1k'); });
+document.getElementById('e1m').addEventListener('click', function(){ setExag(100000,'e1m'); });
+
+var btnDrain = document.getElementById('btnDrain');
+btnDrain.addEventListener('click', function(){
+  if (aliveCount <= 4) return;
+  drainOpen = !drainOpen;
+  btnDrain.textContent = drainOpen ? '⏸ 关掉水龙头' : '🚰 放水';
+  btnDrain.classList.toggle('on', drainOpen);
+  if (drainOpen) showCaption('水开始往中间流，越靠近排水口转得越快。', 2800);
+});
+
+document.getElementById('btnSettle').addEventListener('click', function(){
+  for (var i=0;i<N;i++){ pvx[i]*=0.02; pvy[i]*=0.02; }
+  stirAccum *= 0.02;
+  showCaption('快进 24 小时，所有搅动的余波都沉下去了，只剩科里奥利力还在悄悄推。', 3600);
+});
+
+document.getElementById('btnRefill').addEventListener('click', function(){
+  fill();
+  drainOpen = false;
+  stirAccum = 0; coriAccum = 0;
+  btnDrain.textContent = '🚰 放水';
+  btnDrain.classList.remove('on');
+  showCaption('重新放满一缸水，带着一点新的余流。', 2400);
+});
+
+/* ---------- 拖拽搅动 ---------- */
+function toCanvas(e){
+  var r = cv.getBoundingClientRect();
+  var t = e.touches ? e.touches[0] : e;
+  return { x:(t.clientX-r.left)*(W/r.width)-CX, y:(t.clientY-r.top)*(H/r.height)-CY };
+}
+var dragging=false, lastP=null;
+cv.addEventListener('mousedown', function(e){ dragging=true; lastP=toCanvas(e); });
+window.addEventListener('mousemove', function(e){
+  if (!dragging) return;
+  var p = toCanvas(e);
+  stir(p, lastP);
+  lastP = p;
+});
+window.addEventListener('mouseup', function(){ dragging=false; });
+cv.addEventListener('touchstart', function(e){ e.preventDefault(); dragging=true; lastP=toCanvas(e); }, {passive:false});
+cv.addEventListener('touchmove', function(e){ e.preventDefault(); if (!dragging) return; var p=toCanvas(e); stir(p,lastP); lastP=p; }, {passive:false});
+cv.addEventListener('touchend', function(){ dragging=false; });
+
+function stir(p, prev){
+  var dx = p.x-prev.x, dy = p.y-prev.y;
+  var dist = Math.sqrt(dx*dx+dy*dy);
+  if (dist < 0.5 || dist > 80) return;
+  var kickMag = 0;
+  for (var i=0;i<N;i++){
+    if (!alive[i]) continue;
+    var ddx = px[i]-p.x, ddy = py[i]-p.y;
+    var d2 = ddx*ddx+ddy*ddy;
+    if (d2 > STIR_RADIUS*STIR_RADIUS) continue;
+    var w = 1 - Math.sqrt(d2)/STIR_RADIUS;
+    pvx[i] += dx*0.9*w;
+    pvy[i] += dy*0.9*w;
+    kickMag += Math.abs(dx*py[i]-dy*px[i])*w*0.002;
+  }
+  stirAccum += kickMag;
+}
+
+/* ================= 字幕 ================= */
+var capEl = document.getElementById('capSpan');
+var capTimer = null;
+function showCaption(text, ms){
+  capEl.textContent = text;
+  capEl.classList.add('show');
+  clearTimeout(capTimer);
+  capTimer = setTimeout(function(){ capEl.classList.remove('show'); }, ms||3000);
+}
+
+/* ================= 物理步进 ================= */
+function step(dt){
+  var coriSign = hemisphere==='N' ? 1 : (hemisphere==='S' ? -1 : 0);
+  var ac = CORIOLIS_BASE * exaggeration * coriSign;
+
+  for (var i=0;i<N;i++){
+    if (!alive[i]) continue;
+    var x=px[i], y=py[i];
+    var r = Math.sqrt(x*x+y*y); if (r<0.6) r=0.6;
+    var rx=x/r, ry=y/r, tx=-ry, ty=rx;
+
+    var ax=0, ay=0;
+    if (drainOpen && r>DRAIN_R){
+      var pull = DRAIN_PULL * (1 + 30/r);
+      ax += -rx*pull; ay += -ry*pull;
+    }
+    ax += tx*ac; ay += ty*ac;
+
+    var vx = pvx[i]+ax*dt, vy = pvy[i]+ay*dt;
+    vx *= (1-DAMP*dt); vy *= (1-DAMP*dt);
+    pvx[i]=vx; pvy[i]=vy;
+
+    var nx=x+vx*dt, ny=y+vy*dt;
+    var nr = Math.sqrt(nx*nx+ny*ny);
+    if (drainOpen && nr < DRAIN_R){
+      alive[i]=0; aliveCount--;
+      continue;
+    }
+    if (nr > TUB_R-6){
+      var k = (TUB_R-6)/nr;
+      nx*=k; ny*=k;
+      pvx[i]*=0.4; pvy[i]*=0.4;
+    }
+    px[i]=nx; py[i]=ny;
+  }
+
+  if (drainOpen) coriAccum += Math.abs(ac)*dt*38;
+  stirAccum *= (1 - dt*0.06);
+}
+
+/* ================= 读数 ================= */
+function computeNetOmega(){
+  var sum=0, cnt=0;
+  for (var i=0;i<N;i++){
+    if (!alive[i]) continue;
+    var x=px[i], y=py[i];
+    var r2 = x*x+y*y; if (r2<25) continue;
+    if (r2 > (TUB_R*0.6)*(TUB_R*0.6)) continue;
+    sum += (x*pvy[i]-y*pvx[i])/r2;
+    cnt++;
+  }
+  return cnt? sum/cnt : 0;
+}
+
+function updateHUD(){
+  document.getElementById('hWater').textContent = Math.round(aliveCount/N*100) + '%';
+  var omega = computeNetOmega();
+  var dirEl = document.getElementById('hDir');
+  if (Math.abs(omega) < 0.006 || (!drainOpen && aliveCount===N)){
+    dirEl.textContent = drainOpen ? '看不出方向' : '静止';
+  } else {
+    dirEl.textContent = omega > 0 ? '逆时针' : '顺时针';
+  }
+
+  var maxBar = Math.max(stirAccum, coriAccum, 0.001);
+  document.getElementById('barStir').style.width = Math.min(100, stirAccum/maxBar*100) + '%';
+  document.getElementById('barCori').style.width = Math.min(100, coriAccum/maxBar*100) + '%';
+}
+
+/* ================= 绘制 ================= */
+function drawTub(){
+  ctx.fillStyle = '#e2ddcd';
+  ctx.fillRect(0,0,W,H);
+
+  // 缸沿
+  ctx.beginPath();
+  ctx.arc(CX,CY,TUB_R+14,0,Math.PI*2);
+  var rimG = ctx.createRadialGradient(CX,CY,TUB_R-4,CX,CY,TUB_R+14);
+  rimG.addColorStop(0,'#cfd0c8');
+  rimG.addColorStop(1,'#a9aba1');
+  ctx.fillStyle = rimG;
+  ctx.fill();
+
+  // 水体
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX,CY,TUB_R,0,Math.PI*2);
+  ctx.clip();
+  var waterG = ctx.createRadialGradient(CX,CY,DRAIN_R,CX,CY,TUB_R);
+  waterG.addColorStop(0,'#6d8f96');
+  waterG.addColorStop(0.55,'#8fb2b6');
+  waterG.addColorStop(1,'#a9c7c8');
+  ctx.fillStyle = waterG;
+  ctx.fillRect(CX-TUB_R,CY-TUB_R,TUB_R*2,TUB_R*2);
+
+  // 同心水纹
+  ctx.strokeStyle = 'rgba(255,255,255,.12)';
+  ctx.lineWidth = 1;
+  for (var rr=30; rr<TUB_R; rr+=26){
+    ctx.beginPath();
+    ctx.arc(CX,CY,rr,0,Math.PI*2);
+    ctx.stroke();
+  }
+
+  // 粒子
+  for (var i=0;i<N;i++){
+    if (!alive[i]) continue;
+    var x=CX+px[i], y=CY+py[i];
+    var speed = Math.sqrt(pvx[i]*pvx[i]+pvy[i]*pvy[i]);
+    var t = Math.min(1, speed/60);
+    var cr = 205+t*40, cg = 224-t*30, cb = 226-t*40;
+    ctx.fillStyle = 'rgba('+cr+','+cg+','+cb+',0.85)';
+    ctx.beginPath();
+    ctx.arc(x,y,1.6,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // 排水漩涡暗影
+  if (drainOpen){
+    var funnel = ctx.createRadialGradient(CX,CY,0,CX,CY,60);
+    funnel.addColorStop(0,'rgba(20,24,26,.6)');
+    funnel.addColorStop(1,'rgba(20,24,26,0)');
+    ctx.fillStyle = funnel;
+    ctx.beginPath(); ctx.arc(CX,CY,60,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+
+  // 排水口
+  ctx.beginPath();
+  ctx.arc(CX,CY,DRAIN_R,0,Math.PI*2);
+  ctx.fillStyle = '#20221f';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(230,225,210,.55)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(CX-DRAIN_R*0.6,CY); ctx.lineTo(CX+DRAIN_R*0.6,CY);
+  ctx.moveTo(CX,CY-DRAIN_R*0.6); ctx.lineTo(CX,CY+DRAIN_R*0.6);
+  ctx.stroke();
+
+  // 缸沿高光
+  ctx.beginPath();
+  ctx.arc(CX,CY,TUB_R,0,Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,.5)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 转向指示箭头
+  drawDirArrow();
+
+  // 半球标签
+  ctx.fillStyle = '#6b6255';
+  ctx.font = '12px "Noto Serif SC",serif';
+  ctx.textAlign = 'center';
+  var hemiLabel = hemisphere==='N' ? '北半球模式' : (hemisphere==='S' ? '南半球模式' : '赤道模式');
+  ctx.fillText(hemiLabel, CX, CY+TUB_R+34);
+}
+
+function drawDirArrow(){
+  if (!drainOpen) return;
+  var omega = computeNetOmega();
+  if (Math.abs(omega) < 0.006) return;
+  var cw = omega < 0;
+  var ar = TUB_R + 30;
+  ctx.save();
+  ctx.translate(CX, CY-4);
+  ctx.strokeStyle = 'rgba(181,64,44,.85)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  var a0 = -Math.PI*0.62, a1 = Math.PI*0.18;
+  if (cw){ var tmp=a0; a0=Math.PI-a1; a1=Math.PI-tmp; }
+  ctx.beginPath();
+  ctx.arc(0,0,ar,a0,a1,false);
+  ctx.stroke();
+  var endAng = a1;
+  var ex = Math.cos(endAng)*ar, ey = Math.sin(endAng)*ar;
+  var tangent = endAng + Math.PI/2;
+  ctx.fillStyle = 'rgba(181,64,44,.85)';
+  ctx.beginPath();
+  ctx.moveTo(ex+Math.cos(tangent)*10, ey+Math.sin(tangent)*10);
+  ctx.lineTo(ex-Math.cos(tangent-0.5)*9, ey-Math.sin(tangent-0.5)*9);
+  ctx.lineTo(ex-Math.cos(tangent+0.5)*9, ey-Math.sin(tangent+0.5)*9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ================= 主循环 ================= */
+var lastT = null, introShown=false, mythShown=false;
+function frame(now){
+  if (lastT===null) lastT = now;
+  var dt = Math.min(0.05, (now-lastT)/1000);
+  lastT = now;
+
+  step(dt);
+  drawTub();
+  updateHUD();
+
+  if (drainOpen && !mythShown && coriAccum>0.001){
+    var ratio = stirAccum / Math.max(coriAccum,1e-6);
+    if (ratio > 15){
+      mythShown = true;
+      showCaption('这一圈转向，几乎全是你搅出来的，地球自转的贡献小到可以忽略。', 4200);
+    } else if (exaggeration>=100000 && ratio < 3){
+      mythShown = true;
+      showCaption('这次几乎没人搅，放大 10 万倍的科里奥利力才有机会露头。', 4200);
+    }
+  }
+
+  if (!introShown){ introShown=true; showCaption('先在水面上拖一拖搅一把，再点"放水"看它转向哪边。', 3400); }
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
